@@ -1,0 +1,1 @@
+export type AnyBecauseLibrary = any; // eslint-disable-line @typescript-eslint/no-explicit-any
