@@ -9,18 +9,26 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "adm-zip": "^0.5.16",
+    "canvas": "^3.2.0",
     "lodash": "^4.17.21",
     "next": "15.1.2",
+    "opensheetmusicdisplay": "^1.9.2",
+    "pdfjs-dist": "^5.4.296",
     "pptxgenjs": "^3.12.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-pdf": "^10.2.0",
+    "verovio": "^5.6.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@types/adm-zip": "^0.5.7",
     "@types/lodash": "^4.17.13",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/react-pdf": "^6.2.0",
     "eslint": "^9",
     "eslint-config-next": "15.1.2",
     "postcss": "^8",

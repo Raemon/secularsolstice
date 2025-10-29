@@ -4,7 +4,6 @@ import React, { useState, useEffect, useRef } from 'react';
 // import map from 'lodash/map';
 
 export const SongPlayer = ({
-  songTitle,
   audioSrc = "song.mp3",
   lyricsMarkdownFile = ""
 }: {

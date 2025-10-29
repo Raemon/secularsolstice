@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import SongPlayer from "./SongPlayer";
 
 const songs = [
@@ -11,6 +12,7 @@ const songs = [
 
 
 export default function Home() {
+  redirect('/songs');
   return (
     <div>
       {songs.map((song) => (

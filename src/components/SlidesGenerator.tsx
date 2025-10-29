@@ -33,12 +33,34 @@ const SlidesGenerator = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [frameExtractionInProgress, setFrameExtractionInProgress] = useState(false);
   
-  // Load PptxGenJS on mount
+  // Load PptxGenJS on mount and restore from localStorage
   useEffect(() => {
-    if (typeof window !== 'undefined' && !PptxGenJS) {
-      import('pptxgenjs').then((module) => {
-        PptxGenJS = module.default;
-      });
+    if (typeof window !== 'undefined') {
+      if (!PptxGenJS) {
+        import('pptxgenjs').then((module) => {
+          PptxGenJS = module.default;
+        });
+      }
+      
+      // Restore saved content from localStorage
+      const savedHtmlContent = localStorage.getItem('slidesGenerator_htmlContent');
+      const savedLinesPerSlide = localStorage.getItem('slidesGenerator_linesPerSlide');
+      const savedExtractedFrames = localStorage.getItem('slidesGenerator_extractedFrames');
+      
+      if (savedHtmlContent) {
+        setHtmlContent(savedHtmlContent);
+      }
+      if (savedLinesPerSlide) {
+        setLinesPerSlide(parseInt(savedLinesPerSlide, 10));
+      }
+      if (savedExtractedFrames) {
+        try {
+          const frames = JSON.parse(savedExtractedFrames);
+          setExtractedFrames(frames);
+        } catch (e) {
+          console.error('Failed to parse saved frames:', e);
+        }
+      }
     }
   }, []);
   
@@ -55,6 +77,27 @@ const SlidesGenerator = () => {
     setSlides(newSlides);
     setRawHtml(processRawHtml(htmlContent));
   }, [htmlContent, linesPerSlide]);
+  
+  // Save htmlContent to localStorage when it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('slidesGenerator_htmlContent', htmlContent);
+    }
+  }, [htmlContent]);
+  
+  // Save linesPerSlide to localStorage when it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('slidesGenerator_linesPerSlide', linesPerSlide.toString());
+    }
+  }, [linesPerSlide]);
+  
+  // Save extractedFrames to localStorage when they change
+  useEffect(() => {
+    if (typeof window !== 'undefined' && extractedFrames.length > 0) {
+      localStorage.setItem('slidesGenerator_extractedFrames', JSON.stringify(extractedFrames));
+    }
+  }, [extractedFrames]);
   
   // Handle video load
   const handleVideoLoad = useCallback(async (file: File, video: HTMLVideoElement) => {
