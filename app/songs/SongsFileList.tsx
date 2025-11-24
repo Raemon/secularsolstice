@@ -1,61 +1,10 @@
 'use client';
 
-import { useState, useEffect, Fragment } from 'react';
-import { marked } from 'marked';
-import SongItem from './SongItem';
+import { useState, useEffect } from 'react';
+import SearchInput from './SearchInput';
+import SongList from './SongList';
+import VersionDetailPanel from './VersionDetailPanel';
 import type { Song, SongVersion } from './types';
-
-const VersionContent = ({version, isEditing, editedContent, onContentChange}: {
-  version: SongVersion;
-  isEditing: boolean;
-  editedContent: string;
-  onContentChange: (content: string) => void;
-}) => {
-  const hasAudio = Boolean(version.audioUrl);
-  const hasContent = Boolean(version.content);
-  const isTxtFile = version.label.toLowerCase().endsWith('.txt');
-
-  if (!hasAudio && !hasContent) {
-    return <p className="text-gray-500 text-xs">No stored content for this version.</p>;
-  }
-
-  if (isEditing) {
-    return (
-      <div className="space-y-2">
-        {hasAudio && (
-          <audio controls src={version.audioUrl || undefined} className="w-full">
-            Your browser does not support the audio element.
-          </audio>
-        )}
-        <textarea
-          value={editedContent}
-          onChange={(e) => onContentChange(e.target.value)}
-          className="w-full h-96 p-2 text-xs font-mono border border-gray-300"
-        />
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-2">
-      {hasAudio && (
-        <audio controls src={version.audioUrl || undefined} className="w-full">
-          Your browser does not support the audio element.
-        </audio>
-      )}
-      {hasContent && (
-        isTxtFile ? (
-          <pre className="text-content text-gray-800 text-xs overflow-x-auto">{version.content}</pre>
-        ) : (
-          <div 
-            className="markdown-content text-gray-800 text-xs"
-            dangerouslySetInnerHTML={{ __html: marked.parse(version.content || '') }}
-          />
-        )
-      )}
-    </div>
-  );
-};
 
 const SongsFileList = () => {
   console.log('SongsFileList component rendering');
@@ -63,10 +12,12 @@ const SongsFileList = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedVersion, setSelectedVersion] = useState<SongVersion | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedContent, setEditedContent] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
+  const [selectedVersion, setSelectedVersion] = useState<SongVersion & { songId?: string; nextVersionId?: string | null; originalVersionId?: string | null } | null>(null);
+  const [previousVersions, setPreviousVersions] = useState<SongVersion[]>([]);
+  const [isExpandedPreviousVersions, setIsExpandedPreviousVersions] = useState(false);
+  const [isCreatingVersion, setIsCreatingVersion] = useState(false);
+  const [newVersionForm, setNewVersionForm] = useState({ label: '', content: '', audioUrl: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchSongs = async () => {
     console.log('fetchSongs called');
@@ -108,52 +59,115 @@ const SongsFileList = () => {
     );
   });
 
-  const handleVersionClick = (version: SongVersion) => {
-    setSelectedVersion(prev => prev?.id === version.id ? null : version);
-    setIsEditing(false);
-    setEditedContent('');
-  };
-
-  const handleEditClick = () => {
-    if (selectedVersion) {
-      setEditedContent(selectedVersion.content || '');
-      setIsEditing(true);
+  const handleVersionClick = async (version: SongVersion) => {
+    if (selectedVersion?.id === version.id) {
+      setSelectedVersion(null);
+      setPreviousVersions([]);
+      setIsExpandedPreviousVersions(false);
+      return;
+    }
+    
+    setSelectedVersion(version);
+    setIsExpandedPreviousVersions(false);
+    setIsCreatingVersion(false);
+    
+    try {
+      const response = await fetch(`/api/songs/versions/${version.id}`);
+      if (!response.ok) {
+        throw new Error('Failed to load version details');
+      }
+      const data = await response.json();
+      setPreviousVersions(data.previousVersions || []);
+      if (data.version) {
+        setSelectedVersion(data.version as SongVersion);
+      }
+    } catch (err) {
+      console.error('Error loading version details:', err);
+      setPreviousVersions([]);
     }
   };
 
-  const handleCancelEdit = () => {
-    setIsEditing(false);
-    setEditedContent('');
+  const handleCreateVersionClick = () => {
+    setIsCreatingVersion(true);
+    setNewVersionForm({
+      label: selectedVersion?.label || '',
+      content: selectedVersion?.content || '',
+      audioUrl: selectedVersion?.audioUrl || '',
+    });
   };
 
-  const handleSaveEdit = async () => {
+  const handleCancelCreateVersion = () => {
+    setIsCreatingVersion(false);
+    setNewVersionForm({ label: '', content: '', audioUrl: '' });
+  };
+
+  const handleFormChange = (updates: Partial<{ label: string; content: string; audioUrl: string }>) => {
+    setNewVersionForm({ ...newVersionForm, ...updates });
+  };
+
+  const handleClose = () => {
+    setSelectedVersion(null);
+    setPreviousVersions([]);
+    setIsExpandedPreviousVersions(false);
+    setIsCreatingVersion(false);
+  };
+
+  const handleSubmitVersion = async () => {
     if (!selectedVersion) return;
     
-    setIsSaving(true);
+    if (!newVersionForm.label.trim()) {
+      setError('Label is required');
+      return;
+    }
+    
+    const songId = (selectedVersion as SongVersion & { songId: string }).songId || songs.find(song => 
+      song.versions.some(v => v.id === selectedVersion.id)
+    )?.id;
+    
+    if (!songId) {
+      setError('Could not determine song ID');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    setError(null);
+    
     try {
-      const response = await fetch(`/api/songs/versions/${selectedVersion.id}`, {
-        method: 'PATCH',
+      const response = await fetch('/api/songs/versions', {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ content: editedContent }),
+        body: JSON.stringify({
+          songId: songId,
+          label: newVersionForm.label,
+          content: newVersionForm.content || null,
+          audioUrl: newVersionForm.audioUrl || null,
+          previousVersionId: selectedVersion.id,
+        }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save changes');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create version');
       }
 
       const data = await response.json();
-      setSelectedVersion(data.version);
-      setIsEditing(false);
+      setIsCreatingVersion(false);
+      setNewVersionForm({ label: '', content: '', audioUrl: '' });
       
-      // Refresh the songs list to get updated content
+      const oldSelectedVersion = selectedVersion;
+      const newVersion = data.version;
+      
       await fetchSongs();
+      
+      setSelectedVersion(newVersion);
+      setPreviousVersions(oldSelectedVersion ? [oldSelectedVersion, ...previousVersions] : previousVersions);
     } catch (err) {
-      console.error('Error saving version:', err);
-      setError(err instanceof Error ? err.message : 'Failed to save changes');
+      console.error('Error creating version:', err);
+      setError(err instanceof Error ? err.message : 'Failed to create version');
     } finally {
-      setIsSaving(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -179,83 +193,37 @@ const SongsFileList = () => {
 
   return (
     <div className="min-h-screen p-4">
-      <div className="flex gap-4 h-[calc(100vh-2rem)] mx-auto max-w-7xl">
+      <div className="flex gap-4 h-[calc(100vh-2rem)] mx-auto max-w-6xl">
         <div className="flex-1 overflow-y-auto max-w-md">
-          <input
-            type="text"
-            placeholder="Search songs or versions..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="mb-3 px-2 py-1 w-full max-w-md"
+          <SearchInput
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
           />
           
-          <div className="grid grid-cols-[200px_1fr] gap-x-4">
-            {filteredSongs.map((song) => (
-              <Fragment key={song.id}>
-                <SongItem
-                  song={song}
-                  renderName={true}
-                />
-                <SongItem
-                  song={song}
-                  renderFiles={true}
-                  selectedVersionId={selectedVersion?.id}
-                  onVersionClick={handleVersionClick}
-                />
-              </Fragment>
-            ))}
-          </div>
+          <SongList
+            songs={filteredSongs}
+            selectedVersionId={selectedVersion?.id}
+            onVersionClick={handleVersionClick}
+          />
         </div>
         
         {selectedVersion && (
-          <div className="w-96 border-l border-gray-200 pl-4 overflow-y-auto">
-            <div className="mb-2">
-              <div className="flex items-start justify-between mb-2">
-                <button
-                  onClick={() => {
-                    setSelectedVersion(null);
-                    setIsEditing(false);
-                    setEditedContent('');
-                  }}
-                  className="text-gray-400 text-xs"
-                >
-                  × Close
-                </button>
-                {selectedVersion.content !== null && (
-                  <button
-                    onClick={isEditing ? handleCancelEdit : handleEditClick}
-                    className="text-gray-600 text-xs"
-                    disabled={isSaving}
-                  >
-                    {isEditing ? 'Cancel' : 'Edit'}
-                  </button>
-                )}
-              </div>
-              <h3 className="font-mono text-sm font-medium text-gray-800 mb-1">
-                {selectedVersion.label}
-              </h3>
-              <p className="text-gray-400 text-xs">
-                {new Date(selectedVersion.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
-              </p>
-              {isEditing && (
-                <div className="mt-2 flex gap-2">
-                  <button
-                    onClick={handleSaveEdit}
-                    disabled={isSaving}
-                    className="text-xs px-2 py-1 bg-blue-600 text-white disabled:opacity-50"
-                  >
-                    {isSaving ? 'Saving...' : 'Save'}
-                  </button>
-                </div>
-              )}
-            </div>
-            <VersionContent 
-              version={selectedVersion} 
-              isEditing={isEditing}
-              editedContent={editedContent}
-              onContentChange={setEditedContent}
-            />
-          </div>
+          <VersionDetailPanel
+            version={selectedVersion}
+            previousVersions={previousVersions}
+            isExpandedPreviousVersions={isExpandedPreviousVersions}
+            isCreatingVersion={isCreatingVersion}
+            newVersionForm={newVersionForm}
+            isSubmitting={isSubmitting}
+            error={error}
+            onClose={handleClose}
+            onTogglePreviousVersions={() => setIsExpandedPreviousVersions(!isExpandedPreviousVersions)}
+            onVersionClick={handleVersionClick}
+            onCreateVersionClick={handleCreateVersionClick}
+            onCancelCreateVersion={handleCancelCreateVersion}
+            onFormChange={handleFormChange}
+            onSubmitVersion={handleSubmitVersion}
+          />
         )}
       </div>
     </div>

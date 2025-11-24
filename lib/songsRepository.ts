@@ -178,20 +178,6 @@ export const findVersionBySongTitleAndLabel = async (songTitle: string, label: s
   return typedRows.length > 0 ? typedRows[0] : null;
 };
 
-export const updateVersionContent = async (versionId: string, content: string | null): Promise<SongVersionRecord> => {
-  const rows = await sql`
-    update song_versions
-    set content = ${content}
-    where id = ${versionId}
-    returning id, song_id as "songId", label, content, audio_url as "audioUrl", previous_version_id as "previousVersionId", next_version_id as "nextVersionId", original_version_id as "originalVersionId", created_at as "createdAt"
-  `;
-  const typedRows = rows as SongVersionResult[];
-  if (typedRows.length === 0) {
-    throw new Error(`Version ${versionId} not found`);
-  }
-  return typedRows[0];
-};
-
 export const updateVersionNextId = async (versionId: string, nextVersionId: string): Promise<SongVersionRecord> => {
   const rows = await sql`
     update song_versions
@@ -226,18 +212,33 @@ export const getVersionById = async (versionId: string): Promise<SongVersionReco
 };
 
 export const getPreviousVersionsChain = async (versionId: string): Promise<SongVersionRecord[]> => {
-  const chain: SongVersionRecord[] = [];
-  let currentVersionId: string | null = versionId;
-  
-  while (currentVersionId) {
-    const version = await getVersionById(currentVersionId);
-    if (!version) break;
-    
-    chain.push(version);
-    currentVersionId = version.previousVersionId;
+  const currentVersion = await getVersionById(versionId);
+  if (!currentVersion) {
+    return [];
   }
   
-  return chain.slice(1);
+  const originalVersionId = currentVersion.originalVersionId || currentVersion.id;
+  
+  const rows = await sql`
+    select
+      v.id as "id",
+      v.song_id as "songId",
+      v.label,
+      v.content,
+      v.audio_url as "audioUrl",
+      v.previous_version_id as "previousVersionId",
+      v.next_version_id as "nextVersionId",
+      v.original_version_id as "originalVersionId",
+      v.created_at as "createdAt"
+    from song_versions v
+    where v.original_version_id = ${originalVersionId}
+      and v.label = ${currentVersion.label}
+      and v.id != ${versionId}
+      and v.created_at < ${currentVersion.createdAt}
+    order by v.created_at desc
+  `;
+  
+  return rows as SongVersionRecord[];
 };
 
 export const createVersionWithLineage = async (params: { songId: string; label: string; content: string | null; audioUrl?: string | null; previousVersionId?: string | null; }): Promise<SongVersionRecord> => {

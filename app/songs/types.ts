@@ -1,5 +1,6 @@
 export type SongVersion = {
   id: string;
+  songId: string;
   label: string;
   content: string | null;
   audioUrl: string | null;
