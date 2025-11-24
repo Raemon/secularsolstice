@@ -37,13 +37,23 @@ const CreateVersionForm = ({form, onFormChange, onSubmit, onCancel, isSubmitting
           placeholder="Audio URL"
         />
       </div>
-      <button
-        onClick={onSubmit}
-        disabled={isSubmitting}
-        className="text-xs px-2 py-1 bg-blue-600 text-white disabled:opacity-50"
-      >
-        {isSubmitting ? 'Submitting...' : 'Submit Version'}
-      </button>
+      <div className="flex gap-2">
+        <button
+          onClick={onSubmit}
+          disabled={isSubmitting}
+          className="text-xs px-2 py-1 bg-blue-600 text-white disabled:opacity-50"
+        >
+          {isSubmitting ? 'Submitting...' : 'Submit Version'}
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          disabled={isSubmitting}
+          className="text-xs px-2 py-1 border border-gray-300 text-gray-700 disabled:opacity-50"
+        >
+          Cancel
+        </button>
+      </div>
       {error && (
         <p className="text-red-600 text-xs">{error}</p>
       )}
