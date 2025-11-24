@@ -5,13 +5,35 @@ import { marked } from 'marked';
 import SongItem from './SongItem';
 import type { Song, SongVersion } from './types';
 
-const VersionContent = ({version}: {version: SongVersion}) => {
+const VersionContent = ({version, isEditing, editedContent, onContentChange}: {
+  version: SongVersion;
+  isEditing: boolean;
+  editedContent: string;
+  onContentChange: (content: string) => void;
+}) => {
   const hasAudio = Boolean(version.audioUrl);
   const hasContent = Boolean(version.content);
   const isTxtFile = version.label.toLowerCase().endsWith('.txt');
 
   if (!hasAudio && !hasContent) {
     return <p className="text-gray-500 text-xs">No stored content for this version.</p>;
+  }
+
+  if (isEditing) {
+    return (
+      <div className="space-y-2">
+        {hasAudio && (
+          <audio controls src={version.audioUrl || undefined} className="w-full">
+            Your browser does not support the audio element.
+          </audio>
+        )}
+        <textarea
+          value={editedContent}
+          onChange={(e) => onContentChange(e.target.value)}
+          className="w-full h-96 p-2 text-xs font-mono border border-gray-300"
+        />
+      </div>
+    );
   }
 
   return (
@@ -42,6 +64,9 @@ const SongsFileList = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedVersion, setSelectedVersion] = useState<SongVersion | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedContent, setEditedContent] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   const fetchSongs = async () => {
     console.log('fetchSongs called');
@@ -85,6 +110,51 @@ const SongsFileList = () => {
 
   const handleVersionClick = (version: SongVersion) => {
     setSelectedVersion(prev => prev?.id === version.id ? null : version);
+    setIsEditing(false);
+    setEditedContent('');
+  };
+
+  const handleEditClick = () => {
+    if (selectedVersion) {
+      setEditedContent(selectedVersion.content || '');
+      setIsEditing(true);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditedContent('');
+  };
+
+  const handleSaveEdit = async () => {
+    if (!selectedVersion) return;
+    
+    setIsSaving(true);
+    try {
+      const response = await fetch(`/api/songs/versions/${selectedVersion.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ content: editedContent }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save changes');
+      }
+
+      const data = await response.json();
+      setSelectedVersion(data.version);
+      setIsEditing(false);
+      
+      // Refresh the songs list to get updated content
+      await fetchSongs();
+    } catch (err) {
+      console.error('Error saving version:', err);
+      setError(err instanceof Error ? err.message : 'Failed to save changes');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (loading) {
@@ -140,20 +210,51 @@ const SongsFileList = () => {
         {selectedVersion && (
           <div className="w-96 border-l border-gray-200 pl-4 overflow-y-auto">
             <div className="mb-2">
-              <button
-                onClick={() => setSelectedVersion(null)}
-                className="text-gray-400 text-xs mb-2"
-              >
-                × Close
-              </button>
+              <div className="flex items-start justify-between mb-2">
+                <button
+                  onClick={() => {
+                    setSelectedVersion(null);
+                    setIsEditing(false);
+                    setEditedContent('');
+                  }}
+                  className="text-gray-400 text-xs"
+                >
+                  × Close
+                </button>
+                {selectedVersion.content !== null && (
+                  <button
+                    onClick={isEditing ? handleCancelEdit : handleEditClick}
+                    className="text-gray-600 text-xs"
+                    disabled={isSaving}
+                  >
+                    {isEditing ? 'Cancel' : 'Edit'}
+                  </button>
+                )}
+              </div>
               <h3 className="font-mono text-sm font-medium text-gray-800 mb-1">
                 {selectedVersion.label}
               </h3>
               <p className="text-gray-400 text-xs">
                 {new Date(selectedVersion.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
               </p>
+              {isEditing && (
+                <div className="mt-2 flex gap-2">
+                  <button
+                    onClick={handleSaveEdit}
+                    disabled={isSaving}
+                    className="text-xs px-2 py-1 bg-blue-600 text-white disabled:opacity-50"
+                  >
+                    {isSaving ? 'Saving...' : 'Save'}
+                  </button>
+                </div>
+              )}
             </div>
-            <VersionContent version={selectedVersion} />
+            <VersionContent 
+              version={selectedVersion} 
+              isEditing={isEditing}
+              editedContent={editedContent}
+              onContentChange={setEditedContent}
+            />
           </div>
         )}
       </div>

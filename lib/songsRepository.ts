@@ -164,3 +164,17 @@ export const findVersionBySongTitleAndLabel = async (songTitle: string, label: s
   return typedRows.length > 0 ? typedRows[0] : null;
 };
 
+export const updateVersionContent = async (versionId: string, content: string | null): Promise<SongVersionRecord> => {
+  const rows = await sql`
+    update song_versions
+    set content = ${content}
+    where id = ${versionId}
+    returning id, song_id as "songId", label, content, audio_url as "audioUrl", previous_version_id as "previousVersionId", created_at as "createdAt"
+  `;
+  const typedRows = rows as SongVersionResult[];
+  if (typedRows.length === 0) {
+    throw new Error(`Version ${versionId} not found`);
+  }
+  return typedRows[0];
+};
+
