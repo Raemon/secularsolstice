@@ -101,47 +101,47 @@ const ChordmarkConverter = () => {
   return (
     <div className="p-4">
       <style dangerouslySetInnerHTML={{__html: `
-        .cmSong {
+        .styled-chordmark .cmSong {
           font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
           white-space: pre;
           font-variant-ligatures: none;
         }
-        .cmSong * {
+        .styled-chordmark .cmSong * {
           font-family: inherit;
           white-space: inherit;
         }
-        .cmSong p {
+        .styled-chordmark .cmSong p {
           margin: 0;
           line-height: 1.2;
         }
-        .cmSong p + p {
+        .styled-chordmark .cmSong p + p {
           margin-top: 0.25em;
         }
-        .cmSong .cmLine,
-        .cmSong .cmChordLine,
-        .cmSong .cmLyricLine,
-        .cmSong .cmChordLyricLine,
-        .cmSong .cmSectionLabel,
-        .cmSong .cmEmptyLine {
+        .styled-chordmark .cmSong .cmLine,
+        .styled-chordmark .cmSong .cmChordLine,
+        .styled-chordmark .cmSong .cmLyricLine,
+        .styled-chordmark .cmSong .cmChordLyricLine,
+        .styled-chordmark .cmSong .cmSectionLabel,
+        .styled-chordmark .cmSong .cmEmptyLine {
           display: block;
         }
-        .cmSong .cmChordLyricPair {
+        .styled-chordmark .cmSong .cmChordLyricPair {
           display: inline-flex;
           gap: 1ch;
         }
-        .cmSong .cmChordLineOffset,
-        .cmSong .cmChordSymbol,
-        .cmSong .cmChordDuration,
-        .cmSong .cmBarSeparator,
-        .cmSong .cmTimeSignature,
-        .cmSong .cmSubBeatGroupOpener,
-        .cmSong .cmSubBeatGroupCloser {
+        .styled-chordmark .cmSong .cmChordLineOffset,
+        .styled-chordmark .cmSong .cmChordSymbol,
+        .styled-chordmark .cmSong .cmChordDuration,
+        .styled-chordmark .cmSong .cmBarSeparator,
+        .styled-chordmark .cmSong .cmTimeSignature,
+        .styled-chordmark .cmSong .cmSubBeatGroupOpener,
+        .styled-chordmark .cmSong .cmSubBeatGroupCloser {
           white-space: inherit;
         }
-        .cmSong .cmSectionLabel {
+        .styled-chordmark .cmSong .cmSectionLabel {
           font-weight: 600;
         }
-        .cmSong .cmEmptyLine {
+        .styled-chordmark .cmSong .cmEmptyLine {
           min-height: 0.5em;
         }
       `}} />
@@ -179,7 +179,7 @@ const ChordmarkConverter = () => {
 
         <div className="flex flex-col">
           <h2 className="text-sm font-semibold mb-2">HTML (Full Chart)</h2>
-          <div className="flex-1 p-2 border overflow-auto text-xs font-mono">
+          <div className="flex-1 p-2 border overflow-auto text-xs font-mono styled-chordmark">
             {renderedOutputs.htmlFull ? (
               <div dangerouslySetInnerHTML={{ __html: renderedOutputs.htmlFull }} />
             ) : (
@@ -201,20 +201,9 @@ const ChordmarkConverter = () => {
 
         <div className="flex flex-col">
           <h2 className="text-sm font-semibold mb-2">HTML (Lyrics Only)</h2>
-          <div className="flex-1 p-2 border overflow-auto text-xs font-mono">
+          <div className="flex-1 p-2 border overflow-auto text-xs font-mono styled-chordmark">
             {renderedOutputs.htmlLyricsOnly ? (
               <div dangerouslySetInnerHTML={{ __html: renderedOutputs.htmlLyricsOnly }} />
-            ) : (
-              <div className="text-gray-400">Enter chordmark to see rendered output</div>
-            )}
-          </div>
-        </div>
-
-        <div className="flex flex-col">
-          <h2 className="text-sm font-semibold mb-2">HTML (Chords + Lyrics Same Line)</h2>
-          <div className="flex-1 p-2 border overflow-auto text-xs font-mono">
-            {renderedOutputs.htmlChordsFirstLyricLine ? (
-              <div dangerouslySetInnerHTML={{ __html: renderedOutputs.htmlChordsFirstLyricLine }} />
             ) : (
               <div className="text-gray-400">Enter chordmark to see rendered output</div>
             )}
