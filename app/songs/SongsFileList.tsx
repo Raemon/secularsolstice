@@ -294,7 +294,7 @@ const SongsFileList = ({ initialVersionId }: SongsFileListProps = {}) => {
   return (
     <div className="min-h-screen p-4">
       <div className="flex gap-4 h-[calc(100vh-2rem)] mx-auto max-w-6xl">
-        <div className="flex-1 overflow-y-auto max-w-md">
+        <div className="flex-1 max-w-md">
           <div className="flex gap-2 items-center mb-3">
             <SearchInput
               ref={searchInputRef}
@@ -355,7 +355,7 @@ const SongsFileList = ({ initialVersionId }: SongsFileListProps = {}) => {
           />
         )}
         {creatingVersionForSong && !selectedVersion && (
-          <div className="border-l border-gray-200 pl-4 overflow-y-auto w-full max-w-xl">
+          <div className="border-l border-gray-200 pl-4 w-full max-w-xl">
             <div className="mb-2">
               <div className="flex items-start justify-between mb-2">
                 <button onClick={handleCancelCreateVersion} className="text-gray-400 text-xs">× Close</button>

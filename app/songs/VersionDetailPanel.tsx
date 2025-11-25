@@ -22,7 +22,7 @@ const VersionDetailPanel = ({songTitle, version, previousVersions, isExpandedPre
   onSubmitVersion: () => void;
 }) => {
   return (
-    <div className="border-l border-gray-200 pl-4 overflow-y-auto w-full max-w-xl">
+    <div className="border-l border-gray-200 pl-4 w-full max-w-xl">
       <h2 className="font-mono text-lg font-semibold text-gray-900 mb-2">{songTitle.replace(/_/g, ' ')}</h2>
       <div className="mb-2">
         <div className="flex items-start justify-between mb-2">
