@@ -75,18 +75,16 @@ export const CHORDMARK_STYLES = `
     min-height: 0.5em;
   }
   
-  /* Line highlighting for active playback */
-  .styled-chordmark .cmSong .cmLine[data-line-active="true"],
+  /* Line highlighting for active playback - only chord lines get data-line-index */
   .styled-chordmark .cmSong .cmChordLine[data-line-active="true"],
-  .styled-chordmark .cmSong .cmLyricLine[data-line-active="true"],
   .styled-chordmark .cmSong .cmChordLyricLine[data-line-active="true"] {
     background-color: #fef3c7;
     border-radius: 2px;
     padding: 0 2px;
     margin: 0 -2px;
   }
-  .styled-chords .cmSong .cmLine[data-line-active="true"],
-  .styled-chords .cmSong .cmChordLine[data-line-active="true"] {
+  .styled-chords .cmSong .cmChordLine[data-line-active="true"],
+  .styled-chords .cmSong .cmChordLyricLine[data-line-active="true"] {
     background-color: #fef3c7;
     border-radius: 2px;
     padding: 0 2px;
@@ -137,13 +135,22 @@ const addLineIndexAttributes = (html: string, parsedSong: ReturnType<typeof pars
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, 'text/html');
   
-  // Get all line elements
-  const lineElements = doc.querySelectorAll('.cmLine, .cmChordLine, .cmLyricLine, .cmChordLyricLine, .cmSectionLabel, .cmEmptyLine');
+  // Get chord line elements only - these are the only ones we want to highlight
+  const chordLineElements = doc.querySelectorAll('.cmChordLine, .cmChordLyricLine');
   
-  // Simply map each rendered element to the corresponding line in allLines
-  lineElements.forEach((element, index) => {
-    if (index < parsedSong.allLines.length) {
-      element.setAttribute('data-line-index', String(index));
+  // Build a list of source line indices that have chords
+  const chordLineIndices: number[] = [];
+  for (let i = 0; i < parsedSong.allLines.length; i++) {
+    if (parsedSong.allLines[i].type === 'chord') {
+      chordLineIndices.push(i);
+    }
+  }
+  
+  // Map rendered chord elements to their source line indices
+  // This assumes chord lines are rendered in order
+  chordLineElements.forEach((element, renderIndex) => {
+    if (renderIndex < chordLineIndices.length) {
+      element.setAttribute('data-line-index', String(chordLineIndices[renderIndex]));
     }
   });
   
