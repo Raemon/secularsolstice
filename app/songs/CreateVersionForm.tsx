@@ -9,7 +9,7 @@ const CreateVersionForm = ({form, onFormChange, onSubmit, onCancel, isSubmitting
   error: string | null;
 }) => {
   const label = form.label.toLowerCase();
-  const isChordmarkFile = label.endsWith('.chordmark') || label.endsWith('.ugc') || label.includes('chord');
+  const isChordmarkFile = label.endsWith('.chordmark')
 
   return (
     <div className="space-y-2">
