@@ -154,6 +154,30 @@ const ProgramManager = () => {
     }
   };
 
+  const handleRemoveElement = async (versionId: string) => {
+    if (!selectedProgram) {
+      return;
+    }
+
+    const nextElementIds = selectedProgram.elementIds.filter((id) => id !== versionId);
+
+    try {
+      const response = await fetch(`/api/programs/${selectedProgram.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ elementIds: nextElementIds }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update program');
+      }
+      refreshProgram(data.program);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update program');
+    }
+  };
+
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter' && filteredVersions.length > 0) {
       event.preventDefault();
@@ -242,7 +266,7 @@ const ProgramManager = () => {
               {selectedProgram.elementIds.map((id, index) => {
                 const version = versionMap[id];
                 return (
-                  <div key={`${id}-${index}`} className="text-sm px-2 py-1">
+                  <div key={`${id}-${index}`} className="text-sm px-2 py-1 flex items-center gap-2">
                     <span className="font-semibold">{index + 1}.</span>{' '}
                     {version ? (
                       <>
@@ -251,6 +275,7 @@ const ProgramManager = () => {
                     ) : (
                       <span>{id}</span>
                     )}
+                    <button type="button" onClick={() => handleRemoveElement(id)} className="text-xs px-2 py-0.5 ml-auto text-red-600 hover:text-red-800">Remove</button>
                   </div>
                 );
               })}

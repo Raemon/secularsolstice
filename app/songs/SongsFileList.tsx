@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import SearchInput from './SearchInput';
 import SongItem from './SongItem';
 import VersionDetailPanel from './VersionDetailPanel';
@@ -29,7 +28,6 @@ const SongsFileList = ({ initialVersionId }: SongsFileListProps = {}) => {
   const [newSongTitle, setNewSongTitle] = useState('');
   const [isSubmittingSong, setIsSubmittingSong] = useState(false);
   const [creatingVersionForSong, setCreatingVersionForSong] = useState<Song | null>(null);
-  const router = useRouter();
 
   const fetchSongs = async () => {
     console.log('fetchSongs called');
@@ -142,7 +140,8 @@ const SongsFileList = ({ initialVersionId }: SongsFileListProps = {}) => {
       return;
     }
     applyVersionSelection(targetVersion);
-  }, [initialVersionId, songs, selectedVersion, applyVersionSelection]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialVersionId, songs, applyVersionSelection]);
 
   const handleCreateVersionClick = () => {
     setIsCreatingVersion(true);
@@ -292,9 +291,9 @@ const SongsFileList = ({ initialVersionId }: SongsFileListProps = {}) => {
   }
 
   return (
-    <div className="min-h-screen p-4">
-      <div className="flex gap-4 h-[calc(100vh-2rem)] mx-auto max-w-6xl">
-        <div className="flex-1 max-w-md">
+    <div className="min-h-screen p-4 relative">
+      <div className="flex gap-4  justify-around">
+        <div className="flex-2 w-full max-w-[650px] overflow-y-auto h-[calc(100vh-2rem)] scrollbar-hide">
           <div className="flex gap-2 items-center mb-3">
             <SearchInput
               ref={searchInputRef}

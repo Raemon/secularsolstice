@@ -12,12 +12,13 @@ const VersionRow = ({version, isSelected, onClick}: {
   isSelected: boolean;
   onClick: () => void;
 }) => {
+  const isReadme = version.label.includes('README.md');
   return (
     <div 
       onClick={onClick}
       className={`flex items-center gap-3 px-2 py-1 cursor-pointer ${isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
     >
-      <span className={`flex-1 font-mono text-sm min-w-0 ${isSelected ? 'font-medium' : ''}`}>
+      <span className={`flex-1 font-mono min-w-0 ${isSelected ? 'font-medium' : ''}`} style={isReadme ? {fontSize: '12px', opacity: 0.7} : {fontSize: '0.875rem'}}>
         <span className="text-gray-800">{version.label}</span>
       </span>
       {/* <span className="text-gray-400 text-xs w-24">{formatDate(version.createdAt)}</span> */}
@@ -33,7 +34,7 @@ const SongItem = ({song, selectedVersionId, onVersionClick, onCreateNewVersion}:
 }) => {
   return (
     <div className="flex">
-      <div className="group flex items-center w-2/3 justify-between px-2 py-1 text-base font-medium border-b border-gray-200 font-georgia">
+      <div className="group flex items-center w-1/2 justify-between px-2 py-1 text-base font-medium border-b border-gray-200 font-georgia">
         <span>{song.title.replace(/_/g, ' ')}</span>
         <button
           onClick={(e) => { e.stopPropagation(); onCreateNewVersion(song); }}
@@ -43,7 +44,7 @@ const SongItem = ({song, selectedVersionId, onVersionClick, onCreateNewVersion}:
           +
         </button>
       </div>
-      <div className="border-b border-gray-200 w-1/3">
+      <div className="border-b border-gray-200 w-1/2">
         {song.versions.length === 0 ? (
           <p className="px-2 py-1 text-xs text-gray-500">No versions stored yet.</p>
         ) : (

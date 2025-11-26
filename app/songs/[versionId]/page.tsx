@@ -1,15 +1,19 @@
 import SongsFileList from '../SongsFileList';
 
 type SongVersionPageProps = {
-  params: {
+  params: Promise<{
     versionId: string;
-  };
+  }>;
 };
 
-const SongVersionPage = ({ params }: SongVersionPageProps) => {
-  return <SongsFileList initialVersionId={params.versionId} />;
+const SongVersionPage = async ({ params }: SongVersionPageProps) => {
+  const { versionId } = await params;
+  return <SongsFileList initialVersionId={versionId} />;
 };
 
 export default SongVersionPage;
+
+
+
 
 

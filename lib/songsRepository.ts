@@ -279,3 +279,19 @@ export const createVersionWithLineage = async (params: { songId: string; label: 
   return newVersion;
 };
 
+export const listAllVersionsWithSongTitles = async () => {
+  const rows = await sql`
+    select
+      v.id,
+      v.song_id as "songId",
+      v.label,
+      s.title as "songTitle",
+      v.created_at as "createdAt"
+    from song_versions v
+    join songs s on s.id = v.song_id
+    where v.next_version_id is null
+    order by s.title asc, v.label asc
+  `;
+  return rows as { id: string; songId: string; label: string; songTitle: string; createdAt: string; }[];
+};
+

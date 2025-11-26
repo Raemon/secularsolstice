@@ -106,3 +106,8 @@ export const extractChordEvents = (song: ParsedSong | null): ChordEvent[] => {
 
 
 
+
+
+
+
+
