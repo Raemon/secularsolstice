@@ -25,11 +25,10 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
   try {
     const { id } = await context.params;
     const body = await request.json();
-    const rawElementIds = Array.isArray(body.elementIds) ? body.elementIds : null;
-    if (!rawElementIds) {
+    const elementIds = Array.isArray(body.elementIds) ? body.elementIds : null;
+    if (!elementIds) {
       return NextResponse.json({ error: 'elementIds must be an array' }, { status: 400 });
     }
-    const elementIds = rawElementIds.map((value: string) => String(value));
     const program = await updateProgramElementIds(id, elementIds);
     return NextResponse.json({ program });
   } catch (error) {

@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { parseSong, renderSong } from 'chord-mark';
 import { extractTextFromHTML, convertCustomFormatToChordmark, prepareSongForRendering, prepareSongForChordsWithMeta } from './utils';
 import ChordmarkPlayer from './ChordmarkPlayer';
+import { useLineHighlighting } from './useLineHighlighting';
 
 export type ChordmarkViewMode = 'lyrics+chords' | 'lyrics' | 'chords' | 'one-line' | 'raw';
 
@@ -223,32 +224,15 @@ const ChordmarkRenderer = ({
   const [mode, setMode] = useState<ChordmarkViewMode>(defaultMode);
   const parsedSong = useChordmarkParser(content);
   const renderedOutputs = useChordmarkRenderer(parsedSong.song);
-  const [selectedRendering, setSelectedRendering] = useState<'chords' | 'lyrics' | null>('lyrics');
   const [currentLineIndex, setCurrentLineIndex] = useState<number | null>(null);
 
   const contentRef = useRef<HTMLDivElement>(null);
 
   const error = parsedSong.error || renderedOutputs.renderError;
 
-  // Update active line highlighting
-  useEffect(() => {
-    if (!contentRef.current) return;
-    
-    const container = contentRef.current;
-    const lineToHighlight = activeLineIndex ?? currentLineIndex;
-    
-    // Remove all existing active markers
-    const allLines = container.querySelectorAll('[data-line-index]');
-    allLines.forEach(line => line.removeAttribute('data-line-active'));
-    
-    // Add active marker to current line (try +1 to fix off-by-one)
-    if (lineToHighlight !== null) {
-      const activeLine = container.querySelector(`[data-line-index="${lineToHighlight + 1}"]`);
-      if (activeLine) {
-        activeLine.setAttribute('data-line-active', 'true');
-      }
-    }
-  }, [activeLineIndex, currentLineIndex]);
+  // Apply line highlighting
+  const lineToHighlight = activeLineIndex ?? currentLineIndex;
+  useLineHighlighting(contentRef, lineToHighlight);
 
   const renderContent = () => {
     if (error) {
@@ -266,11 +250,11 @@ const ChordmarkRenderer = ({
       }
       return (
         <div className="flex gap-4">
-          <div className={`flex-0 min-w-0 ${selectedRendering === 'lyrics' && 'opacity-50'}`} onClick={() => setSelectedRendering('chords')}  >
+          <div className="flex-0 min-w-0">
             <div className="text-gray-400 mb-1">Chords</div>
             <div className="styled-chords text-xs font-mono" dangerouslySetInnerHTML={{ __html: renderedOutputs.htmlChordsOnly }} />
           </div>
-          <div className={`flex-1 min-w-0 ${selectedRendering === 'chords' && 'opacity-50'}`} onClick={() => setSelectedRendering('lyrics')} >
+          <div className="flex-1 min-w-0">
             <div className="text-gray-400 mb-1">Lyrics</div>
             <div className="styled-chordmark font-mono text-xs" dangerouslySetInnerHTML={{ __html: renderedOutputs.htmlLyricsOnly }} />
           </div>

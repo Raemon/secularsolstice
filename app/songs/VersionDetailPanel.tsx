@@ -38,21 +38,13 @@ const VersionDetailPanel = ({songTitle, version, previousVersions, isExpandedPre
         <h3 className="text-sm font-medium text-gray-800 mb-1">
           {version.label}
         </h3>
-        <div className="flex items-start justify-between gap-2">
-          <button
-            onClick={onClose}
-            className="text-gray-400 text-xs"
-          >
-            X
-          </button>
-          <button
-            onClick={isCreatingVersion ? onCancelCreateVersion : onCreateVersionClick}
-            className="text-gray-600 text-xs"
-            disabled={isSubmitting}
-          >
-            {isCreatingVersion ? 'Cancel' : 'Edit'}
-          </button>
-        </div>
+        <button
+          onClick={isCreatingVersion ? onCancelCreateVersion : onCreateVersionClick}
+          className="text-gray-600 text-xs hover:text-gray-800"
+          disabled={isSubmitting}
+        >
+          {isCreatingVersion ? 'Cancel' : 'Edit'}
+        </button>
       </div>
       
       {isCreatingVersion ? (

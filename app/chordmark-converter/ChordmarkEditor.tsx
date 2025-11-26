@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { serializeToChordmark, combineChordsAndLyrics } from './utils';
 import { useChordmarkParser, useChordmarkRenderer, CHORDMARK_STYLES } from './ChordmarkRenderer';
 import ChordmarkPlayer from './ChordmarkPlayer';
+import { useLineHighlighting } from './useLineHighlighting';
 
 interface ChordmarkEditorProps {
   value: string;
@@ -33,38 +33,14 @@ const ChordmarkEditor = ({ value, onChange, showSyntaxHelp = false }: ChordmarkE
   }, [value]);
 
   const parsedSong = useChordmarkParser(debouncedValue);
-  const baseOutputs = useChordmarkRenderer(parsedSong.song);
-
-  const renderedOutputs = {
-    ...baseOutputs,
-    htmlChordsFirstLyricLine: baseOutputs.htmlFull ? (() => {
-      try { return combineChordsAndLyrics(baseOutputs.htmlFull); } catch { return baseOutputs.htmlFull; }
-    })() : '',
-    plainText: parsedSong.song ? serializeToChordmark(parsedSong.song) : '',
-  };
+  const renderedOutputs = useChordmarkRenderer(parsedSong.song);
 
   useEffect(() => {
     setError(parsedSong.error || renderedOutputs.renderError);
   }, [parsedSong.error, renderedOutputs.renderError]);
 
-  // Update active line highlighting in preview
-  useEffect(() => {
-    if (!previewRef.current) return;
-    
-    const container = previewRef.current;
-    
-    // Remove all existing active markers
-    const allLines = container.querySelectorAll('[data-line-index]');
-    allLines.forEach(line => line.removeAttribute('data-line-active'));
-    
-    // Add active marker to current line (try +1 to fix off-by-one)
-    if (currentLineIndex !== null) {
-      const activeLine = container.querySelector(`[data-line-index="${currentLineIndex + 1}"]`);
-      if (activeLine) {
-        activeLine.setAttribute('data-line-active', 'true');
-      }
-    }
-  }, [currentLineIndex]);
+  // Apply line highlighting to preview
+  useLineHighlighting(previewRef, currentLineIndex);
 
   const getPreviewContent = () => {
     if (previewMode === 'side-by-side') {

@@ -2,11 +2,6 @@
 
 import type { Song, SongVersion } from './types';
 
-// const formatDate = (isoString: string): string => {
-//   const date = new Date(isoString);
-//   return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-// };
-
 const VersionRow = ({version, isSelected, onClick}: {
   version: SongVersion;
   isSelected: boolean;
@@ -21,7 +16,6 @@ const VersionRow = ({version, isSelected, onClick}: {
       <span className={`flex-1 font-mono min-w-0 ${isSelected ? 'font-medium' : ''}`} style={isReadme ? {fontSize: '12px', opacity: 0.7} : {fontSize: '12px'}}>
         <span className="text-gray-800">{version.label}</span>
       </span>
-      {/* <span className="text-gray-400 text-xs w-24">{formatDate(version.createdAt)}</span> */}
     </div>
   );
 };
