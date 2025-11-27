@@ -380,6 +380,7 @@ export const prepareSongForChordsWithMeta = (song: ParsedSong): ParsedSong => {
   const filteredLines = clonedSong.allLines.filter((line) => {
     if (line.type === lineTypes.CHORD) return true;
     if (line.type === lineTypes.SECTION_LABEL) return true;
+    if (line.type === lineTypes.TIME_SIGNATURE) return true;
     if (line.type === lineTypes.EMPTY_LINE) return true;
     if (isBracketedMetaLine(line)) return true;
     return false;
