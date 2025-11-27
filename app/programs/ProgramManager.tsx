@@ -35,7 +35,7 @@ const ProgramManager = () => {
   const [previousVersions, setPreviousVersions] = useState<SongVersion[]>([]);
   const [isExpandedPreviousVersions, setIsExpandedPreviousVersions] = useState(false);
   const [isCreatingVersion, setIsCreatingVersion] = useState(false);
-  const [newVersionForm, setNewVersionForm] = useState({label: '', content: '', audioUrl: ''});
+  const [newVersionForm, setNewVersionForm] = useState({label: '', content: '', audioUrl: '', bpm: 100});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [versionError, setVersionError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -330,14 +330,14 @@ const ProgramManager = () => {
 
   const handleCreateVersionClick = () => {
     if (selectedVersion) {
-      setNewVersionForm({label: selectedVersion.label || '', content: selectedVersion.content || '', audioUrl: selectedVersion.audioUrl || ''});
+      setNewVersionForm({label: selectedVersion.label || '', content: selectedVersion.content || '', audioUrl: selectedVersion.audioUrl || '', bpm: selectedVersion.bpm || 100});
       setIsCreatingVersion(true);
     }
   };
 
   const handleCancelCreateVersion = () => {
     setIsCreatingVersion(false);
-    setNewVersionForm({label: '', content: '', audioUrl: ''});
+    setNewVersionForm({label: '', content: '', audioUrl: '', bpm: 100});
     setVersionError(null);
   };
 
@@ -348,19 +348,21 @@ const ProgramManager = () => {
       label: 'New Version',
       content: '',
       audioUrl: '',
+      bpm: null,
       previousVersionId: null,
       nextVersionId: null,
       originalVersionId: null,
+      renderedContent: null,
       createdAt: new Date().toISOString(),
     };
     setSelectedVersion(dummyVersion);
     setPreviousVersions([]);
-    setNewVersionForm({label: '', content: '', audioUrl: ''});
+    setNewVersionForm({label: '', content: '', audioUrl: '', bpm: 100});
     setIsCreatingVersion(true);
     setSearchTerm('');
   };
 
-  const handleFormChange = (updates: Partial<{label: string; content: string; audioUrl: string}>) => {
+  const handleFormChange = (updates: Partial<{label: string; content: string; audioUrl: string; bpm: number}>) => {
     setNewVersionForm(prev => ({...prev, ...updates}));
   };
 
@@ -372,7 +374,7 @@ const ProgramManager = () => {
       const response = await fetch('/api/songs/versions', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({songId: selectedVersion.songId, label: newVersionForm.label, content: newVersionForm.content, audioUrl: newVersionForm.audioUrl, previousVersionId: selectedVersion.id === 'new' ? null : selectedVersion.id}),
+        body: JSON.stringify({songId: selectedVersion.songId, label: newVersionForm.label, content: newVersionForm.content, audioUrl: newVersionForm.audioUrl, bpm: newVersionForm.bpm, previousVersionId: selectedVersion.id === 'new' ? null : selectedVersion.id}),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
@@ -380,7 +382,7 @@ const ProgramManager = () => {
       }
       setVersions(prev => [...prev, {id: data.version.id, songId: data.version.songId, label: data.version.label, songTitle: versions.find(v => v.songId === data.version.songId)?.songTitle || '', createdAt: data.version.createdAt}]);
       setIsCreatingVersion(false);
-      setNewVersionForm({label: '', content: '', audioUrl: ''});
+      setNewVersionForm({label: '', content: '', audioUrl: '', bpm: 100});
       await handleElementClick(data.version.id);
     } catch (err) {
       setVersionError(err instanceof Error ? err.message : 'Failed to create version');

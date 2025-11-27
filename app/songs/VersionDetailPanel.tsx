@@ -10,7 +10,7 @@ const VersionDetailPanel = ({songTitle, version, previousVersions, isExpandedPre
   previousVersions: SongVersion[];
   isExpandedPreviousVersions: boolean;
   isCreatingVersion: boolean;
-  newVersionForm: { label: string; content: string; audioUrl: string };
+  newVersionForm: { label: string; content: string; audioUrl: string; bpm: number };
   isSubmitting: boolean;
   error: string | null;
   onClose: () => void;
@@ -18,7 +18,7 @@ const VersionDetailPanel = ({songTitle, version, previousVersions, isExpandedPre
   onVersionClick: (version: SongVersion) => void;
   onCreateVersionClick: () => void;
   onCancelCreateVersion: () => void;
-  onFormChange: (updates: Partial<{ label: string; content: string; audioUrl: string }>) => void;
+  onFormChange: (updates: Partial<{ label: string; content: string; audioUrl: string; bpm: number }>) => void;
   onSubmitVersion: () => void;
 }) => {
   return (
@@ -38,13 +38,24 @@ const VersionDetailPanel = ({songTitle, version, previousVersions, isExpandedPre
         <h3 className="text-sm font-medium text-gray-800 mb-1">
           {version.label}
         </h3>
-        <button
-          onClick={isCreatingVersion ? onCancelCreateVersion : onCreateVersionClick}
-          className="text-gray-600 text-xs hover:text-gray-800"
-          disabled={isSubmitting}
-        >
-          {isCreatingVersion ? 'Cancel' : 'Edit'}
-        </button>
+        <div className="flex items-center gap-2">
+          {isCreatingVersion && (
+            <button
+              onClick={onSubmitVersion}
+              className="text-blue-600 text-xs hover:text-blue-800"
+              disabled={isSubmitting}
+            >
+              Save
+            </button>
+          )}
+          <button
+            onClick={isCreatingVersion ? onCancelCreateVersion : onCreateVersionClick}
+            className="text-gray-600 text-xs hover:text-gray-800"
+            disabled={isSubmitting}
+          >
+            {isCreatingVersion ? 'Cancel' : 'Edit'}
+          </button>
+        </div>
       </div>
       
       {isCreatingVersion ? (

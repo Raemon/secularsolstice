@@ -4,7 +4,7 @@ import { createVersionWithLineage } from '@/lib/songsRepository';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { songId, label, content, audioUrl, previousVersionId } = body;
+    const { songId, label, content, audioUrl, bpm, previousVersionId } = body;
     
     if (!songId || !label) {
       return NextResponse.json({ error: 'songId and label are required' }, { status: 400 });
@@ -15,6 +15,7 @@ export async function POST(request: Request) {
       label,
       content: content ?? null,
       audioUrl: audioUrl ?? null,
+      bpm: bpm ?? null,
       previousVersionId: previousVersionId ?? null,
     });
 

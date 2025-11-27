@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useMemo, useEffect } from 'react';
 import type { ParsedSong } from 'chord-mark';
 import { extractChordEvents } from './chordUtils';
 import { useChordPlayback } from './useChordPlayback';
@@ -8,15 +8,16 @@ import { useChordPlayback } from './useChordPlayback';
 interface ChordmarkPlayerProps {
   parsedSong: ParsedSong | null;
   onLineChange?: (lineIndex: number | null) => void;
+  bpm?: number;
+  onBpmChange?: (bpm: number) => void;
 }
 
 const ChordmarkPlayer = ({
   parsedSong,
   onLineChange,
+  bpm = 90,
+  onBpmChange,
 }: ChordmarkPlayerProps) => {
-  const [bpm, setBpm] = useState(90);
-  const [bpmInput, setBpmInput] = useState('90');
-  
   const chordEvents = useMemo(() => extractChordEvents(parsedSong), [parsedSong]);
   const hasChords = chordEvents.length > 0;
   
@@ -29,13 +30,6 @@ const ChordmarkPlayer = ({
     handlePlay,
     handleStop,
   } = useChordPlayback(chordEvents, bpm);
-  
-  const handleBpmBlur = () => {
-    const val = parseInt(bpmInput) || 90;
-    const clamped = Math.max(30, Math.min(300, val));
-    setBpm(clamped);
-    setBpmInput(String(clamped));
-  };
   
   // Notify parent of line changes
   useEffect(() => {
@@ -56,18 +50,21 @@ const ChordmarkPlayer = ({
         >
           {isLoading ? '...' : isPlaying ? '■' : '▶'}
         </button>
-        <label className="flex items-center gap-1">
-          <span className="text-gray-500">BPM:</span>
-          <input
-            type="number"
-            value={bpmInput}
-            onChange={(e) => setBpmInput(e.target.value)}
-            onBlur={handleBpmBlur}
-            className="w-12 px-1 py-0.5 border text-center"
-            min={30}
-            max={300}
-          />
-        </label>
+        {onBpmChange ? (
+          <div className="flex items-center gap-1">
+            <span className="text-gray-500">BPM:</span>
+            <input
+              type="number"
+              value={bpm}
+              onChange={(e) => onBpmChange(Math.max(1, parseInt(e.target.value) || 1))}
+              className="w-12 px-1 border border-gray-300 text-gray-900"
+              min="1"
+              max="300"
+            />
+          </div>
+        ) : (
+          <span className="text-gray-500">BPM: {bpm}</span>
+        )}
         {currentChord && <span className="text-blue-600 font-medium">{currentChord}</span>}
         {loadError && <span className="text-red-600">{loadError}</span>}
       </div>

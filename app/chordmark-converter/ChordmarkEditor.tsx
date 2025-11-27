@@ -4,16 +4,18 @@ import { useState, useEffect, useRef } from 'react';
 import { useChordmarkParser, useChordmarkRenderer, CHORDMARK_STYLES } from './ChordmarkRenderer';
 import ChordmarkPlayer from './ChordmarkPlayer';
 import { useLineHighlighting } from './useLineHighlighting';
+import Link from 'next/link';
 
 interface ChordmarkEditorProps {
   value: string;
   onChange: (value: string) => void;
   showSyntaxHelp?: boolean;
+  bpm?: number;
 }
 
 type PreviewMode = 'full' | 'chords' | 'lyrics' | 'side-by-side';
 
-const ChordmarkEditor = ({ value, onChange, showSyntaxHelp = false }: ChordmarkEditorProps) => {
+const ChordmarkEditor = ({ value, onChange, showSyntaxHelp = false, bpm }: ChordmarkEditorProps) => {
   const [debouncedValue, setDebouncedValue] = useState(value);
   const [error, setError] = useState<string | null>(null);
   const [previewMode, setPreviewMode] = useState<PreviewMode>('full');
@@ -72,6 +74,7 @@ const ChordmarkEditor = ({ value, onChange, showSyntaxHelp = false }: ChordmarkE
             <div><strong>Lyrics:</strong> Plain text lines. Use <code>_</code> to align chords with lyrics</div>
             <div><strong>Sections:</strong> <code>#v</code> (verse), <code>#c</code> (chorus), <code>#b</code> (bridge), <code>#i</code> (intro), <code>#o</code> (outro)</div>
           </div>
+          <div><Link href="https://github.com/chordmark/chordmark/blob/main/docs/syntax.md">Chordmark Syntax Documentation</Link></div>
         </div>
       )}
 
@@ -84,6 +87,7 @@ const ChordmarkEditor = ({ value, onChange, showSyntaxHelp = false }: ChordmarkE
       <ChordmarkPlayer 
         parsedSong={parsedSong.song}
         onLineChange={setCurrentLineIndex}
+        bpm={bpm}
       />
 
       <div className="flex gap-2">

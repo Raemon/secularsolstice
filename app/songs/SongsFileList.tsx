@@ -22,7 +22,7 @@ const SongsFileList = ({ initialVersionId }: SongsFileListProps = {}) => {
   const [previousVersions, setPreviousVersions] = useState<SongVersion[]>([]);
   const [isExpandedPreviousVersions, setIsExpandedPreviousVersions] = useState(false);
   const [isCreatingVersion, setIsCreatingVersion] = useState(false);
-  const [newVersionForm, setNewVersionForm] = useState({ label: '', content: '', audioUrl: '' });
+  const [newVersionForm, setNewVersionForm] = useState({ label: '', content: '', audioUrl: '', bpm: 100 });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCreatingSong, setIsCreatingSong] = useState(false);
   const [newSongTitle, setNewSongTitle] = useState('');
@@ -170,6 +170,7 @@ const SongsFileList = ({ initialVersionId }: SongsFileListProps = {}) => {
       label: selectedVersion?.label || '',
       content: selectedVersion?.content || '',
       audioUrl: selectedVersion?.audioUrl || '',
+      bpm: selectedVersion?.bpm || 100,
     });
   };
 
@@ -178,16 +179,16 @@ const SongsFileList = ({ initialVersionId }: SongsFileListProps = {}) => {
     setSelectedVersion(null);
     setPreviousVersions([]);
     setIsCreatingVersion(true);
-    setNewVersionForm({ label: '', content: '', audioUrl: '' });
+    setNewVersionForm({ label: '', content: '', audioUrl: '', bpm: 100 });
   };
 
   const handleCancelCreateVersion = () => {
     setIsCreatingVersion(false);
     setCreatingVersionForSong(null);
-    setNewVersionForm({ label: '', content: '', audioUrl: '' });
+    setNewVersionForm({ label: '', content: '', audioUrl: '', bpm: 100 });
   };
 
-  const handleFormChange = (updates: Partial<{ label: string; content: string; audioUrl: string }>) => {
+  const handleFormChange = (updates: Partial<{ label: string; content: string; audioUrl: string; bpm: number }>) => {
     setNewVersionForm({ ...newVersionForm, ...updates });
   };
 
@@ -230,6 +231,7 @@ const SongsFileList = ({ initialVersionId }: SongsFileListProps = {}) => {
           label: newVersionForm.label,
           content: newVersionForm.content || null,
           audioUrl: newVersionForm.audioUrl || null,
+          bpm: newVersionForm.bpm || null,
           previousVersionId: selectedVersion?.id || null,
         }),
       });
@@ -242,7 +244,7 @@ const SongsFileList = ({ initialVersionId }: SongsFileListProps = {}) => {
       const data = await response.json();
       setIsCreatingVersion(false);
       setCreatingVersionForSong(null);
-      setNewVersionForm({ label: '', content: '', audioUrl: '' });
+      setNewVersionForm({ label: '', content: '', audioUrl: '', bpm: 100 });
       
       const oldSelectedVersion = selectedVersion;
       const newVersion = data.version;

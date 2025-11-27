@@ -8,6 +8,7 @@ export type SongVersion = {
   nextVersionId: string | null;
   originalVersionId: string | null;
   renderedContent: string | null;
+  bpm: number | null;
   createdAt: string;
 };
 

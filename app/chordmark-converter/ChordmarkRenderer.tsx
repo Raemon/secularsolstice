@@ -222,16 +222,19 @@ const ChordmarkRenderer = ({
   defaultMode = 'one-line',
   showTabs = true,
   activeLineIndex = null,
+  initialBpm = 90,
 }: {
   content: string;
   defaultMode?: ChordmarkViewMode;
   showTabs?: boolean;
   activeLineIndex?: number | null;
+  initialBpm?: number;
 }) => {
   const [mode, setMode] = useState<ChordmarkViewMode>(defaultMode);
   const parsedSong = useChordmarkParser(content);
   const renderedOutputs = useChordmarkRenderer(parsedSong.song);
   const [currentLineIndex, setCurrentLineIndex] = useState<number | null>(null);
+  const [bpm, setBpm] = useState<number>(initialBpm);
 
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -297,6 +300,8 @@ const ChordmarkRenderer = ({
       <ChordmarkPlayer 
         parsedSong={parsedSong.song} 
         onLineChange={setCurrentLineIndex}
+        bpm={bpm}
+        onBpmChange={setBpm}
       />
       {error && mode !== 'raw' && (
         <div className="mb-2 p-1 bg-red-100 text-red-800 text-xs">{error}</div>

@@ -1,8 +1,8 @@
 import ChordmarkEditor from '../chordmark-converter/ChordmarkEditor';
 
 const CreateVersionForm = ({form, onFormChange, onSubmit, onCancel, isSubmitting, error}: {
-  form: { label: string; content: string; audioUrl: string };
-  onFormChange: (updates: Partial<{ label: string; content: string; audioUrl: string }>) => void;
+  form: { label: string; content: string; audioUrl: string; bpm: number };
+  onFormChange: (updates: Partial<{ label: string; content: string; audioUrl: string; bpm: number }>) => void;
   onSubmit: () => void;
   onCancel: () => void;
   isSubmitting: boolean;
@@ -24,12 +24,23 @@ const CreateVersionForm = ({form, onFormChange, onSubmit, onCancel, isSubmitting
         />
       </div>
       <div>
+        <label className="text-xs text-gray-600">BPM (optional)</label>
+        <input
+          type="number"
+          value={form.bpm}
+          onChange={(e) => onFormChange({ bpm: parseInt(e.target.value) || 100 })}
+          className="w-full px-2 py-1 text-xs border border-gray-300"
+          placeholder="BPM"
+        />
+      </div>
+      <div>
         <label className="text-xs text-gray-600">Content</label>
         {isChordmarkFile ? (
           <ChordmarkEditor
             value={form.content}
             onChange={(content) => onFormChange({ content })}
             showSyntaxHelp={true}
+            bpm={form.bpm || 90}
           />
         ) : (
           <textarea
