@@ -1,6 +1,10 @@
 'use client';
 
 import { useEffect, useMemo, useState, type KeyboardEvent } from 'react';
+import DragAndDropList from './components/DragAndDropList';
+import ProgramSelector from './components/ProgramSelector';
+import VersionSelector from './components/VersionSelector';
+import ProgramElementItem from './components/ProgramElementItem';
 
 type Program = {
   id: string;
@@ -25,6 +29,31 @@ const ProgramManager = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [newProgramTitle, setNewProgramTitle] = useState('');
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    const savedNewProgramTitle = localStorage.getItem('programManager-newProgramTitle');
+    const savedSearchTerm = localStorage.getItem('programManager-searchTerm');
+    if (savedNewProgramTitle) {
+      setNewProgramTitle(savedNewProgramTitle);
+    }
+    if (savedSearchTerm) {
+      setSearchTerm(savedSearchTerm);
+    }
+  }, []);
+
+  // Save to localStorage when inputs change
+  useEffect(() => {
+    if (newProgramTitle) {
+      localStorage.setItem('programManager-newProgramTitle', newProgramTitle);
+    }
+  }, [newProgramTitle]);
+
+  useEffect(() => {
+    if (searchTerm) {
+      localStorage.setItem('programManager-searchTerm', searchTerm);
+    }
+  }, [searchTerm]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -85,11 +114,11 @@ const ProgramManager = () => {
     if (!trimmed) {
       return versions.slice(0, 8);
     }
-    const lower = trimmed.toLowerCase();
+    const normalized = trimmed.toLowerCase().replace(/\s+/g, '_');
     return versions
       .filter((version) =>
-        version.songTitle.toLowerCase().includes(lower) ||
-        version.label.toLowerCase().includes(lower)
+        version.songTitle.toLowerCase().includes(normalized) ||
+        version.label.toLowerCase().includes(normalized)
       )
       .slice(0, 8);
   }, [searchTerm, versions]);
@@ -178,6 +207,56 @@ const ProgramManager = () => {
     }
   };
 
+  const handleChangeVersion = async (oldId: string, newId: string) => {
+    if (!selectedProgram) {
+      return;
+    }
+
+    const nextElementIds = selectedProgram.elementIds.map((id) => id === oldId ? newId : id);
+
+    try {
+      const response = await fetch(`/api/programs/${selectedProgram.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ elementIds: nextElementIds }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update program');
+      }
+      refreshProgram(data.program);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update program');
+    }
+  };
+
+  const handleReorderElements = async (reorderedElementIds: string[]) => {
+    if (!selectedProgram) {
+      return;
+    }
+
+    const previousElementIds = selectedProgram.elementIds;
+    refreshProgram({ ...selectedProgram, elementIds: reorderedElementIds });
+
+    try {
+      const response = await fetch(`/api/programs/${selectedProgram.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ elementIds: reorderedElementIds }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update program');
+      }
+      refreshProgram(data.program);
+      setError(null);
+    } catch (err) {
+      refreshProgram({ ...selectedProgram, elementIds: previousElementIds });
+      setError(err instanceof Error ? err.message : 'Failed to update program');
+    }
+  };
+
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter' && filteredVersions.length > 0) {
       event.preventDefault();
@@ -197,18 +276,7 @@ const ProgramManager = () => {
     <div className="p-4 flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
         <label className="text-sm font-semibold">Program</label>
-        <select
-          value={selectedProgramId ?? ''}
-          onChange={(event) => setSelectedProgramId(event.target.value || null)}
-          className="text-sm px-2 py-1"
-        >
-          <option value="">Select a program</option>
-          {programs.map((program) => (
-            <option key={program.id} value={program.id}>
-              {program.title}
-            </option>
-          ))}
-        </select>
+        <ProgramSelector programs={programs} selectedProgramId={selectedProgramId} onSelect={setSelectedProgramId} />
         <input
           value={newProgramTitle}
           onChange={(event) => setNewProgramTitle(event.target.value)}
@@ -226,33 +294,7 @@ const ProgramManager = () => {
         </div>
       )}
 
-      <div className="flex flex-wrap gap-4">
-        <div className="flex-1 min-w-[280px] flex flex-col gap-1">
-          <div className="text-sm font-semibold">Add element</div>
-          <input
-            value={searchTerm}
-            onChange={(event) => setSearchTerm(event.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Type a song or version label"
-            disabled={!selectedProgram}
-            className="text-sm px-2 py-1"
-          />
-          {selectedProgram && filteredVersions.length > 0 && (
-            <div className="flex flex-col">
-              {filteredVersions.map((version) => (
-                <button
-                  type="button"
-                  key={version.id}
-                  onClick={() => handleAddElement(version.id)}
-                  className="text-left text-sm px-2 py-1 hover:bg-gray-100"
-                >
-                  <span className="font-semibold">{version.songTitle}</span> <span className="text-gray-600">{version.label}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
+      <div className="flex flex-wrap gap-4 w-1/3">
         <div className="flex-1 min-w-[280px] flex flex-col gap-1">
           <div className="text-sm font-semibold">Program elements</div>
           {!selectedProgram && (
@@ -262,25 +304,25 @@ const ProgramManager = () => {
             <p className="text-sm text-gray-600">No elements yet.</p>
           )}
           {selectedProgram && selectedProgram.elementIds.length > 0 && (
-            <div className="flex flex-col">
-              {selectedProgram.elementIds.map((id, index) => {
+            <DragAndDropList
+              items={selectedProgram.elementIds}
+              onReorder={handleReorderElements}
+              keyExtractor={(id) => id}
+              renderItem={(id, index) => {
                 const version = versionMap[id];
-                return (
-                  <div key={`${id}-${index}`} className="text-sm px-2 py-1 flex items-center gap-2">
-                    <span className="font-semibold">{index + 1}.</span>{' '}
-                    {version ? (
-                      <>
-                        <span>{version.songTitle}</span> <span className="text-gray-600">{version.label}</span>
-                      </>
-                    ) : (
-                      <span>{id}</span>
-                    )}
-                    <button type="button" onClick={() => handleRemoveElement(id)} className="text-xs px-2 py-0.5 ml-auto text-red-600 hover:text-red-800">Remove</button>
-                  </div>
-                );
-              })}
-            </div>
+                return <ProgramElementItem id={id} index={index} version={version} allVersions={versions} onRemove={handleRemoveElement} onChangeVersion={handleChangeVersion} />;
+              }}
+            />
           )}
+            <VersionSelector
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              filteredVersions={filteredVersions}
+              onAddElement={handleAddElement}
+              onKeyDown={handleKeyDown}
+              disabled={!selectedProgram}
+            />
+
         </div>
       </div>
     </div>
