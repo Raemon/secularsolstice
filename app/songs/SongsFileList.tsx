@@ -28,7 +28,7 @@ const SongsFileList = ({ initialVersionId }: SongsFileListProps = {}) => {
   const [newSongTitle, setNewSongTitle] = useState('');
   const [isSubmittingSong, setIsSubmittingSong] = useState(false);
   const [creatingVersionForSong, setCreatingVersionForSong] = useState<Song | null>(null);
-  const [sortOption, setSortOption] = useState<'alphabetical' | 'recently-updated'>('alphabetical');
+  const [sortOption, setSortOption] = useState<'alphabetical' | 'recently-updated'>('recently-updated');
 
   const fetchSongs = async () => {
     console.log('fetchSongs called');
