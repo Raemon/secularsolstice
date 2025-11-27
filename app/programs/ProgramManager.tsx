@@ -330,7 +330,7 @@ const ProgramManager = () => {
 
   const handleCreateVersionClick = () => {
     if (selectedVersion) {
-      setNewVersionForm({label: '', content: selectedVersion.content || '', audioUrl: selectedVersion.audioUrl || ''});
+      setNewVersionForm({label: selectedVersion.label || '', content: selectedVersion.content || '', audioUrl: selectedVersion.audioUrl || ''});
       setIsCreatingVersion(true);
     }
   };
