@@ -11,7 +11,7 @@ export type ChordmarkViewMode = 'lyrics+chords' | 'lyrics' | 'chords' | 'one-lin
 export const CHORDMARK_STYLES = `
   .styled-chords .cmSong {
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    white-space: pre-wrap;
+    white-space: pre;
     font-variant-ligatures: none;
   }
   .styled-chords .cmSong * {
@@ -26,9 +26,9 @@ export const CHORDMARK_STYLES = `
     margin-top: 0.25em;
   }
   .styled-chordmark .cmSong {
-    max-width: 400px;
+    max-width:  800px;
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    white-space: pre-wrap;
+    white-space: pre;
     font-variant-ligatures: none;
   }
   .styled-chordmark .cmSong * {

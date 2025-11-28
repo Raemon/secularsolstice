@@ -168,15 +168,13 @@ const ChordmarkEditor = ({ value, onChange, showSyntaxHelp = false, bpm, autosav
         </div>
       )}
 
-      <div className="flex gap-4">
         <ChordmarkPlayer 
           parsedSong={parsedSong.song}
           onLineChange={setCurrentLineIndex}
           bpm={bpm}
         />
-        <ChordButtons startCollapsed />
 
-      </div>
+      <ChordButtons startCollapsed />
 
       <div className="flex gap-2">
         <div className="flex flex-col flex-1">
@@ -185,8 +183,8 @@ const ChordmarkEditor = ({ value, onChange, showSyntaxHelp = false, bpm, autosav
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder="Enter chordmark notation..."
-            className="flex-1 p-2 border text-xs font-mono min-h-[300px]"
-            style={{ lineHeight: '16px', maxWidth: '400px' }}
+            className="flex-1 p-2 border text-xs font-mono min-h-[300px] whitespace-pre flex-grow flex-2"
+            style={{ lineHeight: '16px', maxWidth: '800px' }}
           />
         </div>
 

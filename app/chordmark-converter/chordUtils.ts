@@ -6,7 +6,7 @@ import type { ChordEvent } from './types';
 const isChordLine = (line: { type: string }): line is ChordLine => line.type === lineTypes.CHORD;
 
 // Convert a chord symbol like "C", "Am7", "G/B" to piano notes in a good octave range
-export const chordToNotes = (chordSymbol: string): string[] => {
+export const chordToNotes = (chordSymbol: string, octaveOffset: number = 0): string[] => {
   if (!chordSymbol || chordSymbol === 'NC' || chordSymbol === '%') return [];
   
   // Strip trailing dots (duration markers in chordmark notation)
@@ -34,7 +34,7 @@ export const chordToNotes = (chordSymbol: string): string[] => {
       // Use tonal's Note.transpose to get the correct notes
       const third = Note.transpose(root, '3M'); // Major third
       const fifth = Note.transpose(root, '5P'); // Perfect fifth
-      return [`${root}3`, `${third}3`, `${fifth}3`];
+      return [`${root}${3 + octaveOffset}`, `${third}${3 + octaveOffset}`, `${fifth}${3 + octaveOffset}`];
     }
     return [];
   }
@@ -44,15 +44,15 @@ export const chordToNotes = (chordSymbol: string): string[] => {
   
   // Add bass note if present (lower octave)
   if (bassNote) {
-    notes.push(`${bassNote}2`);
+    notes.push(`${bassNote}${2 + octaveOffset}`);
   }
   
   // Add chord notes - keep main triad in same octave for proper chord voicing
   chordNotes.forEach((note, i) => {
     if (i < 3) {
-      notes.push(`${note}3`); // Main triad (root, third, fifth) in same octave
+      notes.push(`${note}${3 + octaveOffset}`); // Main triad (root, third, fifth) in same octave
     } else {
-      notes.push(`${note}4`); // Extensions (7th, 9th, etc.) in higher octave
+      notes.push(`${note}${4 + octaveOffset}`); // Extensions (7th, 9th, etc.) in higher octave
     }
   });
   

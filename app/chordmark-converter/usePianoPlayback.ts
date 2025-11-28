@@ -46,7 +46,7 @@ export interface PianoPlaybackState {
 }
 
 export interface PianoPlaybackControls {
-  playSingleChord: (chordSymbol: string) => Promise<void>;
+  playSingleChord: (chordSymbol: string, octaveOffset?: number) => Promise<void>;
   loadPiano: () => Promise<boolean>;
   getSampler: () => SamplerInstance | null;
   getTone: () => ToneModule | null;
@@ -97,8 +97,8 @@ export const usePianoPlayback = (): PianoPlaybackState & PianoPlaybackControls =
     }
   }, []);
   
-  const playSingleChord = useCallback(async (chordSymbol: string): Promise<void> => {
-    const notes = chordToNotes(chordSymbol);
+  const playSingleChord = useCallback(async (chordSymbol: string, octaveOffset: number = 0): Promise<void> => {
+    const notes = chordToNotes(chordSymbol, octaveOffset);
     if (notes.length === 0) return;
     
     const loaded = await loadPiano();
