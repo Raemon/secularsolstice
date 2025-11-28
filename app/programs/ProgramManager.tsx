@@ -396,6 +396,7 @@ const ProgramManager = () => {
       renderedContent: null,
       archived: false,
       createdAt: new Date().toISOString(),
+      createdBy: null,
     };
     setSelectedVersion(dummyVersion);
     setPreviousVersions([]);
