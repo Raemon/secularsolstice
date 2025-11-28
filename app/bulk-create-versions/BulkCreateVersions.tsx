@@ -7,8 +7,10 @@ import StatusMessage from './components/StatusMessage';
 import ResultsList from './components/ResultsList';
 import PreviewPanel from './components/PreviewPanel';
 import { useSongs, useSections, useStatus, useProcessSections, usePreviewItems } from './hooks';
+import { useUser } from '../contexts/UserContext';
 
 const BulkCreateVersions = () => {
+  const { canEdit } = useUser();
   const [versionSuffix, setVersionSuffix] = useState('');
   const [htmlContent, setHtmlContent] = useState('');
 
@@ -24,13 +26,15 @@ const BulkCreateVersions = () => {
         <VersionSuffixInput value={versionSuffix} onChange={setVersionSuffix} />
         <ContentEditor onContentChange={setHtmlContent} showStatus={showStatus} />
         <StatusMessage message={statusMessage} type={statusType} />
-        <button
-          onClick={processSections}
-          disabled={isProcessing}
-          className="text-xs px-2 py-1 bg-blue-600 text-white disabled:opacity-50"
-        >
-          {isProcessing ? 'Processing...' : 'Process Sections'}
-        </button>
+        {canEdit && (
+          <button
+            onClick={processSections}
+            disabled={isProcessing}
+            className="text-xs px-2 py-1 bg-blue-600 text-white disabled:opacity-50"
+          >
+            {isProcessing ? 'Processing...' : 'Process Sections'}
+          </button>
+        )}
         <ResultsList results={results} />
       </div>
       <PreviewPanel previewItems={previewItems} />

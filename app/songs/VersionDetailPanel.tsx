@@ -1,8 +1,11 @@
+'use client';
+
 import VersionContent from './VersionContent';
 import VersionMetadata from './VersionMetadata';
 import PreviousVersionsList from './PreviousVersionsList';
 import CreateVersionForm from './CreateVersionForm';
 import type { SongVersion } from './types';
+import { useUser } from '../contexts/UserContext';
 
 const VersionDetailPanel = ({songTitle, version, previousVersions, isExpandedPreviousVersions, isCreatingVersion, newVersionForm, isSubmitting, isArchiving, error, onClose, onTogglePreviousVersions, onVersionClick, onCreateVersionClick, onCancelCreateVersion, onFormChange, onSubmitVersion, onArchiveVersion}: {
   songTitle: string;
@@ -23,6 +26,8 @@ const VersionDetailPanel = ({songTitle, version, previousVersions, isExpandedPre
   onSubmitVersion: () => void;
   onArchiveVersion: () => void;
 }) => {
+  const { canEdit } = useUser();
+
   return (
     <div className="border-l border-gray-200 pl-4 w-full h-[calc(100vh-2rem)] overflow-y-auto scrollbar-hide lg:p-20 relative">
       <h2 className="font-mono -ml-8 text-lg font-semibold text-gray-900 mb-2 flex items-center gap-3">
@@ -41,33 +46,35 @@ const VersionDetailPanel = ({songTitle, version, previousVersions, isExpandedPre
         <h3 className="text-sm font-medium text-gray-800 mb-1">
           {version.label}
         </h3>
-        <div className="flex items-center gap-2">
-          {isCreatingVersion && (
+        {canEdit && (
+          <div className="flex items-center gap-2">
+            {isCreatingVersion && (
+              <button
+                onClick={onSubmitVersion}
+                className="text-blue-600 text-xs hover:text-blue-800"
+                disabled={isSubmitting || isArchiving}
+              >
+                Save
+              </button>
+            )}
+            {isCreatingVersion && version.id !== 'new' && (
+              <button
+                onClick={onArchiveVersion}
+                className="text-red-600 text-xs hover:text-red-800"
+                disabled={isSubmitting || isArchiving}
+              >
+                Delete
+              </button>
+            )}
             <button
-              onClick={onSubmitVersion}
-              className="text-blue-600 text-xs hover:text-blue-800"
+              onClick={isCreatingVersion ? onCancelCreateVersion : onCreateVersionClick}
+              className="text-gray-600 text-xs hover:text-gray-800"
               disabled={isSubmitting || isArchiving}
             >
-              Save
+              {isCreatingVersion ? 'Cancel' : 'Edit'}
             </button>
-          )}
-          {isCreatingVersion && version.id !== 'new' && (
-            <button
-              onClick={onArchiveVersion}
-              className="text-red-600 text-xs hover:text-red-800"
-              disabled={isSubmitting || isArchiving}
-            >
-              Delete
-            </button>
-          )}
-          <button
-            onClick={isCreatingVersion ? onCancelCreateVersion : onCreateVersionClick}
-            className="text-gray-600 text-xs hover:text-gray-800"
-            disabled={isSubmitting || isArchiving}
-          >
-            {isCreatingVersion ? 'Cancel' : 'Edit'}
-          </button>
-        </div>
+          </div>
+        )}
       </div>
       
       {isCreatingVersion ? (

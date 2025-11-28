@@ -8,6 +8,7 @@ import ProgramElementItem from './components/ProgramElementItem';
 import ProgramSlidesView from './components/ProgramSlidesView';
 import VersionDetailPanel from '../songs/VersionDetailPanel';
 import type { SongVersion } from '../songs/types';
+import { useUser } from '../contexts/UserContext';
 
 type Program = {
   id: string;
@@ -26,6 +27,7 @@ type VersionOption = {
 };
 
 const ProgramManager = () => {
+  const { canEdit } = useUser();
   const [programs, setPrograms] = useState<Program[]>([]);
   const [selectedProgramId, setSelectedProgramId] = useState<string | null>(null);
   const [versions, setVersions] = useState<VersionOption[]>([]);
@@ -491,12 +493,16 @@ const ProgramManager = () => {
       <div className="flex-1 flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <ProgramSelector programs={programs} selectedProgramId={selectedProgramId} onSelect={setSelectedProgramId} />
-          <button type="button" onClick={handleOpenCreateModal} className="text-sm px-3 py-1">
-            Create
-          </button>
-          <button type="button" onClick={handleArchiveProgram} disabled={!selectedProgram || isDeletingProgram} className="text-sm px-3 py-1 text-red-600 disabled:opacity-50">
-            {isDeletingProgram ? 'Deleting...' : 'Delete'}
-          </button>
+          {canEdit && (
+            <button type="button" onClick={handleOpenCreateModal} className="text-sm px-3 py-1">
+              Create
+            </button>
+          )}
+          {canEdit && (
+            <button type="button" onClick={handleArchiveProgram} disabled={!selectedProgram || isDeletingProgram} className="text-sm px-3 py-1 text-red-600 disabled:opacity-50">
+              {isDeletingProgram ? 'Deleting...' : 'Delete'}
+            </button>
+          )}
         </div>
 
         {error && (
@@ -519,7 +525,7 @@ const ProgramManager = () => {
               keyExtractor={(id) => id}
               renderItem={(id, index) => {
                 const version = versionMap[id];
-                return <ProgramElementItem id={id} index={index} version={version} allVersions={versions} onRemove={handleRemoveElement} onChangeVersion={handleChangeVersion} onClick={handleElementClick} onCreateNewVersion={handleCreateNewVersion} />;
+                return <ProgramElementItem id={id} index={index} version={version} allVersions={versions} onRemove={handleRemoveElement} onChangeVersion={handleChangeVersion} onClick={handleElementClick} onCreateNewVersion={handleCreateNewVersion} canEdit={canEdit} />;
               }}
             />
           )}

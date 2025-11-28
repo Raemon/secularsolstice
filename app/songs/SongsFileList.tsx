@@ -7,6 +7,7 @@ import SongItem from './SongItem';
 import VersionDetailPanel from './VersionDetailPanel';
 import CreateVersionForm from './CreateVersionForm';
 import type { Song, SongVersion } from './types';
+import { useUser } from '../contexts/UserContext';
 
 const getLatestVersion = (versions: SongVersion[]) => maxBy(versions, (version) => new Date(version.createdAt).getTime());
 
@@ -16,6 +17,7 @@ type SongsFileListProps = {
 
 const SongsFileList = ({ initialVersionId }: SongsFileListProps = {}) => {
   console.log('SongsFileList component rendering');
+  const { canEdit } = useUser();
   const [songs, setSongs] = useState<Song[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -418,12 +420,14 @@ const SongsFileList = ({ initialVersionId }: SongsFileListProps = {}) => {
                   Recent
                 </button>
               </div>
-              <button
-                onClick={() => setIsCreatingSong(!isCreatingSong)}
-                className="text-xs px-2 py-1 bg-blue-600 text-white whitespace-nowrap"
-              >
-                + Song
-              </button>
+              {canEdit && (
+                <button
+                  onClick={() => setIsCreatingSong(!isCreatingSong)}
+                  className="text-xs px-2 py-1 bg-blue-600 text-white whitespace-nowrap"
+                >
+                  + Song
+                </button>
+              )}
               <button
                 onClick={() => setIsListCollapsed(true)}
                 className="text-xs px-2 py-1 text-gray-600 whitespace-nowrap"

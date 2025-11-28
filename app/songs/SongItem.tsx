@@ -2,6 +2,7 @@
 
 import type { Song, SongVersion } from './types';
 import MyTooltip from '@/app/components/Tooltip';
+import { useUser } from '../contexts/UserContext';
 
 
 const formatDate = (dateStr: string) => {
@@ -63,17 +64,21 @@ const SongItem = ({song, selectedVersionId, onVersionClick, onCreateNewVersion}:
   onVersionClick: (version: SongVersion) => void;
   onCreateNewVersion: (song: Song) => void;
 }) => {
+  const { canEdit } = useUser();
+
   return (
     <div className="flex">
       <div className="group flex items-center w-2/3 justify-between px-2 py-1 text-base font-medium border-b border-gray-200 font-georgia">
         <span>{song.title.replace(/_/g, ' ')}</span>
-        <button
-          onClick={(e) => { e.stopPropagation(); onCreateNewVersion(song); }}
-          className="opacity-0 bg-gray-200 rounded-full p-1 group-hover:opacity-100 text-gray-400 hover:text-blue-600 text-sm"
-          title="Add new version"
-        >
-          +
-        </button>
+        {canEdit && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onCreateNewVersion(song); }}
+            className="opacity-0 bg-gray-200 rounded-full p-1 group-hover:opacity-100 text-gray-400 hover:text-blue-600 text-sm"
+            title="Add new version"
+          >
+            +
+          </button>
+        )}
       </div>
       <div className="border-b border-gray-200 w-1/3">
         {song.versions.length === 0 ? (
