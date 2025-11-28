@@ -186,6 +186,7 @@ const ChordmarkEditor = ({ value, onChange, showSyntaxHelp = false, bpm, autosav
             onChange={(e) => onChange(e.target.value)}
             placeholder="Enter chordmark notation..."
             className="flex-1 p-2 border text-xs font-mono min-h-[300px]"
+            style={{ lineHeight: '16px' }}
           />
         </div>
 

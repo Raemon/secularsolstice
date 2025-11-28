@@ -9,11 +9,10 @@ import { useLineHighlighting } from './useLineHighlighting';
 export type ChordmarkViewMode = 'lyrics+chords' | 'lyrics' | 'chords' | 'one-line' | 'raw';
 
 export const CHORDMARK_STYLES = `
-
   .styled-chords .cmSong {
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    white-space: pre;
     font-variant-ligatures: none;
+    max-width: 400px;
   }
   .styled-chords .cmSong * {
     font-family: inherit;
@@ -21,14 +20,14 @@ export const CHORDMARK_STYLES = `
   }
   .styled-chords .cmSong p {
     margin: 0;
-    line-height: 1.2;
+    line-height: 16px;
   }
   .styled-chords .cmSong p + p {
     margin-top: 0.25em;
   }
   .styled-chordmark .cmSong {
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    white-space: pre;
+    max-width: 400px;
     font-variant-ligatures: none;
   }
   .styled-chordmark .cmSong * {
@@ -37,7 +36,7 @@ export const CHORDMARK_STYLES = `
   }
   .styled-chordmark .cmSong p {
     margin: 0;
-    line-height: 1.2;
+    line-height: 16px;
   }
   .styled-chordmark .cmSong p + p {
     margin-top: 0.25em;
@@ -49,6 +48,7 @@ export const CHORDMARK_STYLES = `
   .styled-chordmark .cmSong .cmSectionLabel,
   .styled-chordmark .cmSong .cmEmptyLine {
     display: block;
+    line-height: 16px;
   }
   .styled-chordmark .cmSong .cmChordLyricPair {
     display: inline-flex;
