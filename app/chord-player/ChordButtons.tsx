@@ -13,7 +13,7 @@ const ChordButtons = ({ startCollapsed = false }: ChordButtonsProps) => {
   const [isCollapsed, setIsCollapsed] = useState(startCollapsed);
 
   const chordGroups = useMemo(() => {
-    const roots = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+    const roots = ['C', 'D', 'E', 'F', 'G', 'A', 'Bb', 'B'];
     return [
       { label: 'Major:', chords: roots },
       { label: 'Minor:', chords: roots.map(r => `${r}m`) },
