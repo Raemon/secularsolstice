@@ -51,7 +51,7 @@ const VersionRow = ({version, isSelected, onClick}: {
       <span className={`flex-1 font-mono min-w-0 w-[100px] truncate ${isSelected ? 'font-medium' : ''}`} style={{fontSize: '12px'}}>
         <span className="text-gray-600">{version.label}</span>
       </span>
-      <MyTooltip content={formatDate(version.createdAt)} placement="left">
+      <MyTooltip content={<div>{formatDate(version.createdAt)}{version.createdBy && ` - ${version.createdBy}`}</div>} placement="left">
         <span className="text-gray-400 text-xs">{formatRelativeTimestamp(version.createdAt)}</span>
       </MyTooltip>
     </div>
