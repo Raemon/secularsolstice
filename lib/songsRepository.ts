@@ -5,6 +5,7 @@ export type SongRecord = {
   id: string;
   title: string;
   createdAt: string;
+  archived: boolean;
 };
 
 export type SongVersionRecord = {
@@ -30,6 +31,7 @@ type SongVersionQueryRow = {
   song_id: string;
   title: string;
   song_created_at: string;
+  song_archived: boolean | null;
   version_id: string | null;
   label: string | null;
   content: string | null;
@@ -47,6 +49,7 @@ type SongRowResult = {
   id: string;
   title: string;
   createdAt: string;
+  archived: boolean;
 };
 
 type SongVersionResult = {
@@ -68,6 +71,7 @@ const mapSongRow = (row: SongVersionQueryRow): SongRecord => ({
   id: row.song_id,
   title: row.title,
   createdAt: row.song_created_at,
+  archived: Boolean(row.song_archived),
 });
 
 const mapVersionRow = (row: SongVersionQueryRow): SongVersionRecord => ({
@@ -93,6 +97,7 @@ export const listSongsWithVersions = async (): Promise<SongWithVersions[]> => {
       s.id as song_id,
       s.title,
       s.created_at as song_created_at,
+      s.archived as song_archived,
       v.id as version_id,
       v.label,
       v.content,
@@ -106,6 +111,7 @@ export const listSongsWithVersions = async (): Promise<SongWithVersions[]> => {
       v.created_at as version_created_at
     from songs s
     left join song_versions v on v.song_id = s.id and v.next_version_id is null and v.archived = false
+    where s.archived = false
     order by s.title asc, v.created_at desc nulls last
   `;
 
@@ -125,6 +131,7 @@ export const getSongWithVersions = async (songId: string): Promise<SongWithVersi
       s.id as song_id,
       s.title,
       s.created_at as song_created_at,
+      s.archived as song_archived,
       v.id as version_id,
       v.label,
       v.content,
@@ -138,7 +145,7 @@ export const getSongWithVersions = async (songId: string): Promise<SongWithVersi
       v.created_at as version_created_at
     from songs s
     left join song_versions v on v.song_id = s.id and v.next_version_id is null and v.archived = false
-    where s.id = ${songId}
+    where s.id = ${songId} and s.archived = false
     order by v.created_at desc nulls last
   `;
 
@@ -160,7 +167,7 @@ export const createSong = async (title: string): Promise<SongRecord> => {
   const rows = await sql`
     insert into songs (title)
     values (${title})
-    returning id, title, created_at as "createdAt"
+    returning id, title, created_at as "createdAt", archived
   `;
   return (rows as SongRowResult[])[0];
 };
@@ -191,7 +198,7 @@ export const findVersionBySongTitleAndLabel = async (songTitle: string, label: s
       v.created_at as "createdAt"
     from song_versions v
     join songs s on s.id = v.song_id
-    where s.title = ${songTitle} and v.label = ${label} and v.archived = false
+    where s.title = ${songTitle} and v.label = ${label} and v.archived = false and s.archived = false
     order by v.created_at desc
     limit 1
   `;
@@ -367,6 +374,7 @@ export const listAllVersionsWithSongTitles = async () => {
     join songs s on s.id = v.song_id
     where v.next_version_id is null
       and v.archived = false
+      and s.archived = false
     order by s.title asc, v.label asc
   `;
   return rows as { id: string; songId: string; label: string; songTitle: string; createdAt: string; }[];

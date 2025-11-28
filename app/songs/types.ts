@@ -17,6 +17,7 @@ export type Song = {
   id: string;
   title: string;
   createdAt: string;
+  archived: boolean;
   versions: SongVersion[];
 };
 

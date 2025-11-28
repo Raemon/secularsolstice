@@ -13,6 +13,7 @@ type Program = {
   title: string;
   elementIds: string[];
   createdAt: string;
+  archived: boolean;
 };
 
 type VersionOption = {
@@ -40,6 +41,7 @@ const ProgramManager = () => {
   const [isArchiving, setIsArchiving] = useState(false);
   const [versionError, setVersionError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [isDeletingProgram, setIsDeletingProgram] = useState(false);
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -138,6 +140,41 @@ const ProgramManager = () => {
     setPrograms((prev) =>
       prev.map((program) => (program.id === updatedProgram.id ? updatedProgram : program))
     );
+  };
+
+  const handleArchiveProgram = async () => {
+    if (!selectedProgram) {
+      return;
+    }
+    if (!window.confirm('Are you sure?')) {
+      return;
+    }
+    setIsDeletingProgram(true);
+    try {
+      const response = await fetch(`/api/programs/${selectedProgram.id}/archive`, {
+        method: 'POST',
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to delete program');
+      }
+      let nextPrograms: Program[] = [];
+      setPrograms((prev) => {
+        nextPrograms = prev.filter((program) => program.id !== selectedProgram.id);
+        return nextPrograms;
+      });
+      setSelectedProgramId((currentSelectedId) => {
+        if (currentSelectedId !== selectedProgram.id) {
+          return currentSelectedId;
+        }
+        return nextPrograms.length > 0 ? nextPrograms[0].id : null;
+      });
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete program');
+    } finally {
+      setIsDeletingProgram(false);
+    }
   };
 
   const handleCreateProgram = async () => {
@@ -456,6 +493,9 @@ const ProgramManager = () => {
           <button type="button" onClick={handleOpenCreateModal} className="text-sm px-3 py-1">
             Create
           </button>
+          <button type="button" onClick={handleArchiveProgram} disabled={!selectedProgram || isDeletingProgram} className="text-sm px-3 py-1 text-red-600 disabled:opacity-50">
+            {isDeletingProgram ? 'Deleting...' : 'Delete'}
+          </button>
         </div>
 
         {error && (
@@ -544,5 +584,3 @@ const ProgramManager = () => {
 };
 
 export default ProgramManager;
-
-

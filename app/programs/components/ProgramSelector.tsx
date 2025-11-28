@@ -5,6 +5,7 @@ type Program = {
   title: string;
   elementIds: string[];
   createdAt: string;
+  archived: boolean;
 };
 
 const ProgramSelector = ({programs, selectedProgramId, onSelect}: {programs: Program[], selectedProgramId: string | null, onSelect: (id: string | null) => void}) => {
