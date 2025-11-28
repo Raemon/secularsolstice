@@ -110,6 +110,10 @@ const ProgramSlidesView = ({elementIds, versionMap, linesPerSlide=8}:{elementIds
           if (contentToProcess) {
             const lines = parseHTMLContent(contentToProcess);
             slides = groupIntoSlides(lines, linesPerSlide);
+            
+            // Prepend title slide at the beginning
+            const titleSlide: Slide = [{ text: version.songTitle, isHeading: true, level: 1 }];
+            slides.unshift(titleSlide);
           }
         } catch (err) {
           console.error(`Failed to parse content for ${versionId}:`, err);

@@ -1,4 +1,4 @@
-import { parseSong, lineTypes } from 'chord-mark';
+import { parseSong, renderSong, lineTypes } from 'chord-mark';
 import type { LyricLine } from 'chord-mark';
 
 /**
@@ -341,12 +341,43 @@ export const extractLyricsFromLilypond = (content: string): string => {
 
 /**
  * Extract lyrics from chordmark format content
+ * Uses the same rendering approach as ChordmarkRenderer for consistency
  */
 export const extractLyricsFromChordmark = (content: string): string => {
   try {
     const parsed = parseSong(content);
-    const lyrics: string[] = [];
+    // Use renderSong with chartType: 'lyrics' to get lyrics-only HTML (same as ChordmarkRenderer)
+    const lyricsHtml = renderSong(parsed, { chartType: 'lyrics' });
     
+    // Parse HTML and extract text content
+    if (typeof window !== 'undefined' && typeof DOMParser !== 'undefined') {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(lyricsHtml, 'text/html');
+      
+      // Get all text nodes, preserving line breaks
+      const lines: string[] = [];
+      const elements = doc.querySelectorAll('.cmLyricLine, .cmEmptyLine, .cmChordLyricLine');
+      
+      elements.forEach(element => {
+        if (element.classList.contains('cmEmptyLine')) {
+          lines.push('');
+        } else {
+          // Extract just the lyric text, ignoring any chord symbols
+          const lyricElements = element.querySelectorAll('.cmLyric');
+          if (lyricElements.length > 0) {
+            const text = Array.from(lyricElements).map(el => el.textContent || '').join('');
+            lines.push(text);
+          } else {
+            lines.push(element.textContent || '');
+          }
+        }
+      });
+      
+      return lines.join('\n');
+    }
+    
+    // Fallback for server-side: manually extract from parsed song
+    const lyrics: string[] = [];
     for (const line of parsed.allLines) {
       if (line.type === lineTypes.LYRIC) {
         const lyricLine = line as LyricLine;
@@ -357,14 +388,11 @@ export const extractLyricsFromChordmark = (content: string): string => {
           lyrics.push('');
         }
       } else if (line.type === lineTypes.EMPTY_LINE) {
-        // Preserve all empty lines
         lyrics.push('');
       }
     }
-    
     return lyrics.join('\n');
   } catch (error) {
-    // If parsing fails, return empty string
     console.error('Failed to parse chordmark content:', error);
     return '';
   }
@@ -431,24 +459,26 @@ export const detectFileType = (filename: string, content: string): 'lilypond' | 
     return 'lilypond';
   }
   
-  if (lowerFilename.endsWith('.chordmark')) {
+  if (lowerFilename.endsWith('.chordmark') || lowerFilename.endsWith('.cho')) {
     return 'chordmark';
   }
   
-  // Check content patterns
-  if (content.includes('\\lyricmode') || content.includes('\\version')) {
+  // Check content patterns for lilypond
+  if (content.includes('\\lyricmode') || content.includes('\\version') || content.includes('\\relative')) {
     return 'lilypond';
   }
   
-  // Try to parse as chordmark
+  // Try to parse as chordmark - if it parses successfully, it's chordmark
   try {
     parseSong(content);
-    // If it has bars and chords, it's likely chordmark
-    if (content.includes('|') && /[A-G][#b]?(m|maj)?[0-9]?/.test(content)) {
+    // If parsing succeeded and content has bar notation or chord symbols, it's chordmark
+    if (content.includes('|') || /\[[A-G][#b]?(m|maj|min|sus|aug|dim)?[0-9]?\]/.test(content)) {
       return 'chordmark';
     }
+    // Even without bars, if it parsed and has some structure, assume chordmark
+    return 'chordmark';
   } catch {
-    // Not chordmark
+    // Not chordmark, fall through to ultimateguitar
   }
   
   // Default to ultimate guitar format for plain text
