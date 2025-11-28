@@ -2,12 +2,12 @@ import path from 'path';
 import { promises as fs } from 'fs';
 import dotenv from 'dotenv';
 import sql from '../lib/db';
+import { AUDIO_EXTENSION_SET } from '../lib/audioExtensions';
 
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 
 const SONGS_DIR = path.join(process.cwd(), 'songs');
 const TEXT_EXTENSIONS = new Set(['.txt', '.ugc', '.md', '.lrc', '.ly', '.json', '.abc', '.rtf']);
-const AUDIO_EXTENSIONS = new Set(['.mp3', '.wav', '.aiff', '.aif', '.ogg', '.flac', '.m4a', '.aac', '.wma']);
 
 const ensureSongsDirectory = async () => {
   try {
@@ -58,7 +58,7 @@ const importSongDirectory = async (dirName: string) => {
     const filePath = path.join(dirPath, file.name);
     const ext = path.extname(file.name).toLowerCase();
 
-    if (AUDIO_EXTENSIONS.has(ext)) {
+    if (AUDIO_EXTENSION_SET.has(ext)) {
       console.log(`Audio file detected (${dirName}/${file.name}). Upload manually and set audio_url on a version later.`);
       continue;
     }

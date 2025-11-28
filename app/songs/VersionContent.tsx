@@ -2,6 +2,7 @@ import { marked } from 'marked';
 import type { SongVersion } from './types';
 import ChordmarkRenderer from '../chordmark-converter/ChordmarkRenderer';
 import LilypondViewer from './LilypondViewer';
+import { AUDIO_EXTENSIONS } from '../../lib/audioExtensions';
 
 const VersionContent = ({version}: {
   version: SongVersion;
@@ -14,8 +15,7 @@ const VersionContent = ({version}: {
   const isLilypondFile = label.endsWith('.ly') || label.endsWith('.lilypond')
   const audioUrl = version.audioUrl || '';
   const normalizedAudioUrl = audioUrl.toLowerCase();
-  const audioExtensions = ['.mp3', '.wav', '.ogg', '.m4a', '.aac', '.flac', '.webm'];
-  const isAudioFile = normalizedAudioUrl ? audioExtensions.some(ext => normalizedAudioUrl.endsWith(ext)) : false;
+  const isAudioFile = normalizedAudioUrl ? AUDIO_EXTENSIONS.some(ext => normalizedAudioUrl.endsWith(ext)) : false;
 
   if (!hasAudio && !hasContent) {
     return <p className="text-gray-500 text-xs">No stored content for this version.</p>;
