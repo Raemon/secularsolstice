@@ -52,7 +52,9 @@ export const CHORDMARK_STYLES = `
   }
   .styled-chordmark .cmSong .cmChordLyricPair {
     display: inline-flex;
-    gap: 1ch;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.15em;
   }
   .styled-chordmark .cmSong .cmChordLineOffset,
   .styled-chordmark .cmSong .cmChordSymbol,

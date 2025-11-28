@@ -154,6 +154,63 @@ const ChordPlayer = () => {
     return timeline;
   };
 
+const POWER_CHORD_REGEX = /^[A-G][#b]?5$/i;
+
+const getRootNoteNumber = (rootName: string): number | null => {
+  const root = rootName.trim().toUpperCase();
+  const rootMap: { [key: string]: number } = {
+    'C': 60, 'C#': 61, 'DB': 61,
+    'D': 62, 'D#': 63, 'EB': 63,
+    'E': 64,
+    'F': 65, 'F#': 66, 'GB': 66,
+    'G': 67, 'G#': 68, 'AB': 68,
+    'A': 69, 'A#': 70, 'BB': 70,
+    'B': 71
+  };
+  return rootMap[root] ?? null;
+};
+
+const midiNumberToNoteName = (midiNumber: number): string | null => {
+  if (midiNumber < 0 || midiNumber > 127) {
+    return null;
+  }
+  const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+  const noteIndex = midiNumber % 12;
+  const octave = Math.floor(midiNumber / 12) - 1;
+  return `${noteNames[noteIndex]}${octave}`;
+};
+
+const getPowerChordBassEvents = (
+  timeline: Array<{ chord: string; startTime: number; endTime: number }>
+): Array<{ startTime: number; duration: number; noteName: string }> => {
+  const events: Array<{ startTime: number; duration: number; noteName: string }> = [];
+  timeline.forEach(item => {
+    if (!POWER_CHORD_REGEX.test(item.chord.trim())) {
+      return;
+    }
+    const rootMatch = item.chord.match(/^([A-G][#b]?)/i);
+    if (!rootMatch) {
+      return;
+    }
+    const rootMidi = getRootNoteNumber(rootMatch[1]);
+    if (rootMidi === null) {
+      return;
+    }
+    const bassMidi = rootMidi - 12;
+    const noteName = midiNumberToNoteName(bassMidi);
+    if (!noteName) {
+      return;
+    }
+    const duration = Math.max(0.1, item.endTime - item.startTime);
+    events.push({
+      startTime: item.startTime,
+      duration,
+      noteName
+    });
+  });
+  return events;
+};
+
   useEffect(() => {
     if (!isPlaying || !ToneRef.current) {
       if (updateIntervalRef.current) {
@@ -285,6 +342,7 @@ const ChordPlayer = () => {
 
         // Build chord timeline for display
         chordTimelineRef.current = buildChordTimeline(chordChart);
+        const powerChordBassEvents = getPowerChordBassEvents(chordTimelineRef.current);
         playbackStartTimeRef.current = 0;
 
         // Schedule MIDI playback
@@ -327,6 +385,18 @@ const ChordPlayer = () => {
             scheduledEventsRef.current.push(id);
           });
         });
+
+        if (powerChordBassEvents.length > 0) {
+          powerChordBassEvents.forEach(event => {
+            const bassStartTime = now + event.startTime;
+            const id = Tone.Transport.scheduleOnce(() => {
+              if (synthRef.current) {
+                synthRef.current.triggerAttackRelease(event.noteName, event.duration, undefined, 0.6);
+              }
+            }, bassStartTime);
+            scheduledEventsRef.current.push(id);
+          });
+        }
 
         if (noteCount === 0) {
           throw new Error('No notes found in MIDI file');
