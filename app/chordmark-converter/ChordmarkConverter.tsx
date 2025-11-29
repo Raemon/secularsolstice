@@ -105,7 +105,7 @@ const ChordmarkConverter = () => {
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 placeholder="Enter chordmark notation..."
-                className="flex-1 p-2 border text-xs font-mono"
+                className="flex-1 p-2 border text-xs font-mono dark:bg-gray-800"
                 style={{ lineHeight: '16px' }}
                 rows={20}
               />
