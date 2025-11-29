@@ -67,7 +67,7 @@ export const CHORDMARK_STYLES = `
   }
   .styled-chordmark .cmSong .cmLyricLine,
   .styled-chordmark .cmSong .cmLyric {
-    color: #000;
+
   }
   .styled-chordmark .cmSong .cmSectionLabel {
     font-weight: 600;
@@ -287,11 +287,11 @@ const ChordmarkRenderer = ({
       return (
         <div className="flex gap-4">
           <div className="flex-0 min-w-0">
-            <div className="text-gray-400 mb-1">Chords</div>
+            {/* <div className=" mb-1">Chords</div> */}
             <div className="styled-chords text-xs font-mono" dangerouslySetInnerHTML={{ __html: renderedOutputs.htmlChordsOnly }} />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-gray-400 mb-1">Lyrics</div>
+            {/* <div className="mb-1">Lyrics</div> */}
             <div className="styled-chordmark font-mono text-xs" dangerouslySetInnerHTML={{ __html: renderedOutputs.htmlLyricsOnly }} />
           </div>
         </div>
@@ -332,7 +332,7 @@ const ChordmarkRenderer = ({
       {error && mode !== 'raw' && (
         <div className="mb-2 p-1 bg-red-100 text-red-800 text-xs">{error}</div>
       )}
-      <div ref={contentRef}>
+      <div ref={contentRef} className="text-gray-800 dark:text-white">
         {renderContent()}
       </div>
     </div>

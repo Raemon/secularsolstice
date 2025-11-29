@@ -40,10 +40,10 @@ const VersionContent = ({version}: {
         ) : isChordmarkFile ? (
           <ChordmarkRenderer content={version.content || ''} initialBpm={version.bpm || 90} />
         ) : isTxtFile ? (
-          <pre className="text-content text-gray-800 text-xs overflow-x-auto max-w-full">{version.content}</pre>
+          <pre className="text-content text-xs overflow-x-auto max-w-full">{version.content}</pre>
         ) : (
           <div 
-            className="markdown-content text-gray-800 text-xs whitespace-pre-wrap"
+            className="markdown-content text-xs whitespace-pre-wrap"
             dangerouslySetInnerHTML={{ __html: marked.parse(version.content || '', { breaks: true }) as string }}
           />
         )
