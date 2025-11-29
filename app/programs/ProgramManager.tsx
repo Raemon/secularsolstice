@@ -427,7 +427,14 @@ const ProgramManager = () => {
       if (!response.ok) {
         throw new Error(data.error || 'Failed to create version');
       }
-      setVersions(prev => [...prev, {id: data.version.id, songId: data.version.songId, label: data.version.label, songTitle: versions.find(v => v.songId === data.version.songId)?.songTitle || '', createdAt: data.version.createdAt}]);
+      setVersions(prev => [...prev, {
+        id: data.version.id, 
+        songId: data.version.songId, 
+        label: data.version.label, 
+        songTitle: versions.find(v => v.songId === data.version.songId)?.songTitle || '', 
+        createdAt: data.version.createdAt, 
+        nextVersionId: data.version.nextVersionId || null
+      }]);
       setIsCreatingVersion(false);
       setNewVersionForm({label: '', content: '', audioUrl: '', bpm: 100});
       await handleElementClick(data.version.id);
