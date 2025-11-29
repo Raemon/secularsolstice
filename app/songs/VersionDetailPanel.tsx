@@ -30,7 +30,7 @@ const VersionDetailPanel = ({songTitle, version, previousVersions, isExpandedPre
 
   return (
     <div className="border-l border-gray-200 pl-4 w-full h-[calc(100vh-2rem)] overflow-y-auto scrollbar-hide lg:p-20 relative">
-      <h2 className="font-mono -ml-8 text-lg font-semibold text-gray-900 mb-2 flex items-center gap-3 dark:text-gray-100">
+      <h2 className="font-mono -ml-8 text-lg font-semibold mb-2 flex items-center gap-3">
         <button
           onClick={() => !isCreatingVersion && onClose()}
           className="text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-gray-400"
@@ -42,8 +42,8 @@ const VersionDetailPanel = ({songTitle, version, previousVersions, isExpandedPre
         </button>
         {songTitle.replace(/_/g, ' ')}
       </h2>
-      <div className="mb-2 flex items-center justify-between sticky top-[-80px] bg-white dark:bg-black dark:text-gray-100">
-        <h3 className="text-sm font-medium text-gray-800 mb-1">
+      <div className="mb-2 flex items-center justify-between sticky top-[-80px]">
+        <h3 className="text-sm font-medium mb-1">
           {version.label}
         </h3>
         {canEdit && (
@@ -68,7 +68,7 @@ const VersionDetailPanel = ({songTitle, version, previousVersions, isExpandedPre
             )}
             <button
               onClick={isCreatingVersion ? onCancelCreateVersion : onCreateVersionClick}
-              className="text-gray-600 text-xs hover:text-gray-800"
+              className="text-gray-600 text-xs hover:text-gray-200"
               disabled={isSubmitting || isArchiving}
             >
               {isCreatingVersion ? 'Cancel' : 'Edit'}

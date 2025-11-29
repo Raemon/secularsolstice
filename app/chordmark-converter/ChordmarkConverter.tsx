@@ -80,7 +80,7 @@ const ChordmarkConverter = () => {
         />
       ) : (
         <>
-          <div className="mb-4 p-3 bg-gray-50 text-xs">
+          <div className="mb-4 p-3 text-xs">
             <div className="font-semibold mb-2">Chordmark Syntax:</div>
             <div className="space-y-1">
               <div><strong>Chords:</strong> Use bars <code>|C|G|Am|F|</code> or chord names <code>C G Am F</code></div>

@@ -386,8 +386,8 @@ const SongsFileList = ({ initialVersionId }: SongsFileListProps = {}) => {
                     onClick={() => handleCollapsedSongClick(song)}
                     className={`w-full text-xs py-2 text-center ${
                       isSongSelected 
-                        ? 'bg-blue-600 text-white' 
-                        : 'text-gray-700 hover:bg-gray-100'
+                        ? 'text-white' 
+                        : 'text-gray-300'
                     }`}
                     title={song.title}
                   >
@@ -405,23 +405,23 @@ const SongsFileList = ({ initialVersionId }: SongsFileListProps = {}) => {
                 searchTerm={searchTerm}
                 onSearchChange={setSearchTerm}
               />
-              <div className="flex gap-0 border border-gray-300">
+              <div className="flex gap-0 ">
                 <button
                   onClick={() => setSortOption('alphabetical')}
-                  className={`text-xs px-2 py-1 whitespace-nowrap ${
+                  className={`text-xs px-2 whitespace-nowrap outline-none border-none ${
                     sortOption === 'alphabetical' 
-                      ? 'bg-blue-600 text-white' 
-                      : 'bg-white text-gray-700 hover:bg-gray-50'
+                      ? 'underline text-white' 
+                      : 'text-gray-400 hover:underline'
                   }`}
                 >
                   A-Z
                 </button>
                 <button
                   onClick={() => setSortOption('recently-updated')}
-                  className={`text-xs px-2 py-1 whitespace-nowrap border-l border-gray-300 ${
+                  className={`text-xs px-2 whitespace-nowrap border-l border-gray-500 ${
                     sortOption === 'recently-updated' 
-                      ? 'bg-blue-600 text-white' 
-                      : 'bg-white text-gray-700 hover:bg-gray-50'
+                      ? 'underline text-white' 
+                      : 'text-gray-400 hover:underline'
                   }`}
                 >
                   Recent
@@ -430,7 +430,7 @@ const SongsFileList = ({ initialVersionId }: SongsFileListProps = {}) => {
               {canEdit && (
                 <button
                   onClick={() => setIsCreatingSong(!isCreatingSong)}
-                  className="text-xs px-2 py-1 bg-blue-600 text-white whitespace-nowrap"
+                  className="text-xs px-2 py-1 border border-gray-500 rounded-sm text-white whitespace-nowrap"
                 >
                   + Song
                 </button>
@@ -503,7 +503,7 @@ const SongsFileList = ({ initialVersionId }: SongsFileListProps = {}) => {
               <div className="flex items-start justify-between mb-2">
                 <button onClick={handleCancelCreateVersion} className="text-gray-400 text-xs">× Close</button>
               </div>
-              <h3 className="font-mono text-sm font-medium text-gray-800 mb-1">
+              <h3 className="font-mono text-sm font-medium text-gray-200 mb-1">
                 New version for: {creatingVersionForSong.title.replace(/_/g, ' ')}
               </h3>
             </div>

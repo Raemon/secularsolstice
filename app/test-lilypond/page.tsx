@@ -159,7 +159,7 @@ const TestLilypondPage = () => {
       </div>
 
       {logs.length > 0 && (
-        <div className="bg-gray-100 p-4 mb-4 rounded">
+        <div className="bg-gray-500 p-4 mb-4 rounded">
           <h3 className="font-bold mb-2">Logs:</h3>
           {logs.map((log, i) => (
             <div key={i} className="text-sm font-mono">{log}</div>
@@ -185,7 +185,7 @@ const TestLilypondPage = () => {
             <div key={index} className="border p-4">
               <h3 className="font-bold mb-2">Page {index + 1} (SVG length: {svg.length} bytes)</h3>
               <div 
-                className="bg-white overflow-auto"
+                className="overflow-auto"
                 dangerouslySetInnerHTML={{ __html: svg }}
               />
             </div>

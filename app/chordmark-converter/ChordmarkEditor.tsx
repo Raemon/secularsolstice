@@ -142,7 +142,7 @@ const ChordmarkEditor = ({ value, onChange, showSyntaxHelp = false, bpm, autosav
       <style dangerouslySetInnerHTML={{ __html: CHORDMARK_STYLES }} />
       
       {showSyntaxHelp && (
-        <div className="p-2 bg-gray-50 text-xs">
+        <div className="p-2 text-xs">
           <div className="font-semibold mb-1">Chordmark Syntax:</div>
           <div className="space-y-0.5">
             <div><strong>Chords:</strong> Use bars <code>|C|G|Am|F|</code> or chord names <code>C G Am F</code></div>
@@ -160,7 +160,7 @@ const ChordmarkEditor = ({ value, onChange, showSyntaxHelp = false, bpm, autosav
       )}
 
       {pendingAutosave && (
-        <div className="flex items-center gap-4 bg-gray-100 p-2 text-xs text-gray-600">
+        <div className="flex items-center gap-4 p-2 text-xs ">
           <div onClick={handleRestoreAutosave} className="cursor-pointer">
             Restore changes from {new Date(pendingAutosave.savedAt).toLocaleString()}?
           </div>
@@ -178,29 +178,29 @@ const ChordmarkEditor = ({ value, onChange, showSyntaxHelp = false, bpm, autosav
 
       <div className="flex gap-2">
         <div className="flex flex-col flex-1">
-          <h3 className="text-xs font-semibold mb-1 text-gray-600">Chordmark Input</h3>
+          <h3 className="text-xs font-semibold mb-1 text-gray-400">Chordmark Input</h3>
           <textarea
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder="Enter chordmark notation..."
-            className="flex-1 p-2 border text-xs font-mono min-h-[300px] whitespace-pre flex-grow flex-2 dark:bg-gray-800"
+            className="flex-1 p-2 border bg-gray-800 text-sm font-mono min-h-[300px] whitespace-pre flex-grow flex-2"
             style={{ lineHeight: '16px', maxWidth: '800px' }}
           />
         </div>
 
         <div className="flex flex-col flex-1">
           <div className="flex items-center justify-between mb-1">
-            <h3 className="text-xs font-semibold text-gray-600">Preview</h3>
+            <h3 className="text-sm font-semibold text-gray-400">Preview</h3>
             <div className="flex gap-1">
               <button
                 onClick={() => setPreviewMode('full')}
-                className={`px-2 py-0.5 text-xs ${previewMode === 'full' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+                className={`px-2 py-0.5 text-xs ${previewMode === 'full' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
               >
                 Full
               </button>
               <button
                 onClick={() => setPreviewMode('side-by-side')}
-                className={`px-2 py-0.5 text-xs ${previewMode === 'side-by-side' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+                className={`px-2 py-0.5 text-xs ${previewMode === 'side-by-side' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
               >
                 Side-by-Side
               </button>
@@ -212,7 +212,7 @@ const ChordmarkEditor = ({ value, onChange, showSyntaxHelp = false, bpm, autosav
               </button>
               <button
                 onClick={() => setPreviewMode('lyrics')}
-                className={`px-2 py-0.5 text-xs ${previewMode === 'lyrics' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+                className={`px-2 py-0.5 text-xs ${previewMode === 'lyrics' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
               >
                 Lyrics
               </button>

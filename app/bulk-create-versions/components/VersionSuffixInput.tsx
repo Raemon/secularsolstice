@@ -5,7 +5,7 @@ type Props = {
 
 const VersionSuffixInput = ({ value, onChange }: Props) => (
   <div>
-    <label className="text-xs text-gray-600">Version Suffix</label>
+    <label className="text-xs text-gray-400">Version Suffix</label>
     <input
       type="text"
       value={value}

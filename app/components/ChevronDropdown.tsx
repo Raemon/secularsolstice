@@ -31,7 +31,7 @@ const ChevronDropdown = ({value, options, onChange, placeholder, footer}: {value
         ▼
       </button>
       {isOpen && (
-        <div className="absolute z-10 mt-1 bg-white border border-gray-300 shadow-lg min-w-[200px] top-full left-0">
+        <div className="absolute z-10 mt-1 border border-gray-300 shadow-lg min-w-[200px] top-full left-0">
           <div className="max-h-[300px] overflow-y-auto">
             {placeholder && (
               <button

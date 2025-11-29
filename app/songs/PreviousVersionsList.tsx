@@ -22,7 +22,7 @@ const PreviousVersionsList = ({previousVersions, currentLabel, isExpanded, onTog
     <div className="mb-4">
       <button
         onClick={onToggle}
-        className="text-xs text-gray-600 mb-2"
+        className="text-xs text-gray-300 mb-2"
       >
         <ChevronArrow isExpanded={isExpanded} className="mr-1" /> Previous Versions ({previousVersions.length})
       </button>
@@ -35,7 +35,7 @@ const PreviousVersionsList = ({previousVersions, currentLabel, isExpanded, onTog
               className="px-2 py-1 cursor-pointer hover:bg-gray-50 text-xs"
             >
               {prevVersion.label !== currentLabel && (
-                <div className="font-mono text-gray-800">{prevVersion.label}</div>
+                <div className="font-mono text-gray-300">{prevVersion.label}</div>
               )}
               <div className="text-gray-400">{formatDate(prevVersion.createdAt)}</div>
               <div className="text-gray-400">{prevVersion.createdBy}</div>

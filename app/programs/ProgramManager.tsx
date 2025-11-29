@@ -572,7 +572,7 @@ const ProgramManager = () => {
 
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={handleCloseCreateModal}>
-          <div className="bg-white p-4 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+          <div className="p-4 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-lg font-semibold mb-3">Create New Program</h2>
             <input
               value={newProgramTitle}

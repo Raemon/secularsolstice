@@ -14,7 +14,7 @@ const songs = [
 export default function Home() {
   redirect('/songs');
   return (
-    <div>
+    <div className="">
       {songs.map((song) => (
         <SongPlayer key={song.title} songTitle={song.title} audioSrc={song.audioSrc} lyricsMarkdownFile={song.lyricsFile} />
       ))}

@@ -234,7 +234,7 @@ const ChordmarkTabs = ({mode, onModeChange}: {mode: ChordmarkViewMode, onModeCha
         <button
           key={tab.id}
           onClick={() => onModeChange(tab.id)}
-          className={`px-2 py-0.5 text-xs ${mode === tab.id ? 'bg-gray-200 font-medium' : 'text-gray-500 hover:bg-gray-100'}`}
+          className={`px-2 py-0.5 text-xs ${mode === tab.id ? 'font-medium' : 'text-gray-500'}`}
         >
           {tab.label}
         </button>
@@ -332,7 +332,7 @@ const ChordmarkRenderer = ({
       {error && mode !== 'raw' && (
         <div className="mb-2 p-1 bg-red-100 text-red-800 text-xs">{error}</div>
       )}
-      <div ref={contentRef} className="text-gray-800 dark:text-white">
+      <div ref={contentRef} className="text-gray-200">
         {renderContent()}
       </div>
     </div>

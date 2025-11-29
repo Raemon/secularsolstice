@@ -69,7 +69,7 @@ const ChordmarkPlayer = ({
   if (!hasChords) return null;
   
   return (
-    <div className="flex flex-col gap-2 text-xs mb-2">
+    <div className="flex flex-col gap-2 text-xs mb-2 border border-gray-500 rounded-sm p-2 mb-4">
       <div className="flex items-center gap-2">
         <button
           onClick={isPlaying ? handleStop : handlePlay}
@@ -85,9 +85,9 @@ const ChordmarkPlayer = ({
               type="number"
               value={bpm}
               onChange={(e) => onBpmChange(Math.max(1, parseInt(e.target.value) || 1))}
-              className="w-12 px-1 border border-gray-300 text-gray-900"
+              className="w-12 px-1 py-1 rounded-sm border border-gray-300 bg-transparent text-gray-100"
               min="1"
-              max="300"
+              max="500"
             />
           </div>
         ) : (
@@ -98,7 +98,7 @@ const ChordmarkPlayer = ({
           <select
             value={String(startLine)}
             onChange={(e) => setStartLine(Number(e.target.value))}
-            className="px-1 border border-gray-300 text-gray-900 max-w-xs"
+            className="p-1 rounded-sm border border-gray-500 text-gray-200 bg-gray-800 max-w-xs"
             disabled={lineOptions.length === 0}
           >
             {lineOptions.map(option => (

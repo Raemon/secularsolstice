@@ -18,12 +18,12 @@ const CreateVersionForm = ({form, onFormChange, onSubmit, onCancel, isSubmitting
   return (
     <div className="space-y-2">
       <div>
-        <label className="text-xs text-gray-600">Label</label>
+        <label className="text-xs text-gray-300">Label</label>
         <input
           type="text"
           value={form.label}
           onChange={(e) => onFormChange({ label: e.target.value })}
-          className="w-full px-2 py-1 text-xs border border-gray-300"
+          className="w-full px-2 py-1 text-sm border border-gray-300 bg-gray-800"
           placeholder="Version label"
         />
       </div>
@@ -33,7 +33,7 @@ const CreateVersionForm = ({form, onFormChange, onSubmit, onCancel, isSubmitting
           type="number"
           value={form.bpm}
           onChange={(e) => onFormChange({ bpm: parseInt(e.target.value) || 100 })}
-          className="w-full px-2 py-1 text-xs border border-gray-300"
+          className="w-full px-2 py-1 text-xs border border-gray-300 bg-gray-800"
           placeholder="BPM"
         />
       </div>

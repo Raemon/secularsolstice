@@ -128,7 +128,7 @@ const LilypondViewer = ({lilypondContent, versionId, renderedContent}:{lilypondC
   const renderContent = () => {
     if (viewMode === 'raw') {
       return (
-        <pre className="text-gray-800 text-xs overflow-x-auto whitespace-pre-wrap break-words font-mono">
+        <pre className="text-gray-400 text-xs overflow-x-auto whitespace-pre-wrap break-words font-mono">
           {lilypondContent}
         </pre>
       );
@@ -137,7 +137,7 @@ const LilypondViewer = ({lilypondContent, versionId, renderedContent}:{lilypondC
     if (viewMode === 'lyrics') {
       const lyrics = extractLyricsFromLilypond(lilypondContent);
       return (
-        <pre className="text-gray-800 text-sm whitespace-pre-wrap">
+        <pre className="text-gray-400 text-sm whitespace-pre-wrap">
           {lyrics || 'No lyrics found'}
         </pre>
       );
@@ -150,13 +150,13 @@ const LilypondViewer = ({lilypondContent, versionId, renderedContent}:{lilypondC
         <div className="space-y-4">
           {chords.length > 0 && (
             <div>
-              <div className="text-gray-600 text-xs font-semibold mb-1">Chords:</div>
-              <div className="text-gray-800 text-sm">{chords.join(' | ')}</div>
+              <div className="text-gray-200 text-xs font-semibold mb-1">Chords:</div>
+              <div className="text-gray-400 text-sm">{chords.join(' | ')}</div>
             </div>
           )}
           <div>
-            <div className="text-gray-600 text-xs font-semibold mb-1">Lyrics:</div>
-            <pre className="text-gray-800 text-sm whitespace-pre-wrap">
+            <div className="text-gray-200 text-xs font-semibold mb-1">Lyrics:</div>
+            <pre className="text-gray-400 text-sm whitespace-pre-wrap">
               {lyrics || 'No lyrics found'}
             </pre>
           </div>
@@ -175,7 +175,7 @@ const LilypondViewer = ({lilypondContent, versionId, renderedContent}:{lilypondC
           <div>Error rendering sheet music: {error}</div>
           <details className="mt-2">
             <summary className="cursor-pointer text-gray-600">Show LilyPond source</summary>
-            <pre className="mt-2 text-gray-800 overflow-x-auto whitespace-pre-wrap break-words">{lilypondContent}</pre>
+            <pre className="mt-2 text-gray-300 overflow-x-auto whitespace-pre-wrap break-words">{lilypondContent}</pre>
           </details>
         </div>
       );
