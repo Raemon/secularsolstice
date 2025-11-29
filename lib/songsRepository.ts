@@ -385,13 +385,14 @@ export const listAllVersionsWithSongTitles = async () => {
       v.song_id as "songId",
       v.label,
       s.title as "songTitle",
-      v.created_at as "createdAt"
+      v.created_at as "createdAt",
+      v.next_version_id as "nextVersionId"
     from song_versions v
     join songs s on s.id = v.song_id
     where v.archived = false
       and s.archived = false
     order by s.title asc, v.label asc
   `;
-  return rows as { id: string; songId: string; label: string; songTitle: string; createdAt: string; }[];
+  return rows as { id: string; songId: string; label: string; songTitle: string; createdAt: string; nextVersionId: string | null; }[];
 };
 

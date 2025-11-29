@@ -24,6 +24,7 @@ type VersionOption = {
   label: string;
   songTitle: string;
   createdAt: string;
+  nextVersionId: string | null;
 };
 
 const ProgramManager = () => {
@@ -91,6 +92,7 @@ const ProgramManager = () => {
 
         const programData = await programResponse.json();
         const versionData = await versionsResponse.json();
+        console.log(versionData.versions);
         setPrograms(programData.programs || []);
         setVersions(versionData.versions || []);
         setError(null);
@@ -133,8 +135,10 @@ const ProgramManager = () => {
     const normalized = trimmed.toLowerCase().replace(/\s+/g, '_');
     return versions
       .filter((version) =>
-        version.songTitle.toLowerCase().includes(normalized) ||
-        version.label.toLowerCase().includes(normalized)
+        version.nextVersionId === null && (
+          version.songTitle.toLowerCase().includes(normalized) ||
+          version.label.toLowerCase().includes(normalized)
+        )
       )
       .slice(0, 8);
   }, [searchTerm, versions]);
