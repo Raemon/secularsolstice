@@ -10,6 +10,10 @@ interface ChordmarkPlayerProps {
   onLineChange?: (lineIndex: number | null) => void;
   bpm?: number;
   onBpmChange?: (bpm: number) => void;
+  startLine?: number;
+  onStartLineChange?: (line: number) => void;
+  autoPlay?: boolean;
+  onAutoPlayComplete?: () => void;
 }
 
 const ChordmarkPlayer = ({
@@ -17,6 +21,10 @@ const ChordmarkPlayer = ({
   onLineChange,
   bpm = 90,
   onBpmChange,
+  startLine: controlledStartLine,
+  onStartLineChange,
+  autoPlay,
+  onAutoPlayComplete,
 }: ChordmarkPlayerProps) => {
   const chordEvents = useMemo(() => extractChordEvents(parsedSong), [parsedSong]);
   const hasChords = chordEvents.length > 0;
@@ -28,7 +36,8 @@ const ChordmarkPlayer = ({
       return { value: index, label: `${index + 1}: ${label}` };
     });
   }, [parsedSong]);
-  const [startLine, setStartLine] = useState(0);
+  const [internalStartLine, setInternalStartLine] = useState(0);
+  const startLine = controlledStartLine !== undefined ? controlledStartLine : internalStartLine;
   const [metronomeMode, setMetronomeMode] = useState<MetronomeMode>('4/4');
   const filteredChordEvents = useMemo(() => {
     if (chordEvents.length === 0) return [];
@@ -63,6 +72,15 @@ const ChordmarkPlayer = ({
     setPlaybackMetronomeMode(metronomeMode);
   }, [metronomeMode, setPlaybackMetronomeMode]);
   
+  useEffect(() => {
+    if (autoPlay && !isPlaying && !isLoading) {
+      handlePlay();
+      if (onAutoPlayComplete) {
+        onAutoPlayComplete();
+      }
+    }
+  }, [autoPlay, isPlaying, isLoading, handlePlay, onAutoPlayComplete]);
+  
   if (!hasChords) return null;
   
   return (
@@ -94,7 +112,14 @@ const ChordmarkPlayer = ({
           <span className="text-gray-500">Start line:</span>
           <select
             value={String(startLine)}
-            onChange={(e) => setStartLine(Number(e.target.value))}
+            onChange={(e) => {
+              const newLine = Number(e.target.value);
+              if (onStartLineChange) {
+                onStartLineChange(newLine);
+              } else {
+                setInternalStartLine(newLine);
+              }
+            }}
             className="p-1 rounded-sm border border-gray-500 text-gray-200 bg-black max-w-xs"
             disabled={lineOptions.length === 0}
           >

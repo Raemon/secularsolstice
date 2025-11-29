@@ -29,7 +29,10 @@ const ChordmarkEditor = ({ value, onChange, showSyntaxHelp = false, bpm, autosav
   const [previewMode, setPreviewMode] = useState<PreviewMode>('full');
   const [currentLineIndex, setCurrentLineIndex] = useState<number | null>(null);
   const [pendingAutosave, setPendingAutosave] = useState<AutosaveSnapshot | null>(null);
+  const [playerStartLine, setPlayerStartLine] = useState(0);
+  const [shouldAutoPlay, setShouldAutoPlay] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const autosaveStorageKey = `chordmark-editor:${autosaveKey || 'default'}`;
 
   const persistAutosaveSnapshot = useCallback((snapshot: AutosaveSnapshot) => {
@@ -116,6 +119,11 @@ const ChordmarkEditor = ({ value, onChange, showSyntaxHelp = false, bpm, autosav
     setPendingAutosave(null);
   };
 
+  const handlePlayFromLine = (lineIndex: number) => {
+    setPlayerStartLine(lineIndex);
+    setShouldAutoPlay(true);
+  };
+
   // Apply line highlighting to preview
   useLineHighlighting(previewRef, currentLineIndex);
 
@@ -172,6 +180,10 @@ const ChordmarkEditor = ({ value, onChange, showSyntaxHelp = false, bpm, autosav
           parsedSong={parsedSong.song}
           onLineChange={setCurrentLineIndex}
           bpm={bpm}
+          startLine={playerStartLine}
+          onStartLineChange={setPlayerStartLine}
+          autoPlay={shouldAutoPlay}
+          onAutoPlayComplete={() => setShouldAutoPlay(false)}
         />
 
       <ChordButtons startCollapsed />
@@ -179,13 +191,37 @@ const ChordmarkEditor = ({ value, onChange, showSyntaxHelp = false, bpm, autosav
       <div className="flex gap-2">
         <div className="flex flex-col flex-1">
           <h3 className="text-xs font-semibold mb-1 text-gray-400">Chordmark Input</h3>
-          <textarea
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder="Enter chordmark notation..."
-            className="flex-1 p-2 border bg-black text-sm font-mono min-h-[300px] whitespace-pre flex-grow flex-2"
-            style={{ lineHeight: '16px', maxWidth: '800px' }}
-          />
+          <div className="flex flex-1 border relative" style={{ maxWidth: '800px' }}>
+            <div className="flex flex-col bg-gray-900 border-r border-gray-700">
+              {value.split('\n').map((_, index) => (
+                <div
+                  key={index}
+                  className="relative group flex items-center"
+                  style={{ height: '16px', lineHeight: '16px' }}
+                >
+                  <button
+                    onClick={() => handlePlayFromLine(index)}
+                    className="absolute left-0 opacity-0 group-hover:opacity-100 transition-opacity px-1 text-blue-400 hover:text-blue-300 text-xs"
+                    title={`Play from line ${index + 1}`}
+                    style={{ fontSize: '10px' }}
+                  >
+                    ▶
+                  </button>
+                  <span className="text-gray-500 text-xs pr-1 pl-5 select-none" style={{ fontSize: '10px', minWidth: '40px', textAlign: 'right' }}>
+                    {index + 1}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <textarea
+              ref={textareaRef}
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              placeholder="Enter chordmark notation..."
+              className="flex-1 p-2 bg-black text-sm font-mono min-h-[300px] whitespace-pre flex-grow border-0 outline-none"
+              style={{ lineHeight: '16px', resize: 'none' }}
+            />
+          </div>
         </div>
 
         <div className="flex flex-col flex-1">
