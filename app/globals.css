@@ -7,6 +7,19 @@
   --foreground: #171717;
 }
 
+:root {
+  --primary: rgb(255, 226, 64);
+}
+
+text-primary {
+  color: var(--primary) !important;
+}
+
+bg-primary {
+  background-color: var(--primary) !important;
+}
+
+
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
@@ -84,12 +97,12 @@ body {
 }
 
 .markdown-content a {
-  color: #2563eb;
+  color: var(--primary);
   text-decoration: underline;
 }
 
 .markdown-content a:hover {
-  color: #1d4ed8;
+  opacity: 0.8;
 }
 
 .markdown-content code {

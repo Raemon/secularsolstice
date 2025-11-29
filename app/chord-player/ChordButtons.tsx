@@ -23,7 +23,7 @@ const ChordButtons = ({ startCollapsed = false }: ChordButtonsProps) => {
 
   const getButtonClass = (isActive: boolean, position: 'left' | 'center' | 'right') => {
     const baseClass = 'font-mono text-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
-    const activeClass = isActive ? 'bg-gray-600 text-white border-gray-600' : 'bg-gray-500 hover:bg-gray-100 border-gray-300 text-gray-300';
+    const activeClass = isActive ? 'bg-gray-600 text-white border-gray-600' : 'bg-gray-500 hover:bg-black/80 border-gray-300 text-gray-300';
     const borders = position === 'left' ? 'border-l border-t border-b' : position === 'right' ? 'border-r border-t border-b' : 'border';
     const padding = position === 'center' ? 'px-2 py-0.5' : 'px-1 py-0.5';
     const textColor = position === 'center' ? 'text-gray-400' : 'text-gray-300';

@@ -7,7 +7,7 @@ const ProgressBar = ({percent, text, show}:{percent: number, text: string, show:
         <div className="text-xs">Generating Presentation</div>
         <div className="text-xs">{Math.round(percent)}%</div>
       </div>
-      <div className="w-full h-1 bg-gray-200 overflow-hidden">
+      <div className="w-full h-1 bg-gray-800 overflow-hidden">
         <div className="h-full bg-black transition-all" style={{width: `${percent}%`}} />
       </div>
       <div className="mt-1 text-xs text-center">{text}</div>

@@ -62,7 +62,7 @@ const VideoUploader = ({onVideoLoad}:{onVideoLoad: (file: File, videoElement: HT
         <h2 className="text-sm m-0">Upload MP4 Video</h2>
       </div>
       <div className="w-1/2">
-        <div onClick={handleContainerClick} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} className={`relative border border-dashed p-4 text-center cursor-pointer ${dragOver ? 'bg-gray-100' : fileName ? 'bg-black' : ''}`}>
+        <div onClick={handleContainerClick} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} className={`relative border border-dashed p-4 text-center cursor-pointer ${dragOver ? 'bg-black/80' : fileName ? 'bg-black' : ''}`}>
           <input ref={fileInputRef} type="file" accept="video/mp4" onChange={handleFileChange} className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer" />
           <div className="pointer-events-none">
             <div className="text-sm mb-1">{fileName || 'Choose MP4 Video File'}</div>

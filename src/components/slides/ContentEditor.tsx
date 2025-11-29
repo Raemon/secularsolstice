@@ -55,7 +55,7 @@ const ContentEditor = ({htmlContent, setHtmlContent, rawHtml, slides, extractedF
             <h3 className="text-xs m-0">Slides Preview</h3>
             <span className="text-xs">{slides.length} slides</span>
           </div>
-          <div ref={slidesRef} className="flex-1 min-h-0 p-2 border text-xs overflow-y-auto overflow-x-hidden bg-gray-100 resize-y w-full box-border" data-placeholder="Slides will appear here...">
+          <div ref={slidesRef} className="flex-1 min-h-0 p-2 border text-xs overflow-y-auto overflow-x-hidden bg-black/80 resize-y w-full box-border" data-placeholder="Slides will appear here...">
             {slides.length === 0 ? (
               <div className="text-gray-500 text-center py-10 italic">No slides to preview</div>
             ) : (

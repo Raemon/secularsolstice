@@ -40,7 +40,7 @@ const ChevronDropdown = ({value, options, onChange, placeholder, footer}: {value
                   onChange(null);
                   setIsOpen(false);
                 }}
-                className={`w-full text-left px-2 py-1 text-sm hover:bg-gray-100 ${!value ? 'bg-gray-100 font-semibold' : ''}`}
+                className={`w-full text-left px-2 py-1 text-sm hover:bg-black/80 ${!value ? 'bg-black/80 font-semibold' : ''}`}
               >
                 {placeholder}
               </button>
@@ -53,7 +53,7 @@ const ChevronDropdown = ({value, options, onChange, placeholder, footer}: {value
                   onChange(option.value);
                   setIsOpen(false);
                 }}
-                className={`w-full text-left px-2 py-1 text-sm hover:bg-gray-100 ${option.value === value ? 'bg-gray-100 font-semibold' : ''}`}
+                className={`w-full text-left px-2 py-1 text-sm hover:bg-black/80 ${option.value === value ? 'bg-black/80 font-semibold' : ''}`}
               >
                 {option.label}
               </button>

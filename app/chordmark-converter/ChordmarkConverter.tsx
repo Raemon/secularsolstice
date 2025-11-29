@@ -58,13 +58,13 @@ const ChordmarkConverter = () => {
         <div className="flex gap-2">
           <button
             onClick={() => setViewMode('editor')}
-            className={`px-3 py-1 text-xs ${viewMode === 'editor' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+            className={`px-3 py-1 text-xs ${viewMode === 'editor' ? 'bg-blue-600 text-white' : 'bg-gray-800'}`}
           >
             Editor View
           </button>
           <button
             onClick={() => setViewMode('detailed')}
-            className={`px-3 py-1 text-xs ${viewMode === 'detailed' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+            className={`px-3 py-1 text-xs ${viewMode === 'detailed' ? 'bg-blue-600 text-white' : 'bg-gray-800'}`}
           >
             Detailed View
           </button>

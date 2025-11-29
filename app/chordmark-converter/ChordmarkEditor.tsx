@@ -194,25 +194,25 @@ const ChordmarkEditor = ({ value, onChange, showSyntaxHelp = false, bpm, autosav
             <div className="flex gap-1">
               <button
                 onClick={() => setPreviewMode('full')}
-                className={`px-2 py-0.5 text-xs ${previewMode === 'full' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+                className={`px-2 py-0.5 text-xs ${previewMode === 'full' ? 'bg-blue-600 text-white' : 'bg-gray-800'}`}
               >
                 Full
               </button>
               <button
                 onClick={() => setPreviewMode('side-by-side')}
-                className={`px-2 py-0.5 text-xs ${previewMode === 'side-by-side' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+                className={`px-2 py-0.5 text-xs ${previewMode === 'side-by-side' ? 'bg-blue-600 text-white' : 'bg-gray-800'}`}
               >
                 Side-by-Side
               </button>
               <button
                 onClick={() => setPreviewMode('chords')}
-                className={`px-2 py-0.5 text-xs ${previewMode === 'chords' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-300'}`}
+                className={`px-2 py-0.5 text-xs ${previewMode === 'chords' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-300'}`}
               >
                 Chords
               </button>
               <button
                 onClick={() => setPreviewMode('lyrics')}
-                className={`px-2 py-0.5 text-xs ${previewMode === 'lyrics' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+                className={`px-2 py-0.5 text-xs ${previewMode === 'lyrics' ? 'bg-blue-600 text-white' : 'bg-gray-800'}`}
               >
                 Lyrics
               </button>
