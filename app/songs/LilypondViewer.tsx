@@ -6,7 +6,7 @@ import { extractLyricsFromLilypond } from '@/lib/lyricsExtractor';
 
 type ViewMode = 'svg' | 'raw' | 'lyrics' | 'lyrics-chords';
 
-const LilypondViewer = ({lilypondContent, versionId, renderedContent}:{lilypondContent: string | undefined, versionId?: string, renderedContent?: string | null}) => {
+const LilypondViewer = ({lilypondContent, versionId, renderedContent}:{lilypondContent: string | undefined, versionId?: string, renderedContent?: {lilypond?: string; legacy?: string; [key: string]: string | undefined} | null}) => {
   const [svgs, setSvgs] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,8 +45,18 @@ const LilypondViewer = ({lilypondContent, versionId, renderedContent}:{lilypondC
       if (renderedContent) {
         console.log('[LilypondViewer] Using cached rendered content');
         try {
-          const parsed = JSON.parse(renderedContent);
-          setSvgs(parsed);
+          // Try new format first
+          if (renderedContent.lilypond) {
+            const parsed = JSON.parse(renderedContent.lilypond);
+            setSvgs(parsed);
+            return;
+          }
+          // Fall back to legacy format (whole renderedContent was a JSON string)
+          if (renderedContent.legacy) {
+            const parsed = JSON.parse(renderedContent.legacy);
+            setSvgs(parsed);
+            return;
+          }
         } catch (err) {
           console.error('[LilypondViewer] Error parsing cached content:', err);
           setError('Error loading cached content');
@@ -96,7 +106,7 @@ const LilypondViewer = ({lilypondContent, versionId, renderedContent}:{lilypondC
             await fetch(`/api/songs/versions/${versionId}/rendered-content`, {
               method: 'PATCH',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ renderedContent: JSON.stringify(svgArray) }),
+              body: JSON.stringify({ renderedContent: { lilypond: JSON.stringify(svgArray) } }),
             });
             console.log('[LilypondViewer] Successfully cached rendered content');
           } catch (cacheErr) {

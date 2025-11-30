@@ -1,3 +1,14 @@
+export type RenderedContent = {
+  htmlFull?: string;
+  htmlChordsOnly?: string;
+  htmlLyricsOnly?: string;
+  htmlChordsFirstLyricLine?: string;
+  plainText?: string;
+  slides?: string;
+  legacy?: string;
+  [key: string]: string | undefined;
+};
+
 export type SongVersion = {
   id: string;
   songId: string;
@@ -7,7 +18,7 @@ export type SongVersion = {
   previousVersionId: string | null;
   nextVersionId: string | null;
   originalVersionId: string | null;
-  renderedContent: string | null;
+  renderedContent: RenderedContent | null;
   bpm: number | null;
   archived: boolean;
   createdAt: string;

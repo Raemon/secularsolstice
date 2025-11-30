@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState, type KeyboardEvent } from 'react';
+import { useRouter } from 'next/navigation';
 import DragAndDropList from './components/DragAndDropList';
 import ProgramSelector from './components/ProgramSelector';
 import VersionSelector from './components/VersionSelector';
@@ -37,8 +38,14 @@ type SongSlideData = {
   slides: Slide[];
 };
 
-const ProgramManager = () => {
+type ProgramManagerProps = {
+  initialProgramId?: string;
+  initialVersionId?: string;
+};
+
+const ProgramManager = ({ initialProgramId, initialVersionId }: ProgramManagerProps) => {
   const { canEdit, userName } = useUser();
+  const router = useRouter();
   const [programs, setPrograms] = useState<Program[]>([]);
   const [selectedProgramId, setSelectedProgramId] = useState<string | null>(null);
   const [versions, setVersions] = useState<VersionOption[]>([]);
@@ -118,10 +125,13 @@ const ProgramManager = () => {
   }, []);
 
   useEffect(() => {
-    if (!selectedProgramId && programs.length > 0) {
+    if (initialProgramId) {
+      setSelectedProgramId(initialProgramId);
+    } else if (!selectedProgramId && programs.length > 0) {
       setSelectedProgramId(programs[0].id);
     }
-  }, [programs, selectedProgramId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [programs, initialProgramId]);
 
   const selectedProgram = useMemo(() => {
     if (!selectedProgramId) {
@@ -196,7 +206,8 @@ const ProgramManager = () => {
           if (fullVersion.content) {
             contentToProcess = convertToLyricsOnly(fullVersion.content, version.label);
           } else if (fullVersion.renderedContent) {
-            contentToProcess = fullVersion.renderedContent;
+            // Use htmlLyricsOnly or htmlFull from the rendered content object
+            contentToProcess = fullVersion.renderedContent.htmlLyricsOnly || fullVersion.renderedContent.htmlFull || fullVersion.renderedContent.legacy || '';
           }
           
           if (contentToProcess) {
@@ -260,17 +271,25 @@ const ProgramManager = () => {
         throw new Error(data.error || 'Failed to delete program');
       }
       let nextPrograms: Program[] = [];
+      let nextProgramId: string | null = null;
       setPrograms((prev) => {
         nextPrograms = prev.filter((program) => program.id !== selectedProgram.id);
         return nextPrograms;
       });
       setSelectedProgramId((currentSelectedId) => {
         if (currentSelectedId !== selectedProgram.id) {
+          nextProgramId = currentSelectedId;
           return currentSelectedId;
         }
-        return nextPrograms.length > 0 ? nextPrograms[0].id : null;
+        nextProgramId = nextPrograms.length > 0 ? nextPrograms[0].id : null;
+        return nextProgramId;
       });
       setError(null);
+      if (nextProgramId) {
+        router.push(`/programs/${nextProgramId}`);
+      } else {
+        router.push('/programs');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete program');
     } finally {
@@ -299,6 +318,7 @@ const ProgramManager = () => {
       setNewProgramTitle('');
       setShowCreateModal(false);
       setError(null);
+      router.push(`/programs/${data.program.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create program');
     }
@@ -448,12 +468,15 @@ const ProgramManager = () => {
       setIsExpandedPreviousVersions(false);
       setIsCreatingVersion(false);
       setVersionError(null);
+      if (selectedProgramId) {
+        router.push(`/programs/${selectedProgramId}/${versionId}`);
+      }
     } catch (err) {
       console.error('Error loading version details:', err);
       setVersionError(err instanceof Error ? err.message : 'Failed to load version');
       setPreviousVersions([]);
     }
-  }, []);
+  }, [selectedProgramId, router]);
 
   const handleCloseVersionPanel = () => {
     setSelectedVersion(null);
@@ -461,7 +484,16 @@ const ProgramManager = () => {
     setIsExpandedPreviousVersions(false);
     setIsCreatingVersion(false);
     setVersionError(null);
+    if (selectedProgramId) {
+      router.push(`/programs/${selectedProgramId}`);
+    }
   };
+
+  useEffect(() => {
+    if (initialVersionId) {
+      handleElementClick(initialVersionId);
+    }
+  }, [initialVersionId, handleElementClick]);
 
   const handleVersionClick = async (version: SongVersion) => {
     await handleElementClick(version.id);
@@ -598,7 +630,10 @@ const ProgramManager = () => {
     <div className="p-4 flex gap-3">
       <div className="flex-1 flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
-          <ProgramSelector programs={programs} selectedProgramId={selectedProgramId} onSelect={setSelectedProgramId} />
+          <ProgramSelector programs={programs} selectedProgramId={selectedProgramId} onSelect={(programId) => {
+            setSelectedProgramId(programId);
+            router.push(`/programs/${programId}`);
+          }} />
           {canEdit && (
             <button type="button" onClick={handleOpenCreateModal} className="text-sm px-3 py-1">
               Create

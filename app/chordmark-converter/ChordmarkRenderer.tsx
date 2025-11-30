@@ -232,7 +232,7 @@ const addBracketMetaClasses = (html: string, parsedSong: ReturnType<typeof parse
   return doc.body.innerHTML;
 };
 
-export const useChordmarkRenderer = (parsedSong: ReturnType<typeof parseSong> | null, content: string) => {
+export const useChordmarkRenderer = (parsedSong: ReturnType<typeof parseSong> | null) => {
   const songForRendering = useMemo(() => {
     if (!parsedSong) return null;
     return prepareSongForRendering(parsedSong);
@@ -245,14 +245,9 @@ export const useChordmarkRenderer = (parsedSong: ReturnType<typeof parseSong> | 
 
   const chordLineIndices = useMemo(() => buildChordLineIndices(parsedSong), [parsedSong]);
 
-  const slides = useMemo(() => {
-    if (!songForRendering || !content || !content.trim()) return [];
-    return generateSlidesFromChordmark(content, { linesPerSlide: 8 });
-  }, [songForRendering, content]);
-
   return useMemo(() => {
     if (!songForRendering) {
-      return { htmlFull: '', htmlChordsOnly: '', htmlLyricsOnly: '', slides: [], renderError: null };
+      return { htmlFull: '', htmlChordsOnly: '', htmlLyricsOnly: '', renderError: null };
     }
 
     try {
@@ -272,12 +267,12 @@ export const useChordmarkRenderer = (parsedSong: ReturnType<typeof parseSong> | 
       htmlChordsOnly = addBracketMetaClasses(htmlChordsOnly, songForChordsWithMeta || parsedSong);
       htmlLyricsOnly = addBracketMetaClasses(htmlLyricsOnly, parsedSong);
 
-      return { htmlFull, htmlChordsOnly, htmlLyricsOnly, slides, renderError: null };
+      return { htmlFull, htmlChordsOnly, htmlLyricsOnly, renderError: null };
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'An error occurred during rendering';
-      return { htmlFull: '', htmlChordsOnly: '', htmlLyricsOnly: '', slides: [], renderError: errorMsg };
+      return { htmlFull: '', htmlChordsOnly: '', htmlLyricsOnly: '', renderError: errorMsg };
     }
-  }, [songForRendering, songForChordsWithMeta, chordLineIndices, parsedSong, slides]);
+  }, [songForRendering, songForChordsWithMeta, chordLineIndices, parsedSong]);
 };
 
 const ChordmarkTabs = ({mode, onModeChange}: {mode: ChordmarkViewMode, onModeChange: (mode: ChordmarkViewMode) => void}) => {
@@ -311,16 +306,45 @@ const ChordmarkRenderer = ({
   activeLineIndex = null,
   initialBpm = 90,
   print = false,
+  renderedContent = null,
 }: {
   content: string;
   defaultMode?: ChordmarkViewMode;
   activeLineIndex?: number | null;
   initialBpm?: number;
   print?: boolean;
+  renderedContent?: {htmlFull?: string; htmlChordsOnly?: string; htmlLyricsOnly?: string; slides?: string; [key: string]: string | undefined} | null;
 }) => {
   const [mode, setMode] = useState<ChordmarkViewMode>(defaultMode);
+  
+  // Always parse for the player, but only render if we don't have cached content
   const parsedSong = useChordmarkParser(content);
-  const renderedOutputs = useChordmarkRenderer(parsedSong.song, content);
+  const renderedOutputs = useChordmarkRenderer(renderedContent ? null : parsedSong.song);
+  
+  // Always generate slides client-side (they're cheap and can't be generated server-side easily)
+  const slides = useMemo(() => {
+    if (!content || !content.trim()) return [];
+    return generateSlidesFromChordmark(content, { linesPerSlide: 8 });
+  }, [content]);
+  
+  // Use cached content if available
+  const finalOutputs = useMemo(() => {
+    if (renderedContent) {
+      console.log('[ChordmarkRenderer] Using cached rendered content');
+      return {
+        htmlFull: renderedContent.htmlFull || '',
+        htmlChordsOnly: renderedContent.htmlChordsOnly || '',
+        htmlLyricsOnly: renderedContent.htmlLyricsOnly || '',
+        slides,
+        renderError: null,
+      };
+    }
+    return {
+      ...renderedOutputs,
+      slides,
+    };
+  }, [renderedContent, renderedOutputs, slides]);
+  
   const [currentLineIndex, setCurrentLineIndex] = useState<number | null>(null);
   const [bpm, setBpm] = useState<number>(initialBpm);
   const [playerStartLine, setPlayerStartLine] = useState(0);
@@ -328,7 +352,7 @@ const ChordmarkRenderer = ({
 
   const contentRef = useRef<HTMLDivElement>(null);
 
-  const error = parsedSong.error || renderedOutputs.renderError;
+  const error = parsedSong.error || finalOutputs.renderError;
 
   const handlePlayFromLine = (lineIndex: number) => {
     setPlayerStartLine(lineIndex);
@@ -350,23 +374,23 @@ const ChordmarkRenderer = ({
 
     // Slides view: display slides as they would appear in a presentation (same as ProgramSlidesView)
     if (mode === 'slides') {
-      return <SlideDisplay slides={renderedOutputs.slides} />;
+      return <SlideDisplay slides={finalOutputs.slides} />;
     }
 
     // Side-by-side view: chords on left, lyrics on right
     if (mode === 'one-line') {
-      if (!renderedOutputs.htmlChordsOnly && !renderedOutputs.htmlLyricsOnly) {
+      if (!finalOutputs.htmlChordsOnly && !finalOutputs.htmlLyricsOnly) {
         return <pre className="text-xs font-mono whitespace-pre-wrap">{content}</pre>;
       }
       return (
         <div className="flex gap-4">
           <div className="flex-0 min-w-0">
             {/* <div className=" mb-1">Chords</div> */}
-            <div className="styled-chords text-xs font-mono" dangerouslySetInnerHTML={{ __html: renderedOutputs.htmlChordsOnly }} />
+            <div className="styled-chords text-xs font-mono" dangerouslySetInnerHTML={{ __html: finalOutputs.htmlChordsOnly }} />
           </div>
           <div className="flex-1 min-w-0">
             {/* <div className="mb-1">Lyrics</div> */}
-            <div className="styled-chordmark font-mono text-xs" dangerouslySetInnerHTML={{ __html: renderedOutputs.htmlLyricsOnly }} />
+            <div className="styled-chordmark font-mono text-xs" dangerouslySetInnerHTML={{ __html: finalOutputs.htmlLyricsOnly }} />
           </div>
         </div>
       );
@@ -374,11 +398,11 @@ const ChordmarkRenderer = ({
 
     let html = '';
     if (mode === 'lyrics+chords') {
-      html = renderedOutputs.htmlFull;
+      html = finalOutputs.htmlFull;
     } else if (mode === 'lyrics') {
-      html = renderedOutputs.htmlLyricsOnly;
+      html = finalOutputs.htmlLyricsOnly;
     } else if (mode === 'chords') {
-      html = renderedOutputs.htmlChordsOnly;
+      html = finalOutputs.htmlChordsOnly;
     }
 
     if (!html) {

@@ -1,14 +1,15 @@
 import { NextResponse } from 'next/server';
 import { updateVersionRenderedContent } from '@/lib/songsRepository';
+import type { RenderedContent } from '@/lib/songsRepository';
 
 export async function PATCH(_: Request, context: { params: Promise<{ id: string }> }) {
   try {
     const params = await context.params;
     const body = await _.json();
-    const { renderedContent } = body;
+    const { renderedContent } = body as { renderedContent: RenderedContent };
     
-    if (!renderedContent) {
-      return NextResponse.json({ error: 'renderedContent is required' }, { status: 400 });
+    if (!renderedContent || typeof renderedContent !== 'object') {
+      return NextResponse.json({ error: 'renderedContent is required and must be an object' }, { status: 400 });
     }
     
     const updatedVersion = await updateVersionRenderedContent(params.id, renderedContent);

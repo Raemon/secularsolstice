@@ -1,6 +1,17 @@
 import groupBy from 'lodash/groupBy';
 import sql from './db';
 
+export type RenderedContent = {
+  htmlFull?: string;
+  htmlChordsOnly?: string;
+  htmlLyricsOnly?: string;
+  htmlChordsFirstLyricLine?: string;
+  plainText?: string;
+  slides?: string;
+  legacy?: string;
+  [key: string]: string | undefined;
+};
+
 export type SongRecord = {
   id: string;
   title: string;
@@ -18,7 +29,7 @@ export type SongVersionRecord = {
   previousVersionId: string | null;
   nextVersionId: string | null;
   originalVersionId: string | null;
-  renderedContent: string | null;
+  renderedContent: RenderedContent | null;
   bpm: number | null;
   archived: boolean;
   createdBy: string | null;
@@ -43,7 +54,7 @@ type SongVersionQueryRow = {
   previous_version_id: string | null;
   next_version_id: string | null;
   original_version_id: string | null;
-  rendered_content: string | null;
+  rendered_content: RenderedContent | null;
   bpm: number | null;
   archived: boolean | null;
   version_created_by: string | null;
@@ -67,7 +78,7 @@ type SongVersionResult = {
   previousVersionId: string | null;
   nextVersionId: string | null;
   originalVersionId: string | null;
-  renderedContent: string | null;
+  renderedContent: RenderedContent | null;
   bpm: number | null;
   archived: boolean;
   createdBy: string | null;
@@ -335,10 +346,10 @@ export const createVersionWithLineage = async (params: { songId: string; label: 
   return newVersion;
 };
 
-export const updateVersionRenderedContent = async (versionId: string, renderedContent: string): Promise<SongVersionRecord> => {
+export const updateVersionRenderedContent = async (versionId: string, renderedContent: RenderedContent): Promise<SongVersionRecord> => {
   const rows = await sql`
     update song_versions
-    set rendered_content = ${renderedContent}
+    set rendered_content = ${JSON.stringify(renderedContent)}::jsonb
     where id = ${versionId}
     returning id, song_id as "songId", label, content, audio_url as "audioUrl", bpm, previous_version_id as "previousVersionId", next_version_id as "nextVersionId", original_version_id as "originalVersionId", rendered_content as "renderedContent", archived, created_by as "createdBy", created_at as "createdAt"
   `;

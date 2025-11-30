@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useChordmarkParser, useChordmarkRenderer, CHORDMARK_STYLES } from './ChordmarkRenderer';
 import ChordmarkPlayer from './ChordmarkPlayer';
 import ChordButtons from '../chord-player/ChordButtons';
 import { useLineHighlighting } from './useLineHighlighting';
 import Link from 'next/link';
 import SlideDisplay from '../../src/components/slides/SlideDisplay';
+import { generateSlidesFromChordmark } from '../../src/components/slides/slideGenerators';
 
 interface ChordmarkEditorProps {
   value: string;
@@ -71,7 +72,13 @@ const ChordmarkEditor = ({ value, onChange, showSyntaxHelp = false, bpm, autosav
   }, [value]);
 
   const parsedSong = useChordmarkParser(debouncedValue);
-  const renderedOutputs = useChordmarkRenderer(parsedSong.song, debouncedValue);
+  const renderedOutputs = useChordmarkRenderer(parsedSong.song);
+  
+  // Generate slides separately (client-side only)
+  const slides = useMemo(() => {
+    if (!debouncedValue || !debouncedValue.trim()) return [];
+    return generateSlidesFromChordmark(debouncedValue, { linesPerSlide: 8 });
+  }, [debouncedValue]);
 
   useEffect(() => {
     setError(parsedSong.error || renderedOutputs.renderError);
@@ -263,7 +270,7 @@ const ChordmarkEditor = ({ value, onChange, showSyntaxHelp = false, bpm, autosav
           </div>
           <div ref={previewRef} className="flex-1 p-2 border overflow-auto text-xs font-mono">
             {previewMode === 'slides' ? (
-              <SlideDisplay slides={renderedOutputs.slides} />
+              <SlideDisplay slides={slides} />
             ) : previewMode === 'side-by-side' ? (
               renderedOutputs.htmlChordsOnly || renderedOutputs.htmlLyricsOnly ? (
                 <div className="flex gap-4 h-full">

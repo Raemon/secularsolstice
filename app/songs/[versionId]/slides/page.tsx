@@ -53,7 +53,8 @@ const SongSlidesPage = () => {
           if (version.content) {
             contentToProcess = convertToLyricsOnly(version.content, version.label);
           } else if (version.renderedContent) {
-            contentToProcess = version.renderedContent;
+            // Use htmlLyricsOnly or htmlFull from the rendered content object
+            contentToProcess = version.renderedContent.htmlLyricsOnly || version.renderedContent.htmlFull || version.renderedContent.legacy || '';
           }
           
           if (contentToProcess) {

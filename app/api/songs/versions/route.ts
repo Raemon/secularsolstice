@@ -1,5 +1,27 @@
 import { NextResponse } from 'next/server';
-import { createVersionWithLineage } from '@/lib/songsRepository';
+import { createVersionWithLineage, updateVersionRenderedContent, SongVersionRecord } from '@/lib/songsRepository';
+import { detectFileType } from '@/lib/lyricsExtractor';
+import { generateAllChordmarkRenderTypes } from '@/lib/chordmarkRenderer';
+
+async function handleChordmarkRendering(version: SongVersionRecord, label: string, content: string | null): Promise<SongVersionRecord> {
+  if (!content) return version;
+  
+  const fileType = detectFileType(label, content);
+  if (fileType === 'chordmark') {
+    try {
+      const renderedContent = generateAllChordmarkRenderTypes(content);
+      if (Object.keys(renderedContent).length > 0) {
+        await updateVersionRenderedContent(version.id, renderedContent);
+        // Refresh the version to get the updated rendered content
+        return { ...version, renderedContent };
+      }
+    } catch (renderError) {
+      // Log the error but don't fail the version creation
+      console.error('Failed to generate rendered content:', renderError);
+    }
+  }
+  return version;
+}
 
 export async function POST(request: Request) {
   try {
@@ -24,7 +46,10 @@ export async function POST(request: Request) {
       createdBy: createdBy.trim(),
     });
 
-    return NextResponse.json({ version: newVersion });
+    // If this is a chordmark file, automatically generate rendered content
+    const versionWithRendering = await handleChordmarkRendering(newVersion, label, content ?? null);
+
+    return NextResponse.json({ version: versionWithRendering });
   } catch (error) {
     console.error('Failed to create version:', error);
     const errorMessage = error instanceof Error ? error.message : String(error);
