@@ -24,9 +24,9 @@ async function handleChordmarkRendering(version: SongVersionRecord, label: strin
   return version;
 }
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const { label, content, audioUrl, bpm, previousVersionId, nextVersionId } = body;
     

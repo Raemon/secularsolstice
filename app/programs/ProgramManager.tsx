@@ -57,7 +57,7 @@ const ProgramManager = ({ initialProgramId, initialVersionId }: ProgramManagerPr
   const [previousVersions, setPreviousVersions] = useState<SongVersion[]>([]);
   const [isExpandedPreviousVersions, setIsExpandedPreviousVersions] = useState(false);
   const [isCreatingVersion, setIsCreatingVersion] = useState(false);
-  const [newVersionForm, setNewVersionForm] = useState({label: '', content: '', audioUrl: '', bpm: 100});
+  const [newVersionForm, setNewVersionForm] = useState({label: '', content: '', audioUrl: '', bpm: 100, previousVersionId: '', nextVersionId: ''});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
   const [versionError, setVersionError] = useState<string | null>(null);
@@ -501,14 +501,14 @@ const ProgramManager = ({ initialProgramId, initialVersionId }: ProgramManagerPr
 
   const handleCreateVersionClick = () => {
     if (selectedVersion) {
-      setNewVersionForm({label: selectedVersion.label || '', content: selectedVersion.content || '', audioUrl: selectedVersion.audioUrl || '', bpm: selectedVersion.bpm || 100});
+      setNewVersionForm({label: selectedVersion.label || '', content: selectedVersion.content || '', audioUrl: selectedVersion.audioUrl || '', bpm: selectedVersion.bpm || 100, previousVersionId: '', nextVersionId: ''});
       setIsCreatingVersion(true);
     }
   };
 
   const handleCancelCreateVersion = () => {
     setIsCreatingVersion(false);
-    setNewVersionForm({label: '', content: '', audioUrl: '', bpm: 100});
+    setNewVersionForm({label: '', content: '', audioUrl: '', bpm: 100, previousVersionId: '', nextVersionId: ''});
     setVersionError(null);
   };
 
@@ -530,7 +530,7 @@ const ProgramManager = ({ initialProgramId, initialVersionId }: ProgramManagerPr
     };
     setSelectedVersion(dummyVersion);
     setPreviousVersions([]);
-    setNewVersionForm({label: '', content: '', audioUrl: '', bpm: 100});
+    setNewVersionForm({label: '', content: '', audioUrl: '', bpm: 100, previousVersionId: '', nextVersionId: ''});
     setIsCreatingVersion(true);
     setSearchTerm('');
   };
@@ -562,7 +562,7 @@ const ProgramManager = ({ initialProgramId, initialVersionId }: ProgramManagerPr
         nextVersionId: data.version.nextVersionId || null
       }]);
       setIsCreatingVersion(false);
-      setNewVersionForm({label: '', content: '', audioUrl: '', bpm: 100});
+      setNewVersionForm({label: '', content: '', audioUrl: '', bpm: 100, previousVersionId: '', nextVersionId: ''});
       await handleElementClick(data.version.id);
     } catch (err) {
       setVersionError(err instanceof Error ? err.message : 'Failed to create version');
