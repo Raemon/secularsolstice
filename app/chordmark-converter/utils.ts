@@ -107,24 +107,6 @@ export const serializeToChordmark = (parsed: ParsedSong): string => {
   return lines.join('\n');
 };
 
-export const removeRepeatBarIndicators = (song: ParsedSong | null): ParsedSong | null => {
-  if (!song?.allLines) {
-    return song;
-  }
-  song.allLines.forEach((line) => {
-    if (!isChordLine(line)) {
-      return;
-    }
-    const bars = line.model?.allBars || line.allBars || [];
-    bars.forEach((bar) => {
-      if (bar.isRepeated) {
-        bar.isRepeated = false;
-      }
-    });
-  });
-  return song;
-};
-
 const normalizeChordLine = (line: string): string => {
   return line
     .replace(/G_B/g, 'G/B')
@@ -341,7 +323,7 @@ const flagChordAlignment = (lines: SongLine[]) => {
       return;
     }
     const nextLine = lines[index + 1];
-    if (nextLine && isLyricLine(nextLine) && hasLyricPositions(nextLine)) {
+    if (isLyricLine(nextLine) && hasLyricPositions(nextLine)) {
       line.model.hasPositionedChords = true;
       markChordPositions(line, nextLine);
     } else {
@@ -380,30 +362,6 @@ export const prepareSongForRendering = (song: ParsedSong): ParsedSong => {
   });
   clonedSong.allLines = filteredLines;
   flagChordAlignment(clonedSong.allLines);
-  return clonedSong;
-};
-
-const isBracketedMetaLine = (line: SongLine): boolean => {
-  if (!isLyricLine(line)) return false;
-  const lyrics = line.lyrics || line.model?.lyrics || '';
-  const trimmed = lyrics.trim();
-  return trimmed.startsWith('[') && trimmed.endsWith(']');
-};
-
-export const prepareSongForChordsWithMeta = (song: ParsedSong): ParsedSong => {
-  if (!song?.allLines?.length) {
-    return song;
-  }
-  const clonedSong = cloneSong(song);
-  const filteredLines = clonedSong.allLines.filter((line) => {
-    if (line.type === lineTypes.CHORD) return true;
-    if (line.type === lineTypes.SECTION_LABEL) return true;
-    if (line.type === lineTypes.TIME_SIGNATURE) return true;
-    if (line.type === lineTypes.EMPTY_LINE) return true;
-    if (isBracketedMetaLine(line)) return true;
-    return false;
-  });
-  clonedSong.allLines = filteredLines;
   return clonedSong;
 };
 
