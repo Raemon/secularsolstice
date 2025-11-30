@@ -18,24 +18,24 @@ export const extractTextFromHTML = (html: string): string => {
   return textContent.trim();
 };
 
-const isSectionLabelLine = (line: SongLine): line is SectionLabelLine => {
-  return line.type === lineTypes.SECTION_LABEL;
+const isSectionLabelLine = (line: SongLine | undefined): line is SectionLabelLine => {
+  return !!line && line.type === lineTypes.SECTION_LABEL;
 };
 
-const isTimeSignatureLine = (line: SongLine): line is TimeSignatureLine => {
-  return line.type === lineTypes.TIME_SIGNATURE;
+const isTimeSignatureLine = (line: SongLine | undefined): line is TimeSignatureLine => {
+  return !!line && line.type === lineTypes.TIME_SIGNATURE;
 };
 
-const isKeyDeclarationLine = (line: SongLine): line is KeyDeclarationLine => {
-  return line.type === lineTypes.KEY_DECLARATION;
+const isKeyDeclarationLine = (line: SongLine | undefined): line is KeyDeclarationLine => {
+  return !!line && line.type === lineTypes.KEY_DECLARATION;
 };
 
-const isChordLine = (line: SongLine): line is ChordLine => {
-  return line.type === lineTypes.CHORD;
+const isChordLine = (line: SongLine | undefined): line is ChordLine => {
+  return !!line && line.type === lineTypes.CHORD;
 };
 
-const isLyricLine = (line: SongLine): line is LyricLine => {
-  return line.type === lineTypes.LYRIC;
+const isLyricLine = (line: SongLine | undefined): line is LyricLine => {
+  return !!line && line.type === lineTypes.LYRIC;
 };
 
 export const serializeToChordmark = (parsed: ParsedSong): string => {

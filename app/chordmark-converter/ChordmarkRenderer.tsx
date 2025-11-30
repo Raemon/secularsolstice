@@ -5,8 +5,10 @@ import { parseSong, renderSong } from 'chord-mark';
 import { extractTextFromHTML, convertCustomFormatToChordmark, prepareSongForRendering, prepareSongForChordsWithMeta, removeRepeatBarIndicators, isBracketedMetaLine } from './utils';
 import ChordmarkPlayer from './ChordmarkPlayer';
 import { useLineHighlighting } from './useLineHighlighting';
+import { generateSlidesFromChordmark } from '../../src/components/slides/slideGenerators';
+import SlideDisplay from '../../src/components/slides/SlideDisplay';
 
-export type ChordmarkViewMode = 'lyrics+chords' | 'lyrics' | 'chords' | 'one-line' | 'raw';
+export type ChordmarkViewMode = 'lyrics+chords' | 'lyrics' | 'chords' | 'one-line' | 'slides' | 'raw';
 
 export const CHORDMARK_STYLES = `
   .styled-chords .cmSong {
@@ -230,7 +232,7 @@ const addBracketMetaClasses = (html: string, parsedSong: ReturnType<typeof parse
   return doc.body.innerHTML;
 };
 
-export const useChordmarkRenderer = (parsedSong: ReturnType<typeof parseSong> | null) => {
+export const useChordmarkRenderer = (parsedSong: ReturnType<typeof parseSong> | null, content: string) => {
   const songForRendering = useMemo(() => {
     if (!parsedSong) return null;
     return prepareSongForRendering(parsedSong);
@@ -243,9 +245,14 @@ export const useChordmarkRenderer = (parsedSong: ReturnType<typeof parseSong> | 
 
   const chordLineIndices = useMemo(() => buildChordLineIndices(parsedSong), [parsedSong]);
 
+  const slides = useMemo(() => {
+    if (!songForRendering || !content || !content.trim()) return [];
+    return generateSlidesFromChordmark(content, { linesPerSlide: 8 });
+  }, [songForRendering, content]);
+
   return useMemo(() => {
     if (!songForRendering) {
-      return { htmlFull: '', htmlChordsOnly: '', htmlLyricsOnly: '', renderError: null };
+      return { htmlFull: '', htmlChordsOnly: '', htmlLyricsOnly: '', slides: [], renderError: null };
     }
 
     try {
@@ -265,12 +272,12 @@ export const useChordmarkRenderer = (parsedSong: ReturnType<typeof parseSong> | 
       htmlChordsOnly = addBracketMetaClasses(htmlChordsOnly, songForChordsWithMeta || parsedSong);
       htmlLyricsOnly = addBracketMetaClasses(htmlLyricsOnly, parsedSong);
 
-      return { htmlFull, htmlChordsOnly, htmlLyricsOnly, renderError: null };
+      return { htmlFull, htmlChordsOnly, htmlLyricsOnly, slides, renderError: null };
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'An error occurred during rendering';
-      return { htmlFull: '', htmlChordsOnly: '', htmlLyricsOnly: '', renderError: errorMsg };
+      return { htmlFull: '', htmlChordsOnly: '', htmlLyricsOnly: '', slides: [], renderError: errorMsg };
     }
-  }, [songForRendering, songForChordsWithMeta, chordLineIndices, parsedSong]);
+  }, [songForRendering, songForChordsWithMeta, chordLineIndices, parsedSong, slides]);
 };
 
 const ChordmarkTabs = ({mode, onModeChange}: {mode: ChordmarkViewMode, onModeChange: (mode: ChordmarkViewMode) => void}) => {
@@ -279,6 +286,7 @@ const ChordmarkTabs = ({mode, onModeChange}: {mode: ChordmarkViewMode, onModeCha
     { id: 'lyrics', label: 'Lyrics' },
     { id: 'chords', label: 'Chords' },
     { id: 'one-line', label: 'Side-by-Side' },
+    { id: 'slides', label: 'Slides' },
     { id: 'raw', label: 'Raw' },
   ];
 
@@ -300,21 +308,19 @@ const ChordmarkTabs = ({mode, onModeChange}: {mode: ChordmarkViewMode, onModeCha
 const ChordmarkRenderer = ({
   content,
   defaultMode = 'one-line',
-  showTabs = true,
   activeLineIndex = null,
   initialBpm = 90,
   print = false,
 }: {
   content: string;
   defaultMode?: ChordmarkViewMode;
-  showTabs?: boolean;
   activeLineIndex?: number | null;
   initialBpm?: number;
   print?: boolean;
 }) => {
   const [mode, setMode] = useState<ChordmarkViewMode>(defaultMode);
   const parsedSong = useChordmarkParser(content);
-  const renderedOutputs = useChordmarkRenderer(parsedSong.song);
+  const renderedOutputs = useChordmarkRenderer(parsedSong.song, content);
   const [currentLineIndex, setCurrentLineIndex] = useState<number | null>(null);
   const [bpm, setBpm] = useState<number>(initialBpm);
   const [playerStartLine, setPlayerStartLine] = useState(0);
@@ -340,6 +346,11 @@ const ChordmarkRenderer = ({
     
     if (mode === 'raw') {
       return <pre className="text-xs font-mono whitespace-pre-wrap">{content}</pre>;
+    }
+
+    // Slides view: display slides as they would appear in a presentation (same as ProgramSlidesView)
+    if (mode === 'slides') {
+      return <SlideDisplay slides={renderedOutputs.slides} />;
     }
 
     // Side-by-side view: chords on left, lyrics on right

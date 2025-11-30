@@ -9,7 +9,7 @@ import ProgramSlidesView from './components/ProgramSlidesView';
 import VersionDetailPanel from '../songs/VersionDetailPanel';
 import type { SongVersion } from '../songs/types';
 import { useUser } from '../contexts/UserContext';
-import { parseHTMLContent, groupIntoSlides } from '../../src/components/slides/utils';
+import { generateSlidesFromHtml } from '../../src/components/slides/slideGenerators';
 import type { Slide } from '../../src/components/slides/types';
 import { extractLyrics } from '../../lib/lyricsExtractor';
 
@@ -200,8 +200,7 @@ const ProgramManager = () => {
           }
           
           if (contentToProcess) {
-            const lines = parseHTMLContent(contentToProcess);
-            slides = groupIntoSlides(lines, linesPerSlide);
+            slides = generateSlidesFromHtml(contentToProcess, { linesPerSlide });
             
             const titleSlide: Slide = [{ text: version.songTitle, isHeading: true, level: 1 }];
             slides.unshift(titleSlide);

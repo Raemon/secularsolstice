@@ -2,34 +2,17 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { parseHTMLContent, groupIntoSlides } from '../../../../src/components/slides/utils';
+import { generateSlidesFromHtml } from '../../../../src/components/slides/slideGenerators';
 import type { Slide } from '../../../../src/components/slides/types';
 import { extractLyrics } from '../../../../lib/lyricsExtractor';
 import type { SongVersion } from '../../../songs/types';
+import FullScreenSlideItem from '../../../../src/components/slides/FullScreenSlideItem';
 
 type SongSlideData = {
   versionId: string;
   songTitle: string;
   versionLabel: string;
   slides: Slide[];
-};
-
-const SlideItem = ({slide, slideIndex}:{slide: Slide, slideIndex: number}) => {
-  return (
-    <div className="bg-black p-8 text-white text-2xl min-h-screen flex items-center justify-center">
-      <div className="space-y-2 max-w-4xl w-full">
-        {slide.map((line, lineIndex) => {
-          if (line.isImage) {
-            return <img key={lineIndex} src={line.src} alt="" className="max-w-full h-auto" />;
-          }
-          if (line.isHeading) {
-            return <div key={lineIndex} className="font-bold text-4xl text-center">{line.text}</div>;
-          }
-          return <div key={lineIndex} className="text-center">{line.text}</div>;
-        })}
-      </div>
-    </div>
-  );
 };
 
 const SongSlidesPage = () => {
@@ -50,30 +33,19 @@ const SongSlidesPage = () => {
         const data = await response.json();
         const version: SongVersion = data.version;
         
-        const convertToLyricsOnly = (content: string, label: string): string => {
-          try {
-            const lyrics = extractLyrics(content, label);
-            return `<div>${lyrics.split('\n').map(line => `<p>${line || '&nbsp;'}</p>`).join('')}</div>`;
-          } catch (err) {
-            console.error('Failed to extract lyrics:', err);
-            return content;
-          }
-        };
-        
         let slides: Slide[] = [];
-        const linesPerSlide = 8;
         
-        let contentToProcess = '';
+        // Generate slides from content
         if (version.content) {
-          contentToProcess = convertToLyricsOnly(version.content, version.label);
+          const lyrics = extractLyrics(version.content, version.label);
+          const htmlContent = `<div>${lyrics.split('\n').map(line => `<p>${line || '&nbsp;'}</p>`).join('')}</div>`;
+          slides = generateSlidesFromHtml(htmlContent, { linesPerSlide: 8 });
         } else if (version.renderedContent) {
-          contentToProcess = version.renderedContent;
+          slides = generateSlidesFromHtml(version.renderedContent, { linesPerSlide: 8 });
         }
         
-        if (contentToProcess) {
-          const lines = parseHTMLContent(contentToProcess);
-          slides = groupIntoSlides(lines, linesPerSlide);
-          
+        // Add title slide at the beginning
+        if (slides.length > 0) {
           const titleSlide: Slide = [{ text: data.songTitle || 'Song', isHeading: true, level: 1 }];
           slides.unshift(titleSlide);
         }
@@ -126,7 +98,7 @@ const SongSlidesPage = () => {
 
   return (
     <div className="relative">
-      <SlideItem slide={slideData.slides[currentSlide]} slideIndex={currentSlide} />
+      <FullScreenSlideItem slide={slideData.slides[currentSlide]} />
       <div className="fixed bottom-4 right-4 text-white text-sm bg-black bg-opacity-50 px-3 py-1 rounded">
         {currentSlide + 1} / {slideData.slides.length}
       </div>

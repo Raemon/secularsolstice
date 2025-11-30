@@ -6,6 +6,7 @@ import ChordmarkPlayer from './ChordmarkPlayer';
 import ChordButtons from '../chord-player/ChordButtons';
 import { useLineHighlighting } from './useLineHighlighting';
 import Link from 'next/link';
+import SlideDisplay from '../../src/components/slides/SlideDisplay';
 
 interface ChordmarkEditorProps {
   value: string;
@@ -16,7 +17,7 @@ interface ChordmarkEditorProps {
   versionCreatedAt?: string;
 }
 
-type PreviewMode = 'full' | 'chords' | 'lyrics' | 'side-by-side';
+type PreviewMode = 'full' | 'chords' | 'lyrics' | 'side-by-side' | 'slides';
 
 type AutosaveSnapshot = {
   value: string;
@@ -70,7 +71,7 @@ const ChordmarkEditor = ({ value, onChange, showSyntaxHelp = false, bpm, autosav
   }, [value]);
 
   const parsedSong = useChordmarkParser(debouncedValue);
-  const renderedOutputs = useChordmarkRenderer(parsedSong.song);
+  const renderedOutputs = useChordmarkRenderer(parsedSong.song, debouncedValue);
 
   useEffect(() => {
     setError(parsedSong.error || renderedOutputs.renderError);
@@ -252,10 +253,18 @@ const ChordmarkEditor = ({ value, onChange, showSyntaxHelp = false, bpm, autosav
               >
                 Lyrics
               </button>
+              <button
+                onClick={() => setPreviewMode('slides')}
+                className={`px-2 py-0.5 text-xs ${previewMode === 'slides' ? 'bg-blue-600 text-white' : 'bg-gray-800'}`}
+              >
+                Slides
+              </button>
             </div>
           </div>
           <div ref={previewRef} className="flex-1 p-2 border overflow-auto text-xs font-mono">
-            {previewMode === 'side-by-side' ? (
+            {previewMode === 'slides' ? (
+              <SlideDisplay slides={renderedOutputs.slides} />
+            ) : previewMode === 'side-by-side' ? (
               renderedOutputs.htmlChordsOnly || renderedOutputs.htmlLyricsOnly ? (
                 <div className="flex gap-4 h-full">
                   <div className="flex-0 min-w-0">

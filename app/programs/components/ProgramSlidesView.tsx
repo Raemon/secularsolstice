@@ -1,31 +1,13 @@
 'use client';
 
-import type { Slide, ParsedLine } from '../../../src/components/slides/types';
+import type { Slide } from '../../../src/components/slides/types';
+import SlideItem from '../../../src/components/slides/SlideItem';
 
 type SongSlideData = {
   versionId: string;
   songTitle: string;
   versionLabel: string;
   slides: Slide[];
-};
-
-const SlideItem = ({slide, slideIndex, songIndex}:{slide: Slide, slideIndex: number, songIndex: number}) => {
-  return (
-    <div className="bg-black p-2 text-sm">
-      <div className="text-xs text-gray-500 mb-1">Song {songIndex + 1} - Slide {slideIndex + 1}</div>
-      <div className="space-y-1">
-        {slide.map((line: ParsedLine, lineIndex: number) => {
-          if (line.isImage) {
-            return <img key={lineIndex} src={line.src} alt="" className="max-w-full h-auto" />;
-          }
-          if (line.isHeading) {
-            return <div key={lineIndex} className="font-bold">{line.text}</div>;
-          }
-          return <div key={lineIndex}>{line.text}</div>;
-        })}
-      </div>
-    </div>
-  );
 };
 
 const ProgramSlidesView = ({slides}:{slides: SongSlideData[]}) => {
@@ -48,7 +30,11 @@ const ProgramSlidesView = ({slides}:{slides: SongSlideData[]}) => {
           ) : (
             <div className="space-y-2">
               {songData.slides.map((slide, slideIndex) => (
-                <SlideItem key={slideIndex} slide={slide} slideIndex={slideIndex} songIndex={songIndex} />
+                <SlideItem 
+                  key={slideIndex} 
+                  slide={slide} 
+                  slideLabel={`Song ${songIndex + 1} - Slide ${slideIndex + 1}`}
+                />
               ))}
             </div>
           )}
