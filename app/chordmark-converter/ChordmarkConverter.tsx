@@ -36,7 +36,7 @@ const ChordmarkConverter = () => {
   }, [inputText]);
 
   const parsedSong = useChordmarkParser(debouncedInputText);
-  const baseOutputs = useChordmarkRenderer(parsedSong.song);
+  const baseOutputs = useChordmarkRenderer(parsedSong.song, debouncedInputText);
 
   const renderedOutputs = {
     ...baseOutputs,

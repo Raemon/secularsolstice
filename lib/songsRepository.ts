@@ -23,6 +23,7 @@ export type SongVersionRecord = {
   archived: boolean;
   createdBy: string | null;
   createdAt: string;
+  songTitle?: string;
 };
 
 export type SongWithVersions = SongRecord & {
@@ -71,6 +72,7 @@ type SongVersionResult = {
   archived: boolean;
   createdBy: string | null;
   createdAt: string;
+  songTitle?: string;
 };
 
 const mapSongRow = (row: SongVersionQueryRow): SongRecord => ({
@@ -248,8 +250,10 @@ export const getVersionById = async (versionId: string): Promise<SongVersionReco
       v.rendered_content as "renderedContent",
       v.archived as "archived",
       v.created_by as "createdBy",
-      v.created_at as "createdAt"
+      v.created_at as "createdAt",
+      s.title as "songTitle"
     from song_versions v
+    join songs s on v.song_id = s.id
     where v.id = ${versionId} and v.archived = false
   `;
   const typedRows = rows as SongVersionResult[];

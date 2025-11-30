@@ -10,7 +10,7 @@ export async function GET(_: Request, context: { params: Promise<{ id: string }>
     }
     
     const previousVersions = await getPreviousVersionsChain(params.id);
-    return NextResponse.json({ version, previousVersions });
+    return NextResponse.json({ version, previousVersions, songTitle: version.songTitle });
   } catch (error) {
     console.error('Failed to load version:', error);
     const errorMessage = error instanceof Error ? error.message : String(error);

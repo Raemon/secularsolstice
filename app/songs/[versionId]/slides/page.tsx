@@ -33,21 +33,38 @@ const SongSlidesPage = () => {
         const data = await response.json();
         const version: SongVersion = data.version;
         
+        const convertToLyricsOnly = (content: string, label: string): string => {
+          try {
+            const lyrics = extractLyrics(content, label);
+            return `<div>${lyrics.split('\n').map(line => `<p>${line || '&nbsp;'}</p>`).join('')}</div>`;
+          } catch (err) {
+            console.error('Failed to extract lyrics:', err);
+            return content;
+          }
+        };
+        
         let slides: Slide[] = [];
+        const linesPerSlide = 8;
         
         // Generate slides from content
-        if (version.content) {
-          const lyrics = extractLyrics(version.content, version.label);
-          const htmlContent = `<div>${lyrics.split('\n').map(line => `<p>${line || '&nbsp;'}</p>`).join('')}</div>`;
-          slides = generateSlidesFromHtml(htmlContent, { linesPerSlide: 8 });
-        } else if (version.renderedContent) {
-          slides = generateSlidesFromHtml(version.renderedContent, { linesPerSlide: 8 });
-        }
-        
-        // Add title slide at the beginning
-        if (slides.length > 0) {
-          const titleSlide: Slide = [{ text: data.songTitle || 'Song', isHeading: true, level: 1 }];
-          slides.unshift(titleSlide);
+        try {
+          let contentToProcess = '';
+          
+          if (version.content) {
+            contentToProcess = convertToLyricsOnly(version.content, version.label);
+          } else if (version.renderedContent) {
+            contentToProcess = version.renderedContent;
+          }
+          
+          if (contentToProcess) {
+            slides = generateSlidesFromHtml(contentToProcess, { linesPerSlide });
+            
+            // Add title slide at the beginning
+            const titleSlide: Slide = [{ text: data.songTitle || 'Song', isHeading: true, level: 1 }];
+            slides.unshift(titleSlide);
+          }
+        } catch (err) {
+          console.error(`Failed to parse content for ${versionId}:`, err);
         }
         
         setSlideData({
