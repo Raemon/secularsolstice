@@ -8,6 +8,7 @@ import { useLineHighlighting } from './useLineHighlighting';
 import Link from 'next/link';
 import SlideDisplay from '../../src/components/slides/SlideDisplay';
 import { generateSlidesFromChordmark } from '../../src/components/slides/slideGenerators';
+import TransposeControls from './TransposeControls';
 
 interface ChordmarkEditorProps {
   value: string;
@@ -33,6 +34,7 @@ const ChordmarkEditor = ({ value, onChange, showSyntaxHelp = false, bpm, autosav
   const [pendingAutosave, setPendingAutosave] = useState<AutosaveSnapshot | null>(null);
   const [playerStartLine, setPlayerStartLine] = useState(0);
   const [shouldAutoPlay, setShouldAutoPlay] = useState(false);
+  const [transposeSteps, setTransposeSteps] = useState(0);
   const previewRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const autosaveStorageKey = `chordmark-editor:${autosaveKey || 'default'}`;
@@ -72,7 +74,7 @@ const ChordmarkEditor = ({ value, onChange, showSyntaxHelp = false, bpm, autosav
   }, [value]);
 
   const parsedSong = useChordmarkParser(debouncedValue);
-  const renderedOutputs = useChordmarkRenderer(parsedSong.song);
+  const renderedOutputs = useChordmarkRenderer(parsedSong.song, transposeSteps);
   
   // Generate slides separately (client-side only)
   const slides = useMemo(() => {
@@ -233,8 +235,9 @@ const ChordmarkEditor = ({ value, onChange, showSyntaxHelp = false, bpm, autosav
         </div>
 
         <div className="flex flex-col flex-1">
-          <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center justify-between mb-1">
             <h3 className="text-sm font-semibold text-gray-400">Preview</h3>
+          <div className="flex items-center gap-2">
             <div className="flex gap-1">
               <button
                 onClick={() => setPreviewMode('full')}
@@ -266,6 +269,8 @@ const ChordmarkEditor = ({ value, onChange, showSyntaxHelp = false, bpm, autosav
               >
                 Slides
               </button>
+            </div>
+            <TransposeControls value={transposeSteps} onChange={setTransposeSteps} />
             </div>
           </div>
           <div ref={previewRef} className="flex-1 p-2 border overflow-auto text-xs font-mono">

@@ -7,6 +7,7 @@ import ChordmarkPlayer from './ChordmarkPlayer';
 import { useLineHighlighting } from './useLineHighlighting';
 import { generateSlidesFromChordmark } from '../../src/components/slides/slideGenerators';
 import SlideDisplay from '../../src/components/slides/SlideDisplay';
+import TransposeControls from './TransposeControls';
 
 export type ChordmarkViewMode = 'lyrics+chords' | 'lyrics' | 'chords' | 'one-line' | 'slides' | 'raw';
 
@@ -232,7 +233,7 @@ const addBracketMetaClasses = (html: string, parsedSong: ReturnType<typeof parse
   return doc.body.innerHTML;
 };
 
-export const useChordmarkRenderer = (parsedSong: ReturnType<typeof parseSong> | null) => {
+export const useChordmarkRenderer = (parsedSong: ReturnType<typeof parseSong> | null, transposeValue: number = 0) => {
   const songForRendering = useMemo(() => {
     if (!parsedSong) return null;
     return prepareSongForRendering(parsedSong);
@@ -251,11 +252,11 @@ export const useChordmarkRenderer = (parsedSong: ReturnType<typeof parseSong> | 
     }
 
     try {
-      let htmlFull = renderSong(songForRendering, { chartType: 'all', accidentalsType: 'auto' });
+      let htmlFull = renderSong(songForRendering, { chartType: 'all', accidentalsType: 'auto', transposeValue });
       let htmlChordsOnly = songForChordsWithMeta 
-        ? renderSong(songForChordsWithMeta, { chartType: 'all', alignChordsWithLyrics: false, accidentalsType: 'auto' })
-        : renderSong(songForRendering, { chartType: 'chords', alignChordsWithLyrics: false, accidentalsType: 'auto' });
-      let htmlLyricsOnly = renderSong(songForRendering, { chartType: 'lyrics', accidentalsType: 'auto' });
+        ? renderSong(songForChordsWithMeta, { chartType: 'all', alignChordsWithLyrics: false, accidentalsType: 'auto', transposeValue })
+        : renderSong(songForRendering, { chartType: 'chords', alignChordsWithLyrics: false, accidentalsType: 'auto', transposeValue });
+      let htmlLyricsOnly = renderSong(songForRendering, { chartType: 'lyrics', accidentalsType: 'auto', transposeValue });
 
       // Add line index attributes for highlighting
       htmlFull = addLineIndexAttributes(htmlFull, chordLineIndices);
@@ -272,7 +273,7 @@ export const useChordmarkRenderer = (parsedSong: ReturnType<typeof parseSong> | 
       const errorMsg = err instanceof Error ? err.message : 'An error occurred during rendering';
       return { htmlFull: '', htmlChordsOnly: '', htmlLyricsOnly: '', renderError: errorMsg };
     }
-  }, [songForRendering, songForChordsWithMeta, chordLineIndices, parsedSong]);
+  }, [songForRendering, songForChordsWithMeta, chordLineIndices, parsedSong, transposeValue]);
 };
 
 const ChordmarkTabs = ({mode, onModeChange}: {mode: ChordmarkViewMode, onModeChange: (mode: ChordmarkViewMode) => void}) => {
@@ -286,7 +287,7 @@ const ChordmarkTabs = ({mode, onModeChange}: {mode: ChordmarkViewMode, onModeCha
   ];
 
   return (
-    <div className="flex gap-1 mb-2">
+    <div className="flex gap-1">
       {tabs.map(tab => (
         <button
           key={tab.id}
@@ -316,10 +317,12 @@ const ChordmarkRenderer = ({
   renderedContent?: {htmlFull?: string; htmlChordsOnly?: string; htmlLyricsOnly?: string; slides?: string; [key: string]: string | undefined} | null;
 }) => {
   const [mode, setMode] = useState<ChordmarkViewMode>(defaultMode);
+  const [transposeSteps, setTransposeSteps] = useState(0);
   
   // Always parse for the player, but only render if we don't have cached content
   const parsedSong = useChordmarkParser(content);
-  const renderedOutputs = useChordmarkRenderer(renderedContent ? null : parsedSong.song);
+  const shouldUseCachedContent = Boolean(renderedContent) && transposeSteps === 0;
+  const renderedOutputs = useChordmarkRenderer(shouldUseCachedContent ? null : parsedSong.song, transposeSteps);
   
   // Always generate slides client-side (they're cheap and can't be generated server-side easily)
   const slides = useMemo(() => {
@@ -329,7 +332,7 @@ const ChordmarkRenderer = ({
   
   // Use cached content if available
   const finalOutputs = useMemo(() => {
-    if (renderedContent) {
+    if (shouldUseCachedContent && renderedContent) {
       console.log('[ChordmarkRenderer] Using cached rendered content');
       return {
         htmlFull: renderedContent.htmlFull || '',
@@ -343,7 +346,7 @@ const ChordmarkRenderer = ({
       ...renderedOutputs,
       slides,
     };
-  }, [renderedContent, renderedOutputs, slides]);
+  }, [renderedContent, renderedOutputs, slides, shouldUseCachedContent]);
   
   const [currentLineIndex, setCurrentLineIndex] = useState<number | null>(null);
   const [bpm, setBpm] = useState<number>(initialBpm);
@@ -433,7 +436,10 @@ const ChordmarkRenderer = ({
       {error && mode !== 'raw' && (
         <div className="mb-2 p-1 bg-red-100 text-red-800 text-xs">{error}</div>
       )}
-      <ChordmarkTabs mode={mode} onModeChange={setMode} />
+      <div className="flex items-center justify-between mb-2">
+        <ChordmarkTabs mode={mode} onModeChange={setMode} />
+        <TransposeControls value={transposeSteps} onChange={setTransposeSteps} />
+      </div>
       <div className="flex relative" style={{ maxWidth: '800px' }}>
         {!print && <div className="flex flex-col bg-gray-900 border-r border-gray-700">
           {content.split('\n').map((_, index) => (
