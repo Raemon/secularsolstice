@@ -1,4 +1,5 @@
 import ChordmarkEditor from '../chordmark-converter/ChordmarkEditor';
+import { detectFileType } from '../../lib/lyricsExtractor';
 
 type CreateVersionFormProps = {
   form: { label: string; content: string; audioUrl: string; bpm: number };
@@ -12,8 +13,8 @@ type CreateVersionFormProps = {
 };
 
 const CreateVersionForm = ({form, onFormChange, onSubmit, onCancel, isSubmitting, error, autosaveKey, versionCreatedAt}: CreateVersionFormProps) => {
-  const label = form.label.toLowerCase();
-  const isChordmarkFile = label.endsWith('.chordmark')
+  const fileType = detectFileType(form.label, form.content);
+  const isChordmarkFile = fileType === 'chordmark';
 
   return (
     <div className="space-y-2">

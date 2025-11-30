@@ -3,6 +3,7 @@ import type { SongVersion } from './types';
 import ChordmarkRenderer from '../chordmark-converter/ChordmarkRenderer';
 import LilypondViewer from './LilypondViewer';
 import { AUDIO_EXTENSIONS } from '../../lib/audioExtensions';
+import { detectFileType } from '../../lib/lyricsExtractor';
 
 const VersionContent = ({version, print}: {
   version: SongVersion;
@@ -11,9 +12,9 @@ const VersionContent = ({version, print}: {
   const hasAudio = Boolean(version.audioUrl);
   const hasContent = Boolean(version.content);
   const isTxtFile = version.label.toLowerCase().endsWith('.txt');
-  const label = version.label.toLowerCase();
-  const isChordmarkFile = label.endsWith('.chordmark')
-  const isLilypondFile = label.endsWith('.ly') || label.endsWith('.lilypond')
+  const fileType = detectFileType(version.label, version.content || '');
+  const isChordmarkFile = fileType === 'chordmark';
+  const isLilypondFile = fileType === 'lilypond';
   const audioUrl = version.audioUrl || '';
   const normalizedAudioUrl = audioUrl.toLowerCase();
   const isAudioFile = normalizedAudioUrl ? AUDIO_EXTENSIONS.some(ext => normalizedAudioUrl.endsWith(ext)) : false;
