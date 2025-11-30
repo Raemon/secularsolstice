@@ -32,7 +32,3 @@ const PreviewPanel = ({ previewItems }: Props) => (
 
 export default PreviewPanel;
 
-
-
-
-
