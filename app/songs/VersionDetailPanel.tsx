@@ -14,7 +14,7 @@ const VersionDetailPanel = ({songTitle, version, previousVersions, isExpandedPre
   previousVersions: SongVersion[];
   isExpandedPreviousVersions: boolean;
   isCreatingVersion: boolean;
-  newVersionForm: { label: string; content: string; audioUrl: string; bpm: number };
+  newVersionForm: { label: string; content: string; audioUrl: string; bpm: number; previousVersionId: string; nextVersionId: string };
   isSubmitting: boolean;
   isArchiving: boolean;
   error: string | null;
@@ -23,7 +23,7 @@ const VersionDetailPanel = ({songTitle, version, previousVersions, isExpandedPre
   onVersionClick: (version: SongVersion) => void;
   onCreateVersionClick: () => void;
   onCancelCreateVersion: () => void;
-  onFormChange: (updates: Partial<{ label: string; content: string; audioUrl: string; bpm: number }>) => void;
+  onFormChange: (updates: Partial<{ label: string; content: string; audioUrl: string; bpm: number; previousVersionId: string; nextVersionId: string }>) => void;
   onSubmitVersion: () => void;
   onArchiveVersion: () => void;
 }) => {

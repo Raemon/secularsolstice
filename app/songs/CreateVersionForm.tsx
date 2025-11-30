@@ -2,8 +2,8 @@ import ChordmarkEditor from '../chordmark-converter/ChordmarkEditor';
 import { detectFileType } from '../../lib/lyricsExtractor';
 
 type CreateVersionFormProps = {
-  form: { label: string; content: string; audioUrl: string; bpm: number };
-  onFormChange: (updates: Partial<{ label: string; content: string; audioUrl: string; bpm: number }>) => void;
+  form: { label: string; content: string; audioUrl: string; bpm: number; previousVersionId: string; nextVersionId: string };
+  onFormChange: (updates: Partial<{ label: string; content: string; audioUrl: string; bpm: number; previousVersionId: string; nextVersionId: string }>) => void;
   onSubmit: () => void;
   onCancel: () => void;
   isSubmitting: boolean;
@@ -68,6 +68,26 @@ const CreateVersionForm = ({form, onFormChange, onSubmit, onCancel, isSubmitting
           placeholder="Audio URL"
         />
       </div>
+      <div>
+        <label className="text-xs text-gray-400">Previous Version ID (optional)</label>
+        <input
+          type="text"
+          value={form.previousVersionId}
+          onChange={(e) => onFormChange({ previousVersionId: e.target.value })}
+          className="w-full px-2 py-1 text-xs border border-gray-300 bg-black"
+          placeholder="Previous Version ID"
+        />
+      </div>
+      <div>
+        <label className="text-xs text-gray-400">Next Version ID (optional)</label>
+        <input
+          type="text"
+          value={form.nextVersionId}
+          onChange={(e) => onFormChange({ nextVersionId: e.target.value })}
+          className="w-full px-2 py-1 text-xs border border-gray-300 bg-black"
+          placeholder="Next Version ID"
+        />
+      </div>
       <div className="flex gap-2">
         <button
           onClick={onSubmit}
@@ -93,4 +113,3 @@ const CreateVersionForm = ({form, onFormChange, onSubmit, onCancel, isSubmitting
 };
 
 export default CreateVersionForm;
-

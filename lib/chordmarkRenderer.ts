@@ -27,7 +27,8 @@ export const generateAllChordmarkRenderTypes = (content: string): RenderedConten
     let parsedSong: ParsedSong | null = null;
     try {
       parsedSong = removeRepeatBarIndicators(parseSong(textToParse));
-    } catch (parseErr) {
+    } catch (error) {
+      console.error('Failed to parse chordmark content:', error);
       // Try custom format conversion
       const customResult = convertCustomFormatToChordmark(textToParse);
       if (customResult !== textToParse) {
