@@ -31,7 +31,7 @@ const ChevronDropdown = ({value, options, onChange, placeholder, footer}: {value
         ▼
       </button>
       {isOpen && (
-        <div className="absolute z-10 mt-1 border border-gray-300 shadow-lg min-w-[200px] top-full left-0">
+        <div className="absolute bg-black z-10 mt-1 border border-gray-300 shadow-lg min-w-[200px] top-full left-0">
           <div className="max-h-[300px] overflow-y-auto">
             {placeholder && (
               <button
@@ -40,7 +40,7 @@ const ChevronDropdown = ({value, options, onChange, placeholder, footer}: {value
                   onChange(null);
                   setIsOpen(false);
                 }}
-                className={`w-full text-left px-2 py-1 text-sm hover:bg-black/80 ${!value ? 'bg-black/80 font-semibold' : ''}`}
+                className={`w-full text-left px-2 py-1 text-sm hover:bg-black/80 ${!value ? 'text-primary font-semibold' : ''}`}
               >
                 {placeholder}
               </button>
@@ -53,7 +53,7 @@ const ChevronDropdown = ({value, options, onChange, placeholder, footer}: {value
                   onChange(option.value);
                   setIsOpen(false);
                 }}
-                className={`w-full text-left px-2 py-1 text-sm hover:bg-black/80 ${option.value === value ? 'bg-black/80 font-semibold' : ''}`}
+                className={`w-full text-left px-2 py-1 text-sm hover:bg-black/80 ${option.value === value ? 'text-primary font-semibold' : ''}`}
               >
                 {option.label}
               </button>

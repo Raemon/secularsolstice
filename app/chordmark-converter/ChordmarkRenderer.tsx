@@ -113,17 +113,19 @@ export const useChordmarkParser = (content: string) => {
       try {
         const parsed = parseSong(textToParse);
         return { song: removeRepeatBarIndicators(parsed), error: null };
-      } catch {
+      } catch (parseErr) {
+        const firstError = parseErr instanceof Error ? parseErr.message : 'Unknown parsing error';
         const customResult = convertCustomFormatToChordmark(textToParse);
         if (customResult !== textToParse) {
           try {
             const parsedCustom = parseSong(customResult);
             return { song: removeRepeatBarIndicators(parsedCustom), error: null };
-          } catch {
-            return { song: null, error: 'Could not parse input as valid chordmark' };
+          } catch (customErr) {
+            const customError = customErr instanceof Error ? customErr.message : 'Unknown parsing error';
+            return { song: null, error: `Could not parse input. Original error: ${firstError}. After format conversion: ${customError}` };
           }
         }
-        return { song: null, error: 'Could not parse input as valid chordmark' };
+        return { song: null, error: `Could not parse input as valid chordmark: ${firstError}` };
       }
     } catch (err) {
       return { song: null, error: err instanceof Error ? err.message : 'An error occurred during parsing' };

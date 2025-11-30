@@ -1,6 +1,7 @@
 'use client';
 
 import ChevronDropdown from '@/app/components/ChevronDropdown';
+import { formatRelativeTimestamp } from '@/lib/dateUtils';
 
 type VersionOption = {
   id: string;
@@ -11,8 +12,8 @@ type VersionOption = {
 };
 
 const ProgramElementItem = ({id, index, version, allVersions, onRemove, onChangeVersion, onClick, onCreateNewVersion, canEdit}: {id: string, index: number, version?: VersionOption, allVersions: VersionOption[], onRemove: (id: string) => void, onChangeVersion: (oldId: string, newId: string) => void, onClick?: (versionId: string) => void, onCreateNewVersion?: (songId: string) => void, canEdit: boolean}) => {
-  const songVersions = version ? allVersions.filter(v => v.songId === version.songId) : [];
-  const dropdownOptions = songVersions.map(v => ({value: v.id, label: v.label}));
+  const songVersions = version ? allVersions.filter(v => v.songId === version.songId).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) : [];
+  const dropdownOptions = songVersions.map(v => ({value: v.id, label: `${v.label} - ${formatRelativeTimestamp(v.createdAt)}`}));
 
   return (
     <div className="text-sm px-2 py-1 flex items-center gap-2 hover:bg-black cursor-pointer" onClick={() => onClick?.(id)}>
