@@ -4,6 +4,7 @@ import VersionContent from './VersionContent';
 import VersionMetadata from './VersionMetadata';
 import PreviousVersionsList from './PreviousVersionsList';
 import CreateVersionForm from './CreateVersionForm';
+import VersionHeader from './VersionHeader';
 import type { SongVersion } from './types';
 import { useUser } from '../contexts/UserContext';
 
@@ -43,9 +44,7 @@ const VersionDetailPanel = ({songTitle, version, previousVersions, isExpandedPre
         {songTitle.replace(/_/g, ' ')}
       </h2>
       <div className="mb-2 flex items-center justify-between sticky top-[-80px]">
-        <h3 className="text-sm font-medium mb-1">
-          {version.label}
-        </h3>
+        <VersionHeader version={version} />
         {canEdit && (
           <div className="flex items-center gap-2">
             {isCreatingVersion && (
@@ -90,6 +89,8 @@ const VersionDetailPanel = ({songTitle, version, previousVersions, isExpandedPre
         />
       ) : (
         <>
+          <VersionContent version={version} />
+          <VersionMetadata version={version} />
           <PreviousVersionsList
             previousVersions={previousVersions}
             currentLabel={version.label}
@@ -97,9 +98,7 @@ const VersionDetailPanel = ({songTitle, version, previousVersions, isExpandedPre
             onToggle={onTogglePreviousVersions}
             onVersionClick={onVersionClick}
           />
-          <VersionContent version={version} />
-          <VersionMetadata version={version} />
-          <div className="mt-4 pt-4 border-t border-gray-200">
+          <div className="mt-4 pt-4 border-t border-gray-200 flex gap-4">
             <a
               href={`/songs/${version.id}/print`}
               target="_blank"
@@ -107,6 +106,14 @@ const VersionDetailPanel = ({songTitle, version, previousVersions, isExpandedPre
               className="text-blue-400 text-xs hover:text-blue-600 underline"
             >
               Print View
+            </a>
+            <a
+              href={`/songs/${version.id}/slides`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-400 text-xs hover:text-blue-600 underline"
+            >
+              Slides View
             </a>
           </div>
         </>

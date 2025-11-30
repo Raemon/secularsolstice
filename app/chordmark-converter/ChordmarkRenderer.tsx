@@ -245,11 +245,11 @@ export const useChordmarkRenderer = (parsedSong: ReturnType<typeof parseSong> | 
     }
 
     try {
-      let htmlFull = renderSong(songForRendering, { chartType: 'all' });
+      let htmlFull = renderSong(songForRendering, { chartType: 'all', accidentalsType: 'auto' });
       let htmlChordsOnly = songForChordsWithMeta 
-        ? renderSong(songForChordsWithMeta, { chartType: 'all', alignChordsWithLyrics: false })
-        : renderSong(songForRendering, { chartType: 'chords', alignChordsWithLyrics: false });
-      let htmlLyricsOnly = renderSong(songForRendering, { chartType: 'lyrics' });
+        ? renderSong(songForChordsWithMeta, { chartType: 'all', alignChordsWithLyrics: false, accidentalsType: 'auto' })
+        : renderSong(songForRendering, { chartType: 'chords', alignChordsWithLyrics: false, accidentalsType: 'auto' });
+      let htmlLyricsOnly = renderSong(songForRendering, { chartType: 'lyrics', accidentalsType: 'auto' });
 
       // Add line index attributes for highlighting
       htmlFull = addLineIndexAttributes(htmlFull, chordLineIndices);
@@ -381,7 +381,6 @@ const ChordmarkRenderer = ({
   return (
     <div>
       <style dangerouslySetInnerHTML={{ __html: CHORDMARK_STYLES }} />
-      {!print && showTabs && <ChordmarkTabs mode={mode} onModeChange={setMode} />}
       {!print && <ChordmarkPlayer 
         parsedSong={parsedSong.song} 
         onLineChange={setCurrentLineIndex}
@@ -395,6 +394,7 @@ const ChordmarkRenderer = ({
       {error && mode !== 'raw' && (
         <div className="mb-2 p-1 bg-red-100 text-red-800 text-xs">{error}</div>
       )}
+      <ChordmarkTabs mode={mode} onModeChange={setMode} />
       <div className="flex relative" style={{ maxWidth: '800px' }}>
         {!print && <div className="flex flex-col bg-gray-900 border-r border-gray-700">
           {content.split('\n').map((_, index) => (
