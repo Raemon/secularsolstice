@@ -191,7 +191,7 @@ const ProgramManager = ({ initialProgramId, initialVersionId }: ProgramManagerPr
     };
     
     const result: SongSlideData[] = [];
-    const linesPerSlide = 8;
+    const linesPerSlide = 10;
     
     for (const versionId of selectedProgram.elementIds) {
       const version = versionMap[versionId];

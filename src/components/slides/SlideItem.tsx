@@ -18,6 +18,9 @@ const SlideItem = ({slide, slideLabel, className}:{slide: Slide, slideLabel?: st
           if (line.isHeading) {
             return <div key={lineIndex} className="font-bold">{line.text}</div>;
           }
+          if (line.isEmpty) {
+            return <div key={lineIndex}>&nbsp;</div>;
+          }
           return <div key={lineIndex}>{line.text}</div>;
         })}
       </div>

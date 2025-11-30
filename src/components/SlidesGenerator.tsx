@@ -25,7 +25,7 @@ const SlidesGenerator = () => {
   const [htmlContent, setHtmlContent] = useState('');
   const [rawHtml, setRawHtml] = useState('');
   const [slides, setSlides] = useState<Slide[]>([]);
-  const [linesPerSlide, setLinesPerSlide] = useState(8);
+  const [linesPerSlide, setLinesPerSlide] = useState(10);
   const [statusMessage, setStatusMessage] = useState('');
   const [statusType, setStatusType] = useState<StatusType>(null);
   const [progressPercent, setProgressPercent] = useState(0);

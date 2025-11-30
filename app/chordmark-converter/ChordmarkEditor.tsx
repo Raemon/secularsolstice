@@ -77,7 +77,7 @@ const ChordmarkEditor = ({ value, onChange, showSyntaxHelp = false, bpm, autosav
   // Generate slides separately (client-side only)
   const slides = useMemo(() => {
     if (!debouncedValue || !debouncedValue.trim()) return [];
-    return generateSlidesFromChordmark(debouncedValue, { linesPerSlide: 8 });
+    return generateSlidesFromChordmark(debouncedValue, { linesPerSlide: 10 });
   }, [debouncedValue]);
 
   useEffect(() => {

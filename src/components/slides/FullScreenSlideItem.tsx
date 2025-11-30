@@ -17,6 +17,9 @@ const FullScreenSlideItem = ({slide}:{slide: Slide}) => {
           if (line.isHeading) {
             return <div key={lineIndex} className="font-bold text-4xl text-center">{line.text}</div>;
           }
+          if (line.isEmpty) {
+            return <div key={lineIndex} className="text-center">&nbsp;</div>;
+          }
           return <div key={lineIndex} className="text-center">{line.text}</div>;
         })}
       </div>

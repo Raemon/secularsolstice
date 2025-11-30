@@ -44,7 +44,7 @@ const SongSlidesPage = () => {
         };
         
         let slides: Slide[] = [];
-        const linesPerSlide = 8;
+        const linesPerSlide = 10;
         
         // Generate slides from content
         try {

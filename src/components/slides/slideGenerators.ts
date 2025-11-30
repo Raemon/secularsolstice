@@ -10,7 +10,7 @@ export type SlideGenerationConfig = {
   format?: 'chordmark' | 'lilypond' | 'html';
 };
 
-const DEFAULT_LINES_PER_SLIDE = 8;
+const DEFAULT_LINES_PER_SLIDE = 10;
 
 /**
  * Escapes HTML special characters to prevent XSS and rendering issues

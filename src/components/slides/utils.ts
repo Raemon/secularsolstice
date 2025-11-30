@@ -254,54 +254,74 @@ export function groupIntoSlides(lines: ParsedLine[], linesPerSlide: number): Sli
   const slides: Slide[] = [];
   let currentSlide: ParsedLine[] = [];
   
+  // First, group lines into paragraphs (separated by empty lines or special elements)
+  const paragraphs: ParsedLine[][] = [];
+  let currentParagraph: ParsedLine[] = [];
+  
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     
-    // Handle hr tags and br tags - end current slide and skip the break marker
+    // Handle hr tags and br tags - end current paragraph
     if (line.isHr) {
-      if (currentSlide.length > 0) {
-        slides.push(currentSlide);
-        currentSlide = [];
+      if (currentParagraph.length > 0) {
+        paragraphs.push(currentParagraph);
+        currentParagraph = [];
       }
+      paragraphs.push([line]); // hr gets its own paragraph
       continue;
     }
     
-    // Handle empty lines - end current slide and skip the empty line
+    // Handle empty lines - end current paragraph (but don't add the empty line itself)
     if (line.isEmpty) {
-      if (currentSlide.length > 0) {
-        slides.push(currentSlide);
-        currentSlide = [];
+      if (currentParagraph.length > 0) {
+        paragraphs.push(currentParagraph);
+        currentParagraph = [];
       }
       continue;
     }
     
-    // Images get their own slide
-    if (line.isImage) {
-      // Push current slide if it has content
-      if (currentSlide.length > 0) {
-        slides.push(currentSlide);
+    // Images and headers get their own paragraph
+    if (line.isImage || line.isHeading) {
+      if (currentParagraph.length > 0) {
+        paragraphs.push(currentParagraph);
+        currentParagraph = [];
       }
-      // Create a new slide with just the image
-      slides.push([line]);
-      currentSlide = [];
-    }
-    // Headers always get their own slide
-    else if (line.isHeading) {
-      // Push current slide if it has content
-      if (currentSlide.length > 0) {
-        slides.push(currentSlide);
-      }
-      // Create a new slide with just the header
-      slides.push([line]);
-      currentSlide = [];
+      paragraphs.push([line]);
     } else {
-      currentSlide.push(line);
-      
-      // If we've reached the max lines per slide limit, start new slide
-      if (currentSlide.length >= linesPerSlide) {
+      currentParagraph.push(line);
+    }
+  }
+  
+  // Add remaining paragraph
+  if (currentParagraph.length > 0) {
+    paragraphs.push(currentParagraph);
+  }
+  
+  // Now group paragraphs into slides, trying to fit as many as possible without exceeding linesPerSlide
+  for (const paragraph of paragraphs) {
+    // Images and headers always get their own slide
+    if (paragraph.length === 1 && (paragraph[0].isImage || paragraph[0].isHeading || paragraph[0].isHr)) {
+      if (currentSlide.length > 0) {
         slides.push(currentSlide);
         currentSlide = [];
       }
+      slides.push(paragraph);
+      continue;
+    }
+    
+    // Check if adding this paragraph would exceed the limit
+    // Account for the empty line separator that will be added between paragraphs
+    const separatorLines = currentSlide.length > 0 ? 1 : 0;
+    if (currentSlide.length > 0 && currentSlide.length + separatorLines + paragraph.length > linesPerSlide) {
+      // Start a new slide with this paragraph
+      slides.push(currentSlide);
+      currentSlide = [...paragraph];
+    } else {
+      // Add paragraph to current slide with separator if needed
+      if (currentSlide.length > 0) {
+        currentSlide.push({ text: '', isEmpty: true });
+      }
+      currentSlide.push(...paragraph);
     }
   }
   

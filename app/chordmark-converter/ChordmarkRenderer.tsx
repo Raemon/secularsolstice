@@ -324,7 +324,7 @@ const ChordmarkRenderer = ({
   // Always generate slides client-side (they're cheap and can't be generated server-side easily)
   const slides = useMemo(() => {
     if (!content || !content.trim()) return [];
-    return generateSlidesFromChordmark(content, { linesPerSlide: 8 });
+    return generateSlidesFromChordmark(content, { linesPerSlide: 10 });
   }, [content]);
   
   // Use cached content if available

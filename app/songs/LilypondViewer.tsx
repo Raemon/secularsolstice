@@ -42,26 +42,32 @@ const LilypondViewer = ({lilypondContent, versionId, renderedContent}:{lilypondC
       if (!lilypondContent || lilypondContent.trim() === '') return;
       if (viewMode !== 'svg') return; // Only convert for SVG mode
 
-      if (renderedContent) {
+      // Check if we have cached rendered content for lilypond
+      if (renderedContent?.lilypond) {
         console.log('[LilypondViewer] Using cached rendered content');
         try {
-          // Try new format first
-          if (renderedContent.lilypond) {
-            const parsed = JSON.parse(renderedContent.lilypond);
-            setSvgs(parsed);
-            return;
-          }
-          // Fall back to legacy format (whole renderedContent was a JSON string)
-          if (renderedContent.legacy) {
-            const parsed = JSON.parse(renderedContent.legacy);
-            setSvgs(parsed);
-            return;
-          }
+          const parsed = JSON.parse(renderedContent.lilypond);
+          setSvgs(parsed);
+          setIsLoading(false);
+          return;
         } catch (err) {
-          console.error('[LilypondViewer] Error parsing cached content:', err);
-          setError('Error loading cached content');
+          console.error('[LilypondViewer] Error parsing cached lilypond content:', err);
+          // Fall through to reconvert
         }
-        return;
+      }
+      
+      // Fall back to legacy format (whole renderedContent was a JSON string)
+      if (renderedContent?.legacy) {
+        console.log('[LilypondViewer] Using cached legacy rendered content');
+        try {
+          const parsed = JSON.parse(renderedContent.legacy);
+          setSvgs(parsed);
+          setIsLoading(false);
+          return;
+        } catch (err) {
+          console.error('[LilypondViewer] Error parsing legacy cached content:', err);
+          // Fall through to reconvert
+        }
       }
 
       console.log('[LilypondViewer] Starting conversion, content length:', lilypondContent.length);
