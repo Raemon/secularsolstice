@@ -1,6 +1,6 @@
 'use client';
 
-import type { Slide, ParsedLine } from './types';
+import { Slide, ParsedLine } from './types';
 
 /**
  * Renders a single slide with its content lines
