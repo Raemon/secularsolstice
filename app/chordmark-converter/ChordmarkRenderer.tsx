@@ -81,16 +81,18 @@ export const CHORDMARK_STYLES = `
   .styled-chordmark .cmSong .cmBracketMeta {
     color: #888;
     font-style: italic;
-    white-space: pre-wrap;
-    display: inline-block;
     max-width: 400px;
+    display: inline-block;
+    width: 300px;
+    white-space: pre-wrap;
   }
   .styled-chords .cmSong .cmBracketMeta {
     color: #888;
     font-style: italic;
-    white-space: pre-wrap;
-    display: inline-block;
     max-width: 400px;
+    display: inline-block;
+    white-space: pre-wrap;
+    width: 300px;
   }
   
   /* Line highlighting for active playback - only chord lines get data-line-index */
@@ -352,6 +354,7 @@ const ChordmarkRenderer = ({
   const [bpm, setBpm] = useState<number>(initialBpm);
   const [playerStartLine, setPlayerStartLine] = useState(0);
   const [shouldAutoPlay, setShouldAutoPlay] = useState(false);
+  const isSideBySide = mode === 'one-line';
 
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -387,7 +390,7 @@ const ChordmarkRenderer = ({
       }
       return (
         <div className="flex gap-4">
-          <div className="flex-0 min-w-0">
+          <div className="flex-0 min-w-0" style={{ flex: '0 0 auto', minWidth: '18ch' }}>
             {/* <div className=" mb-1">Chords</div> */}
             <div className="styled-chords text-xs font-mono" dangerouslySetInnerHTML={{ __html: finalOutputs.htmlChordsOnly }} />
           </div>
@@ -440,7 +443,7 @@ const ChordmarkRenderer = ({
         <ChordmarkTabs mode={mode} onModeChange={setMode} />
         <TransposeControls value={transposeSteps} onChange={setTransposeSteps} />
       </div>
-      <div className="flex relative" style={{ maxWidth: '800px' }}>
+      <div className="flex relative" style={{ maxWidth: isSideBySide ? 'none' : '800px' }}>
         {!print && <div className="flex flex-col bg-gray-900 border-r border-gray-700">
           {content.split('\n').map((_, index) => (
             <div
