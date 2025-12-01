@@ -1,0 +1,27 @@
+import type { Slide } from '../../src/components/slides/types';
+
+export type Program = {
+  id: string;
+  title: string;
+  elementIds: string[];
+  createdAt: string;
+  archived: boolean;
+};
+
+export type VersionOption = {
+  id: string;
+  songId: string;
+  label: string;
+  songTitle: string;
+  createdAt: string;
+  nextVersionId: string | null;
+};
+
+export type SongSlideData = {
+  versionId: string;
+  songTitle: string;
+  versionLabel: string;
+  slides: Slide[];
+};
+
+

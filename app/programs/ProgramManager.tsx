@@ -2,42 +2,17 @@
 
 import { useCallback, useEffect, useMemo, useState, type KeyboardEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import DragAndDropList from './components/DragAndDropList';
-import ProgramSelector from './components/ProgramSelector';
-import VersionSelector from './components/VersionSelector';
-import ProgramElementItem from './components/ProgramElementItem';
-import ProgramSlidesView from './components/ProgramSlidesView';
-import VersionDetailPanel from '../songs/VersionDetailPanel';
+import ProgramHeaderControls from './components/ProgramHeaderControls';
+import ProgramElementsSection from './components/ProgramElementsSection';
+import ProgramViewPanel from './components/ProgramViewPanel';
+import CreateProgramModal from './components/CreateProgramModal';
 import type { SongVersion } from '../songs/types';
 import { useUser } from '../contexts/UserContext';
 import { generateSlidesFromHtml } from '../../src/components/slides/slideGenerators';
 import type { Slide } from '../../src/components/slides/types';
 import { extractLyrics, detectFileType } from '../../lib/lyricsExtractor';
 import { generateChordmarkRenderedContent } from '../chordmark-converter/clientRenderUtils';
-
-type Program = {
-  id: string;
-  title: string;
-  elementIds: string[];
-  createdAt: string;
-  archived: boolean;
-};
-
-type VersionOption = {
-  id: string;
-  songId: string;
-  label: string;
-  songTitle: string;
-  createdAt: string;
-  nextVersionId: string | null;
-};
-
-type SongSlideData = {
-  versionId: string;
-  songTitle: string;
-  versionLabel: string;
-  slides: Slide[];
-};
+import type { Program, VersionOption, SongSlideData } from './types';
 
 type ProgramManagerProps = {
   initialProgramId?: string;
@@ -177,6 +152,15 @@ const ProgramManager = ({ initialProgramId, initialVersionId }: ProgramManagerPr
     });
     return map;
   }, [versions]);
+
+  const handleSelectProgram = (programId: string | null) => {
+    setSelectedProgramId(programId);
+    if (programId) {
+      router.push(`/programs/${programId}`);
+    } else {
+      router.push('/programs');
+    }
+  };
 
   const allSlides = useMemo(() => {
     if (!selectedProgram) return [];
@@ -479,6 +463,10 @@ const ProgramManager = ({ initialProgramId, initialVersionId }: ProgramManagerPr
     }
   }, [selectedProgramId, router]);
 
+  const handleTogglePreviousVersions = () => {
+    setIsExpandedPreviousVersions(prev => !prev);
+  };
+
   const handleCloseVersionPanel = () => {
     setSelectedVersion(null);
     setPreviousVersions([]);
@@ -636,22 +624,16 @@ const ProgramManager = ({ initialProgramId, initialVersionId }: ProgramManagerPr
   return (
     <div className="p-4 flex gap-3">
       <div className="flex-1 flex flex-col gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <ProgramSelector programs={programs} selectedProgramId={selectedProgramId} onSelect={(programId) => {
-            setSelectedProgramId(programId);
-            router.push(`/programs/${programId}`);
-          }} />
-          {canEdit && (
-            <button type="button" onClick={handleOpenCreateModal} className="text-sm px-3 py-1">
-              Create
-            </button>
-          )}
-          {canEdit && (
-            <button type="button" onClick={handleArchiveProgram} disabled={!selectedProgram || isDeletingProgram} className="text-sm px-3 py-1 text-red-600 disabled:opacity-50">
-              {isDeletingProgram ? 'Deleting...' : 'Delete'}
-            </button>
-          )}
-        </div>
+        <ProgramHeaderControls
+          programs={programs}
+          selectedProgramId={selectedProgramId}
+          onSelectProgram={handleSelectProgram}
+          canEdit={canEdit}
+          onCreateProgram={handleOpenCreateModal}
+          onArchiveProgram={handleArchiveProgram}
+          isDeletingProgram={isDeletingProgram}
+          selectedProgram={selectedProgram}
+        />
 
         {error && (
           <div className="text-sm text-red-600">
@@ -659,98 +641,55 @@ const ProgramManager = ({ initialProgramId, initialVersionId }: ProgramManagerPr
           </div>
         )}
 
-        <div className="flex flex-col gap-1 w-1/2">
-          {!selectedProgram && (
-            <p className="text-sm text-gray-400">Create or select a program to begin.</p>
-          )}
-          {selectedProgram && selectedProgram.elementIds.length === 0 && (
-            <p className="text-sm text-gray-400">No elements yet.</p>
-          )}
-          {selectedProgram && selectedProgram.elementIds.length > 0 && (
-            <DragAndDropList
-              items={selectedProgram.elementIds}
-              onReorder={handleReorderElements}
-              keyExtractor={(id) => id}
-              renderItem={(id, index) => {
-                const version = versionMap[id];
-                return <ProgramElementItem 
-                  id={id} 
-                  index={index} 
-                  version={version} 
-                  allVersions={versions} 
-                  onRemove={handleRemoveElement} 
-                  onChangeVersion={handleChangeVersion} 
-                  onClick={handleElementClick} 
-                  onCreateNewVersion={handleCreateNewVersion} 
-                  canEdit={canEdit} 
-                  selectedVersionId={selectedVersion?.id} 
-                />;
-              }}
-            />
-          )}
-          <VersionSelector
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            filteredVersions={filteredVersions}
-            onAddElement={handleAddElement}
-            onKeyDown={handleKeyDown}
-            onCreateVersion={handleCreateNewVersion}
-            disabled={!selectedProgram}
-          />
-        </div>
+        <ProgramElementsSection
+          selectedProgram={selectedProgram}
+          versions={versions}
+          versionMap={versionMap}
+          selectedVersionId={selectedVersion?.id}
+          filteredVersions={filteredVersions}
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          onAddElement={handleAddElement}
+          onRemoveElement={handleRemoveElement}
+          onReorderElements={handleReorderElements}
+          onChangeVersion={handleChangeVersion}
+          onElementClick={handleElementClick}
+          onCreateVersion={handleCreateNewVersion}
+          onKeyDown={handleKeyDown}
+          canEdit={canEdit}
+        />
       </div>
 
-      {selectedProgram && !selectedVersion && (
-        <div className="w-1/3 overflow-y-auto max-h-screen">
-          <ProgramSlidesView slides={allSlides} />
-        </div>
-      )}
+      <ProgramViewPanel
+        selectedProgram={selectedProgram}
+        selectedVersion={selectedVersion}
+        versions={versions}
+        previousVersions={previousVersions}
+        isExpandedPreviousVersions={isExpandedPreviousVersions}
+        isCreatingVersion={isCreatingVersion}
+        newVersionForm={newVersionForm}
+        isSubmitting={isSubmitting}
+        isArchiving={isArchiving}
+        versionError={versionError}
+        slides={allSlides}
+        onCloseVersionPanel={handleCloseVersionPanel}
+        onTogglePreviousVersions={handleTogglePreviousVersions}
+        onVersionClick={handleVersionClick}
+        onCreateVersionClick={handleCreateVersionClick}
+        onCancelCreateVersion={handleCancelCreateVersion}
+        onFormChange={handleFormChange}
+        onSubmitVersion={handleSubmitVersion}
+        onArchiveVersion={handleArchiveVersion}
+      />
 
-      {selectedVersion && (
-        <VersionDetailPanel
-          songTitle={versions.find(v => v.songId === selectedVersion.songId)?.songTitle || ''}
-          version={selectedVersion}
-          previousVersions={previousVersions}
-          isExpandedPreviousVersions={isExpandedPreviousVersions}
-          isCreatingVersion={isCreatingVersion}
-          newVersionForm={newVersionForm}
-          isSubmitting={isSubmitting}
-          isArchiving={isArchiving}
-          error={versionError}
-          onClose={handleCloseVersionPanel}
-          onTogglePreviousVersions={() => setIsExpandedPreviousVersions(!isExpandedPreviousVersions)}
-          onVersionClick={handleVersionClick}
-          onCreateVersionClick={handleCreateVersionClick}
-          onCancelCreateVersion={handleCancelCreateVersion}
-          onFormChange={handleFormChange}
-          onSubmitVersion={handleSubmitVersion}
-          onArchiveVersion={handleArchiveVersion}
-        />
-      )}
-
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={handleCloseCreateModal}>
-          <div className="p-4 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-lg font-semibold mb-3">Create New Program</h2>
-            <input
-              value={newProgramTitle}
-              onChange={(event) => setNewProgramTitle(event.target.value)}
-              onKeyDown={handleCreateModalKeyDown}
-              placeholder="Program title"
-              className="text-sm px-2 py-1 w-full mb-3"
-              autoFocus
-            />
-            <div className="flex gap-2 justify-end">
-              <button type="button" onClick={handleCloseCreateModal} className="text-sm px-3 py-1">
-                Cancel
-              </button>
-              <button type="button" onClick={handleCreateProgram} className="text-sm px-3 py-1">
-                Create
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <CreateProgramModal
+        visible={showCreateModal}
+        newProgramTitle={newProgramTitle}
+        onChangeTitle={setNewProgramTitle}
+        onClose={handleCloseCreateModal}
+        onSubmit={handleCreateProgram}
+        onKeyDown={handleCreateModalKeyDown}
+      />
     </div>
   );
 };
