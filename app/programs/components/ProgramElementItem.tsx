@@ -11,7 +11,7 @@ type VersionOption = {
   createdAt: string;
 };
 
-type ProgramElementItemProps = {
+export type ProgramElementItemProps = {
   id: string;
   index: number;
   version?: VersionOption;

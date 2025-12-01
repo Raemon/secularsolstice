@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactElement } from 'react';
 import DragAndDropList from './DragAndDropList';
 import ProgramElementItem from './ProgramElementItem';
 import ProgramReferenceItem from './ProgramReferenceItem';
@@ -98,7 +98,7 @@ const ProgramElementsSection = ({selectedProgram, versions, versionMap, selected
     setProgramSelectedIndex(-1);
   };
 
-  const renderChildProgramElements = (programId: string, depth: number, visited: Set<string>): JSX.Element | null => {
+  const renderChildProgramElements = (programId: string, depth: number, visited: Set<string>): ReactElement | null => {
     const program = programMap[programId];
     if (!program) {
       return (
