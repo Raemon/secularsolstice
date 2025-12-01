@@ -22,9 +22,10 @@ type ProgramElementItemProps = {
   onCreateNewVersion?: (songId: string) => void;  
   canEdit: boolean;
   selectedVersionId?: string;
+  showDropdown?: boolean;
 };
 
-const ProgramElementItem = ({id, index, version, allVersions, onRemove, onChangeVersion, onClick, onCreateNewVersion, canEdit, selectedVersionId}: ProgramElementItemProps) => {
+const ProgramElementItem = ({id, index, version, allVersions, onRemove, onChangeVersion, onClick, onCreateNewVersion, canEdit, selectedVersionId, showDropdown = true}: ProgramElementItemProps) => {
   const songVersions = version ? allVersions.filter(v => v.songId === version.songId).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) : [];
   const dropdownOptions = songVersions.map(v => ({value: v.id, label: `${v.label} - ${formatRelativeTimestamp(v.createdAt)}`}));
 
@@ -37,27 +38,29 @@ const ProgramElementItem = ({id, index, version, allVersions, onRemove, onChange
           <span className="text-gray-300 w-[180px] truncate">{version?.label ?? id}</span>
           <span className="text-gray-400 text-xs">{formatRelativeTimestamp(version?.createdAt ?? '')}</span>
         </div>
-        <ChevronDropdown
-          value={id}
-          options={dropdownOptions}
-          onChange={(newId) => {
-            if (newId && newId !== id) {
-              onChangeVersion(id, newId);
-            }
-          }}
-          footer={canEdit ? (
-            <div
-              onClick={(e) => {
-                e.stopPropagation();
-                if (version?.songId && onCreateNewVersion) {
-                  onCreateNewVersion(version.songId);
-                }
-              }}
-            >
-              + Create new version
-            </div>
-          ) : undefined}
-        />
+        {showDropdown && (
+          <ChevronDropdown
+            value={id}
+            options={dropdownOptions}
+            onChange={(newId) => {
+              if (newId && newId !== id) {
+                onChangeVersion(id, newId);
+              }
+            }}
+            footer={canEdit ? (
+              <div
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (version?.songId && onCreateNewVersion) {
+                    onCreateNewVersion(version.songId);
+                  }
+                }}
+              >
+                + Create new version
+              </div>
+            ) : undefined}
+          />
+        )}
       </div>
       {canEdit && (
         <button type="button" onClick={(e) => { e.stopPropagation(); onRemove(id); }} draggable={false} className="text-xs px-2 py-0.5 ml-auto text-red-600 hover:text-red-800 opacity-0 group-hover:opacity-100">X</button>

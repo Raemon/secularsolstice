@@ -26,10 +26,11 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     const { id } = await context.params;
     const body = await request.json();
     const elementIds = Array.isArray(body.elementIds) ? body.elementIds : null;
-    if (!elementIds) {
-      return NextResponse.json({ error: 'elementIds must be an array' }, { status: 400 });
+    const programIds = Array.isArray(body.programIds) ? body.programIds : null;
+    if (!elementIds || !programIds) {
+      return NextResponse.json({ error: 'elementIds and programIds must be arrays' }, { status: 400 });
     }
-    const program = await updateProgramElementIds(id, elementIds);
+    const program = await updateProgramElementIds(id, elementIds, programIds);
     return NextResponse.json({ program });
   } catch (error) {
     console.error('Failed to update program:', error);

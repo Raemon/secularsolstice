@@ -4,6 +4,7 @@ create table if not exists programs (
   id uuid not null default gen_random_uuid(),
   title text not null,
   element_ids uuid[] not null default '{}'::uuid[],
+  program_ids uuid[] not null default '{}'::uuid[],
   created_at timestamptz not null default now(),
   archived boolean not null default false,
   created_by text,

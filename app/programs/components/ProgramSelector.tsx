@@ -1,12 +1,5 @@
 import ChevronDropdown from '@/app/components/ChevronDropdown';
-
-type Program = {
-  id: string;
-  title: string;
-  elementIds: string[];
-  createdAt: string;
-  archived: boolean;
-};
+import type { Program } from '../types';
 
 const ProgramSelector = ({programs, selectedProgramId, onSelect}: {programs: Program[], selectedProgramId: string | null, onSelect: (id: string | null) => void}) => {
   const selectedProgram = programs.find(p => p.id === selectedProgramId);

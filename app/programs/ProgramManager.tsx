@@ -40,6 +40,13 @@ const ProgramManager = ({ initialProgramId, initialVersionId }: ProgramManagerPr
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [isDeletingProgram, setIsDeletingProgram] = useState(false);
   const [fullVersions, setFullVersions] = useState<Record<string, SongVersion>>({});
+  const programMap = useMemo(() => {
+    const map: Record<string, Program> = {};
+    programs.forEach((program) => {
+      map[program.id] = program;
+    });
+    return map;
+  }, [programs]);
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -116,16 +123,67 @@ const ProgramManager = ({ initialProgramId, initialVersionId }: ProgramManagerPr
     return programs.find((program) => program.id === selectedProgramId) || null;
   }, [programs, selectedProgramId]);
 
+  const programReferencesTarget = useCallback((startId: string, targetId: string, visited: Set<string> = new Set()) => {
+    if (startId === targetId) {
+      return true;
+    }
+    if (visited.has(startId)) {
+      return false;
+    }
+    visited.add(startId);
+    const program = programMap[startId];
+    if (!program) {
+      visited.delete(startId);
+      return false;
+    }
+    const result = program.programIds.some((childId) => programReferencesTarget(childId, targetId, visited));
+    visited.delete(startId);
+    return result;
+  }, [programMap]);
+
+  const canReferenceProgram = useCallback((sourceProgram: Program | null, targetProgramId: string) => {
+    if (!sourceProgram) {
+      return false;
+    }
+    if (targetProgramId === sourceProgram.id) {
+      return false;
+    }
+    if (sourceProgram.programIds.includes(targetProgramId)) {
+      return false;
+    }
+    return !programReferencesTarget(targetProgramId, sourceProgram.id);
+  }, [programReferencesTarget]);
+
   useEffect(() => {
+    const collectVersionIds = (program: Program | null, visited: Set<string> = new Set()): string[] => {
+      if (!program || visited.has(program.id)) {
+        return [];
+      }
+      visited.add(program.id);
+      let ids: string[] = [...program.elementIds];
+      for (const childId of program.programIds) {
+        const childProgram = programMap[childId] || null;
+        ids = ids.concat(collectVersionIds(childProgram, visited));
+      }
+      visited.delete(program.id);
+      return ids;
+    };
+
     const fetchVersions = async () => {
-      if (!selectedProgram || selectedProgram.elementIds.length === 0) {
+      if (!selectedProgram) {
+        setFullVersions({});
+        return;
+      }
+
+      const versionIdSet = new Set<string>(collectVersionIds(selectedProgram));
+      if (versionIdSet.size === 0) {
         setFullVersions({});
         return;
       }
       
       const newFullVersions: Record<string, SongVersion> = {};
       
-      for (const versionId of selectedProgram.elementIds) {
+      for (const versionId of versionIdSet) {
         try {
           const response = await fetch(`/api/songs/versions/${versionId}`);
           if (response.ok) {
@@ -143,7 +201,7 @@ const ProgramManager = ({ initialProgramId, initialVersionId }: ProgramManagerPr
     };
     
     fetchVersions();
-  }, [selectedProgram]);
+  }, [selectedProgram, programMap]);
 
   const versionMap = useMemo(() => {
     const map: Record<string, VersionOption> = {};
@@ -175,14 +233,14 @@ const ProgramManager = ({ initialProgramId, initialVersionId }: ProgramManagerPr
       }
     };
     
-    const result: SongSlideData[] = [];
     const linesPerSlide = 10;
-    
-    for (const versionId of selectedProgram.elementIds) {
+
+    const buildSongSlides = (versionId: string): SongSlideData | null => {
       const version = versionMap[versionId];
+      if (!version) {
+        return null;
+      }
       const fullVersion = fullVersions[versionId];
-      if (!version) continue;
-      
       let slides: Slide[] = [];
       if (fullVersion) {
         try {
@@ -191,7 +249,6 @@ const ProgramManager = ({ initialProgramId, initialVersionId }: ProgramManagerPr
           if (fullVersion.content) {
             contentToProcess = convertToLyricsOnly(fullVersion.content, version.label);
           } else if (fullVersion.renderedContent) {
-            // Use htmlLyricsOnly or htmlFull from the rendered content object
             contentToProcess = fullVersion.renderedContent.htmlLyricsOnly || fullVersion.renderedContent.htmlFull || fullVersion.renderedContent.legacy || '';
           }
           
@@ -205,17 +262,39 @@ const ProgramManager = ({ initialProgramId, initialVersionId }: ProgramManagerPr
           console.error(`Failed to parse content for ${versionId}:`, err);
         }
       }
-      
-      result.push({
+      return {
         versionId: version.id,
         songTitle: version.songTitle,
         versionLabel: version.label,
-        slides: slides,
-      });
-    }
+        slides,
+      };
+    };
+
+    const collectSlides = (program: Program | null, visited: Set<string> = new Set()): SongSlideData[] => {
+      if (!program || visited.has(program.id)) {
+        return [];
+      }
+      visited.add(program.id);
+      const result: SongSlideData[] = [];
+      
+      for (const versionId of program.elementIds) {
+        const songSlides = buildSongSlides(versionId);
+        if (songSlides) {
+          result.push(songSlides);
+        }
+      }
+      
+      for (const childId of program.programIds) {
+        const childProgram = programMap[childId] || null;
+        result.push(...collectSlides(childProgram, visited));
+      }
+      
+      visited.delete(program.id);
+      return result;
+    };
     
-    return result;
-  }, [selectedProgram, versionMap, fullVersions]);
+    return collectSlides(selectedProgram, new Set());
+  }, [selectedProgram, versionMap, fullVersions, programMap]);
 
   const filteredVersions = useMemo(() => {
     const trimmed = searchTerm.trim();
@@ -334,7 +413,7 @@ const ProgramManager = ({ initialProgramId, initialVersionId }: ProgramManagerPr
       const response = await fetch(`/api/programs/${selectedProgram.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ elementIds: nextElementIds }),
+        body: JSON.stringify({ elementIds: nextElementIds, programIds: selectedProgram.programIds }),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
@@ -359,7 +438,7 @@ const ProgramManager = ({ initialProgramId, initialVersionId }: ProgramManagerPr
       const response = await fetch(`/api/programs/${selectedProgram.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ elementIds: nextElementIds }),
+        body: JSON.stringify({ elementIds: nextElementIds, programIds: selectedProgram.programIds }),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
@@ -383,7 +462,7 @@ const ProgramManager = ({ initialProgramId, initialVersionId }: ProgramManagerPr
       const response = await fetch(`/api/programs/${selectedProgram.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ elementIds: nextElementIds }),
+        body: JSON.stringify({ elementIds: nextElementIds, programIds: selectedProgram.programIds }),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
@@ -408,7 +487,7 @@ const ProgramManager = ({ initialProgramId, initialVersionId }: ProgramManagerPr
       const response = await fetch(`/api/programs/${selectedProgram.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ elementIds: reorderedElementIds }),
+        body: JSON.stringify({ elementIds: reorderedElementIds, programIds: selectedProgram.programIds }),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
@@ -418,6 +497,80 @@ const ProgramManager = ({ initialProgramId, initialVersionId }: ProgramManagerPr
       setError(null);
     } catch (err) {
       refreshProgram({ ...selectedProgram, elementIds: previousElementIds });
+      setError(err instanceof Error ? err.message : 'Failed to update program');
+    }
+  };
+
+  const handleAddProgram = async (programId: string) => {
+    if (!selectedProgram) {
+      return;
+    }
+    if (!canReferenceProgram(selectedProgram, programId)) {
+      setError('Cannot add that program (duplicate or circular reference).');
+      return;
+    }
+    const nextProgramIds = [...selectedProgram.programIds, programId];
+    try {
+      const response = await fetch(`/api/programs/${selectedProgram.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ elementIds: selectedProgram.elementIds, programIds: nextProgramIds }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update program');
+      }
+      refreshProgram(data.program);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update program');
+    }
+  };
+
+  const handleRemoveProgram = async (programId: string) => {
+    if (!selectedProgram) {
+      return;
+    }
+    const nextProgramIds = selectedProgram.programIds.filter((id) => id !== programId);
+    try {
+      const response = await fetch(`/api/programs/${selectedProgram.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ elementIds: selectedProgram.elementIds, programIds: nextProgramIds }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update program');
+      }
+      refreshProgram(data.program);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update program');
+    }
+  };
+
+  const handleReorderProgramIds = async (reorderedProgramIds: string[]) => {
+    if (!selectedProgram) {
+      return;
+    }
+
+    const previousProgramIds = selectedProgram.programIds;
+    refreshProgram({ ...selectedProgram, programIds: reorderedProgramIds });
+
+    try {
+      const response = await fetch(`/api/programs/${selectedProgram.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ elementIds: selectedProgram.elementIds, programIds: reorderedProgramIds }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update program');
+      }
+      refreshProgram(data.program);
+      setError(null);
+    } catch (err) {
+      refreshProgram({ ...selectedProgram, programIds: previousProgramIds });
       setError(err instanceof Error ? err.message : 'Failed to update program');
     }
   };
@@ -657,6 +810,12 @@ const ProgramManager = ({ initialProgramId, initialVersionId }: ProgramManagerPr
           onCreateVersion={handleCreateNewVersion}
           onKeyDown={handleKeyDown}
           canEdit={canEdit}
+          programs={programs}
+          programMap={programMap}
+          onAddProgram={handleAddProgram}
+          onRemoveProgram={handleRemoveProgram}
+          onReorderProgramIds={handleReorderProgramIds}
+          canReferenceProgram={canReferenceProgram}
         />
       </div>
 

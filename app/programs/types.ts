@@ -4,6 +4,7 @@ export type Program = {
   id: string;
   title: string;
   elementIds: string[];
+  programIds: string[];
   createdAt: string;
   archived: boolean;
 };
