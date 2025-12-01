@@ -27,7 +27,15 @@ export const escapeHtml = (text: string): string => {
 export const lyricsToHtml = (lyrics: string): string => {
   return `<div>${lyrics
     .split('\n')
-    .map(line => `<p>${line ? escapeHtml(line) : '&nbsp;'}</p>`)
+    .map(line => {
+      // Check if line starts with [[ and ends with ]]
+      const metaMatch = line.match(/^\[\[(.*)\]\]$/);
+      if (metaMatch) {
+        // Convert [[text]] to [text] and mark as meta
+        return `<p class="slideMeta">${escapeHtml(`[ ${metaMatch[1]} ]`)}</p>`;
+      }
+      return `<p>${line ? escapeHtml(line) : '&nbsp;'}</p>`;
+    })
     .join('')}</div>`;
 };
 

@@ -116,6 +116,7 @@ export async function generatePresentation(
         
         slideContent.forEach((line) => {
           const isHeading = line.isHeading || false;
+          const isSlideMeta = line.isSlideMeta || false;
           const headingLevel = line.level || 3;
           
           let spacing = 0.5;
@@ -127,6 +128,8 @@ export async function generatePresentation(
             } else {
               spacing = 0.7;
             }
+          } else if (isSlideMeta) {
+            spacing = 0.4;
           }
           
           lineHeights.push(spacing);
@@ -139,10 +142,11 @@ export async function generatePresentation(
         
         slideContent.forEach((line, idx) => {
           const isHeading = line.isHeading || false;
+          const isSlideMeta = line.isSlideMeta || false;
           const headingLevel = line.level || 3;
           const text = line.text || '';
           
-          // Determine font size based on heading level
+          // Determine font size based on heading level or meta
           let fontSize = 16;
           if (isHeading) {
             if (headingLevel === 1) {
@@ -152,6 +156,8 @@ export async function generatePresentation(
             } else {
               fontSize = 26;
             }
+          } else if (isSlideMeta) {
+            fontSize = 12;
           }
           
           slide.addText(text, {
@@ -161,6 +167,7 @@ export async function generatePresentation(
             fontSize: fontSize,
             color: 'FFFFFF',
             bold: isHeading,
+            italic: isSlideMeta,
             align: 'center',
             valign: 'top',
             fontFace: 'Georgia',

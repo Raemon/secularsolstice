@@ -72,6 +72,8 @@ const ContentEditor = ({htmlContent, setHtmlContent, rawHtml, slides, extractedF
                             return <div key={lineIndex} className="text-white/80 italic bg-black/30 px-1 py-0.5 text-center my-0.5">📷 Image{line.isSvg ? ' (SVG)' : ''}</div>;
                           } else if (line.isHeading) {
                             return <div key={lineIndex} className="font-semibold text-white mb-0.5 text-xs">{line.text}</div>;
+                          } else if (line.isSlideMeta) {
+                            return <div key={lineIndex} className="slideMeta text-white/90 mb-0.5 text-xs">{line.text}</div>;
                           } else if (line.text && line.text.trim()) {
                             return <div key={lineIndex} className="text-white/90 mb-0.5 text-xs">{line.text}</div>;
                           }

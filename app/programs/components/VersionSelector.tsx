@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { formatRelativeTimestamp } from '@/lib/dateUtils';
 
 type VersionOption = {
   id: string;
@@ -67,9 +68,10 @@ const VersionSelector = ({searchTerm, onSearchChange, filteredVersions, onAddEle
                 type="button"
                 key={version.id}
                 onClick={() => onAddElement(version.id)}
-                className={`text-left text-sm px-2 py-1 hover:bg-black/80 ${index === selectedIndex ? 'bg-blue-100' : ''}`}
+                className={`flex justify-between items-center text-left text-sm px-2 py-1 hover:bg-black/80 ${index === selectedIndex ? 'bg-blue-100' : ''}`}
               >
-                <span className="font-semibold">{version.songTitle}</span> <span className="text-gray-400">{version.label}</span>
+                <span><span className="font-semibold">{version.songTitle}</span> <span className="text-gray-400">{version.label}</span></span>
+                <span className="text-gray-400 ml-2">{formatRelativeTimestamp(version.createdAt)}</span>
               </button>
             ))}
           <div className="border-t border-gray-300">

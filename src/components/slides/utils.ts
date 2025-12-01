@@ -9,11 +9,22 @@ export function stripBracketedText(text: string): string {
 export function parseHTMLContent(htmlContent: string): ParsedLine[] {
   console.log('parseHTMLContent called with:', htmlContent);
   
-  // First, remove sections that begin with "[" and end with "]"
-  const cleanedHtml = htmlContent.replace(/\[[\s\S]*?\]/g, '');
-  
+  // First, remove sections that begin with "[" and end with "]", but NOT if they're inside elements with class="slideMeta"
+  // We'll do this by parsing first, then cleaning
   const tempDiv = document.createElement('div');
-  tempDiv.innerHTML = cleanedHtml;
+  tempDiv.innerHTML = htmlContent;
+  
+  // Remove bracketed text from elements that don't have the slideMeta class
+  const elementsToClean = tempDiv.querySelectorAll('*:not(.slideMeta)');
+  elementsToClean.forEach(el => {
+    if (el.childNodes.length > 0) {
+      el.childNodes.forEach(node => {
+        if (node.nodeType === Node.TEXT_NODE && node.textContent) {
+          node.textContent = node.textContent.replace(/\[.*?\]/g, '');
+        }
+      });
+    }
+  });
   console.log('tempDiv children count:', tempDiv.children.length);
   console.log('tempDiv img count:', tempDiv.querySelectorAll('img').length);
   console.log('tempDiv svg count:', tempDiv.querySelectorAll('svg').length);
@@ -130,7 +141,8 @@ export function parseHTMLContent(htmlContent: string): ParsedLine[] {
       const element = node as HTMLElement;
       const tagName = element.tagName.toLowerCase();
       const rawText = element.textContent?.trim() || '';
-      const text = stripBracketedText(rawText);
+      const isSlideMeta = element.classList.contains('slideMeta');
+      const text = isSlideMeta ? rawText : stripBracketedText(rawText);
       
       // Handle hr tags and br tags as slide breaks
       if (tagName === 'hr' || tagName === 'br') {
@@ -167,6 +179,8 @@ export function parseHTMLContent(htmlContent: string): ParsedLine[] {
         const hasSvg = element.querySelector('svg');
         // Check if this element contains br tags
         const hasBr = element.querySelector('br');
+        // Check if this element has the slideMeta class
+        const isSlideMeta = element.classList.contains('slideMeta');
         if (!hasHeading && !hasSvg) {
           if (hasBr) {
             // If paragraph contains br tags, split by br and process each part
@@ -174,9 +188,10 @@ export function parseHTMLContent(htmlContent: string): ParsedLine[] {
             parts.forEach((part, index) => {
               const tempDiv = document.createElement('div');
               tempDiv.innerHTML = part;
-              const partText = stripBracketedText(tempDiv.textContent?.trim() || '');
+              const rawPartText = tempDiv.textContent?.trim() || '';
+              const partText = isSlideMeta ? rawPartText : stripBracketedText(rawPartText);
               if (partText.length > 0) {
-                lines.push({ text: partText, isHeading: false });
+                lines.push({ text: partText, isHeading: false, isSlideMeta });
               }
               // Add slide break after each part except the last one
               if (index < parts.length - 1) {
@@ -184,7 +199,7 @@ export function parseHTMLContent(htmlContent: string): ParsedLine[] {
               }
             });
           } else if (text.length > 0) {
-            lines.push({ text, isHeading: false });
+            lines.push({ text, isHeading: false, isSlideMeta });
           } else {
             // Empty paragraph/line - treat as empty line marker
             lines.push({ text: '', isEmpty: true });

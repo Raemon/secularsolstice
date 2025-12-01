@@ -299,7 +299,7 @@ const ProgramManager = ({ initialProgramId, initialVersionId }: ProgramManagerPr
   const filteredVersions = useMemo(() => {
     const trimmed = searchTerm.trim();
     if (!trimmed) {
-      return versions.slice(0, 8);
+      return versions.slice(0, 8).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     }
     const normalized = trimmed.toLowerCase().replace(/\s+/g, '_');
     return versions
@@ -309,6 +309,7 @@ const ProgramManager = ({ initialProgramId, initialVersionId }: ProgramManagerPr
           version.label.toLowerCase().includes(normalized)
         )
       )
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .slice(0, 8);
   }, [searchTerm, versions]);
 

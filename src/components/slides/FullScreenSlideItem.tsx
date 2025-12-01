@@ -21,6 +21,9 @@ const FullScreenSlideItem = ({slide}:{slide: Slide}) => {
             if (line.isEmpty) {
               return <div key={lineIndex} className="text-center">&nbsp;</div>;
             }
+            if (line.isSlideMeta) {
+              return <div key={lineIndex} className="slideMeta text-center">{line.text}</div>;
+            }
             return <div key={lineIndex} className="text-center">{line.text}</div>;
           })}
         </div>

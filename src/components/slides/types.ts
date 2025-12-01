@@ -7,6 +7,7 @@ export interface ParsedLine {
   level?: number;
   isHr?: boolean;
   isEmpty?: boolean;
+  isSlideMeta?: boolean;
 }
 
 export type Slide = ParsedLine[];

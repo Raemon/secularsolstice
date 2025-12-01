@@ -22,6 +22,9 @@ const SlideItem = ({slide, slideLabel, className}:{slide: Slide, slideLabel?: st
             if (line.isEmpty) {
               return <div key={lineIndex}>&nbsp;</div>;
             }
+            if (line.isSlideMeta) {
+              return <div key={lineIndex} className="slideMeta">{line.text}</div>;
+            }
             return <div key={lineIndex}>{line.text}</div>;
           })}
         </div>
