@@ -2,6 +2,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import { existsSync } from 'fs';
 import dotenv from 'dotenv';
+import { generateSchemaSnapshot } from './generateSchemaSnapshot';
 
 const loadEnvFiles = () => {
   const envFiles = ['.env', '.env.local'];
@@ -60,6 +61,7 @@ const runMigrations = async () => {
   }
 
   console.log('All migrations complete.');
+  await generateSchemaSnapshot();
 };
 
 runMigrations().catch((error) => {

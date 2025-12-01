@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "next lint",
     "import:songs": "tsx scripts/importSongsToDb.ts",
-    "migrate": "tsx scripts/runMigrations.ts"
+    "migrate": "tsx scripts/runMigrations.ts",
+    "schema:snapshot": "tsx scripts/generateSchemaSnapshot.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
