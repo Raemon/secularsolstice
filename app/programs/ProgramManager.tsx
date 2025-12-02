@@ -740,6 +740,7 @@ const ProgramManager = ({ initialProgramId, initialVersionId }: ProgramManagerPr
       content: '',
       audioUrl: '',
       bpm: null,
+      transpose: null,
       previousVersionId: null,
       nextVersionId: null,
       originalVersionId: null,
@@ -754,7 +755,7 @@ const ProgramManager = ({ initialProgramId, initialVersionId }: ProgramManagerPr
     setSearchTerm('');
   };
 
-  const handleFormChange = (updates: Partial<{label: string; content: string; audioUrl: string; bpm: number}>) => {
+  const handleFormChange = (updates: Partial<{label: string; content: string; audioUrl: string; bpm: number; transpose: number}>) => {
     updateForm(updates);
   };
 
@@ -773,7 +774,7 @@ const ProgramManager = ({ initialProgramId, initialVersionId }: ProgramManagerPr
       const response = await fetch('/api/songs/versions', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({songId: selectedVersion.songId, label: newVersionForm.label, content: newVersionForm.content, audioUrl: newVersionForm.audioUrl, bpm: newVersionForm.bpm, previousVersionId, createdBy: userName, renderedContent}),
+        body: JSON.stringify({songId: selectedVersion.songId, label: newVersionForm.label, content: newVersionForm.content, audioUrl: newVersionForm.audioUrl, bpm: newVersionForm.bpm, transpose: newVersionForm.transpose ?? null, previousVersionId, createdBy: userName, renderedContent}),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {

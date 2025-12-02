@@ -308,6 +308,7 @@ const ChordmarkRenderer = ({
   defaultMode = 'one-line',
   activeLineIndex = null,
   initialBpm = 90,
+  initialTranspose = 0,
   print = false,
   renderedContent = null,
 }: {
@@ -315,11 +316,12 @@ const ChordmarkRenderer = ({
   defaultMode?: ChordmarkViewMode;
   activeLineIndex?: number | null;
   initialBpm?: number;
+  initialTranspose?: number;
   print?: boolean;
   renderedContent?: {htmlFull?: string; htmlChordsOnly?: string; htmlLyricsOnly?: string; slides?: string; [key: string]: string | undefined} | null;
 }) => {
   const [mode, setMode] = useState<ChordmarkViewMode>(defaultMode);
-  const [transposeSteps, setTransposeSteps] = useState(0);
+  const [transposeSteps, setTransposeSteps] = useState(initialTranspose);
   
   // Always parse for the player, but only render if we don't have cached content
   const parsedSong = useChordmarkParser(content);

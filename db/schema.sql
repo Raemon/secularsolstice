@@ -25,6 +25,7 @@ create table if not exists song_versions (
   next_version_id uuid,
   original_version_id uuid,
   bpm integer,
+  transpose integer default 0,
   archived boolean not null default false,
   created_by text,
   rendered_content jsonb,

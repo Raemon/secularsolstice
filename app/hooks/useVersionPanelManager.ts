@@ -150,6 +150,7 @@ const useVersionPanelManager = ({
           content: newVersionForm.content || null,
           audioUrl: newVersionForm.audioUrl || null,
           bpm: newVersionForm.bpm || null,
+          transpose: newVersionForm.transpose ?? null,
           previousVersionId: previousVersionId || null,
           createdBy: userName,
           renderedContent,

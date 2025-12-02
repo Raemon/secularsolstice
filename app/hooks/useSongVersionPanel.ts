@@ -8,6 +8,7 @@ const defaultFormState = {
   content: '',
   audioUrl: '',
   bpm: 100,
+  transpose: 0,
   previousVersionId: '',
   nextVersionId: '',
 };
@@ -71,6 +72,7 @@ const useSongVersionPanel = () => {
         content: version.content || '',
         audioUrl: version.audioUrl || '',
         bpm: version.bpm || 100,
+        transpose: version.transpose ?? 0,
         previousVersionId: version.previousVersionId || '',
         nextVersionId: version.nextVersionId || '',
       });

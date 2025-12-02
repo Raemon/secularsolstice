@@ -20,6 +20,7 @@ export type SongVersion = {
   originalVersionId: string | null;
   renderedContent: RenderedContent | null;
   bpm: number | null;
+  transpose: number | null;
   archived: boolean;
   createdAt: string;
   createdBy: string | null;
