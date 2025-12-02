@@ -51,6 +51,7 @@ const ProgramManager = ({ initialProgramId, initialVersionId }: ProgramManagerPr
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [isDeletingProgram, setIsDeletingProgram] = useState(false);
   const [fullVersions, setFullVersions] = useState<Record<string, SongVersion>>({});
+  const [pendingVersionId, setPendingVersionId] = useState<string | null>(null);
   const programMap = useMemo(() => {
     const map: Record<string, Program> = {};
     programs.forEach((program) => {
@@ -74,13 +75,9 @@ const ProgramManager = ({ initialProgramId, initialVersionId }: ProgramManagerPr
 
   // Load from localStorage on mount
   useEffect(() => {
-    const savedNewProgramTitle = localStorage.getItem('programManager-newProgramTitle');
-    const savedSearchTerm = localStorage.getItem('programManager-searchTerm');
+  const savedNewProgramTitle = localStorage.getItem('programManager-newProgramTitle');
     if (savedNewProgramTitle) {
       setNewProgramTitle(savedNewProgramTitle);
-    }
-    if (savedSearchTerm) {
-      setSearchTerm(savedSearchTerm);
     }
   }, []);
 
@@ -90,12 +87,6 @@ const ProgramManager = ({ initialProgramId, initialVersionId }: ProgramManagerPr
       localStorage.setItem('programManager-newProgramTitle', newProgramTitle);
     }
   }, [newProgramTitle]);
-
-  useEffect(() => {
-    if (searchTerm) {
-      localStorage.setItem('programManager-searchTerm', searchTerm);
-    }
-  }, [searchTerm]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -193,7 +184,9 @@ const ProgramManager = ({ initialProgramId, initialVersionId }: ProgramManagerPr
       return ids;
     };
 
-    const fetchVersions = async () => {
+    let isCancelled = false;
+
+    const fetchVersions = () => {
       if (!selectedProgram) {
         setFullVersions({});
         return;
@@ -204,27 +197,44 @@ const ProgramManager = ({ initialProgramId, initialVersionId }: ProgramManagerPr
         setFullVersions({});
         return;
       }
-      
-      const newFullVersions: Record<string, SongVersion> = {};
-      
-      for (const versionId of versionIdSet) {
-        try {
-          const response = await fetch(`/api/songs/versions/${versionId}`);
-          if (response.ok) {
-            const data = await response.json();
-            if (data.version) {
-              newFullVersions[versionId] = data.version;
-            }
+
+      setFullVersions((prev) => {
+        const next = { ...prev };
+        let changed = false;
+        Object.keys(next).forEach((existingId) => {
+          if (!versionIdSet.has(existingId)) {
+            delete next[existingId];
+            changed = true;
           }
-        } catch (err) {
-          console.error(`Failed to fetch version ${versionId}:`, err);
-        }
-      }
+        });
+        return changed ? next : prev;
+      });
       
-      setFullVersions(newFullVersions);
+      versionIdSet.forEach((versionId) => {
+        fetch(`/api/songs/versions/${versionId}`)
+          .then((response) => {
+            if (!response.ok) {
+              return null;
+            }
+            return response.json();
+          })
+          .then((data) => {
+            if (!data || !data.version || isCancelled) {
+              return;
+            }
+            setFullVersions((prev) => ({ ...prev, [versionId]: data.version }));
+          })
+          .catch((err) => {
+            console.error(`Failed to fetch version ${versionId}:`, err);
+          });
+      });
     };
     
     fetchVersions();
+
+    return () => {
+      isCancelled = true;
+    };
   }, [selectedProgram, programMap]);
 
   const versionMap = useMemo(() => {
@@ -645,13 +655,40 @@ const ProgramManager = ({ initialProgramId, initialVersionId }: ProgramManagerPr
 
   const handleElementClick = useCallback(async (versionId: string) => {
     setVersionError(null);
+    setPendingVersionId(versionId);
+    const initialVersion = fullVersions[versionId] || (() => {
+      const fallback = versionMap[versionId];
+      if (!fallback) {
+        return null;
+      }
+      return {
+        id: fallback.id,
+        songId: fallback.songId,
+        label: fallback.label,
+        content: '',
+        audioUrl: '',
+        previousVersionId: null,
+        nextVersionId: fallback.nextVersionId,
+        originalVersionId: null,
+        renderedContent: null,
+        bpm: null,
+        archived: false,
+        createdAt: fallback.createdAt,
+        createdBy: null,
+      } as SongVersion;
+    })();
     const version = await selectVersionById(versionId, {
+      initialVersion: initialVersion || undefined,
       onError: (message) => setVersionError(message),
     });
+    if (version) {
+      setFullVersions((prev) => ({ ...prev, [version.id]: version }));
+    }
     if (version && selectedProgramId) {
       router.push(`/programs/${selectedProgramId}/${version.id}`);
     }
-  }, [selectVersionById, selectedProgramId, router]);
+    setPendingVersionId(null);
+  }, [selectVersionById, selectedProgramId, router, fullVersions, versionMap]);
 
   const handleTogglePreviousVersions = () => {
     togglePreviousVersions();
@@ -741,6 +778,7 @@ const ProgramManager = ({ initialProgramId, initialVersionId }: ProgramManagerPr
         createdAt: data.version.createdAt, 
         nextVersionId: data.version.nextVersionId || null
       }]);
+      setFullVersions((prev) => ({ ...prev, [data.version.id]: data.version }));
       if (previousVersionId) {
         await updateProgramElementReferences(previousVersionId, data.version.id);
       }
@@ -792,6 +830,14 @@ const ProgramManager = ({ initialProgramId, initialVersionId }: ProgramManagerPr
       }
 
       setVersions((prev) => prev.filter((version) => version.id !== archivedId));
+      setFullVersions((prev) => {
+        if (!prev[archivedId]) {
+          return prev;
+        }
+        const next = { ...prev };
+        delete next[archivedId];
+        return next;
+      });
       handleCloseVersionPanel();
     } catch (err) {
       setVersionError(err instanceof Error ? err.message : 'Failed to delete version');
@@ -865,6 +911,7 @@ const ProgramManager = ({ initialProgramId, initialVersionId }: ProgramManagerPr
         isArchiving={isArchiving}
         versionError={versionError}
         slides={allSlides}
+        isVersionLoading={Boolean(pendingVersionId)}
         onCloseVersionPanel={handleCloseVersionPanel}
         onTogglePreviousVersions={handleTogglePreviousVersions}
         onVersionClick={handleVersionClick}

@@ -135,9 +135,8 @@ const ProgramElementsSection = ({selectedProgram, versions, versionMap, selected
               onChangeVersion={noopChangeVersion}
               onClick={onElementClick}
               onCreateNewVersion={noopCreateVersion}
-              canEdit={false}
+              canEdit={canEdit}
               selectedVersionId={selectedVersionId}
-              showDropdown={false}
             />
           );
         })}
@@ -151,7 +150,7 @@ const ProgramElementsSection = ({selectedProgram, versions, versionMap, selected
   };
 
   return (
-    <div className="flex flex-col gap-1 w-1/2">
+    <div className="flex flex-col gap-1">
       {!selectedProgram && (
         <p className="text-sm text-gray-400">Create or select a program to begin.</p>
       )}

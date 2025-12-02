@@ -3,7 +3,7 @@ import VersionDetailPanel from '../../songs/VersionDetailPanel';
 import type { SongVersion } from '../../songs/types';
 import type { Program, VersionOption, SongSlideData } from '../types';
 
-const ProgramViewPanel = ({selectedProgram, selectedVersion, versions, previousVersions, isExpandedPreviousVersions, isCreatingVersion, newVersionForm, isSubmitting, isArchiving, versionError, slides, onCloseVersionPanel, onTogglePreviousVersions, onVersionClick, onCreateVersionClick, onCancelCreateVersion, onFormChange, onSubmitVersion, onArchiveVersion}: {selectedProgram: Program | null, selectedVersion: SongVersion | null, versions: VersionOption[], previousVersions: SongVersion[], isExpandedPreviousVersions: boolean, isCreatingVersion: boolean, newVersionForm: {label: string; content: string; audioUrl: string; bpm: number; previousVersionId: string; nextVersionId: string;}, isSubmitting: boolean, isArchiving: boolean, versionError: string | null, slides: SongSlideData[], onCloseVersionPanel: () => void, onTogglePreviousVersions: () => void, onVersionClick: (version: SongVersion) => void, onCreateVersionClick: () => void, onCancelCreateVersion: () => void, onFormChange: (updates: Partial<{label: string; content: string; audioUrl: string; bpm: number;}>) => void, onSubmitVersion: () => void, onArchiveVersion: () => void}) => {
+const ProgramViewPanel = ({selectedProgram, selectedVersion, versions, previousVersions, isExpandedPreviousVersions, isCreatingVersion, newVersionForm, isSubmitting, isArchiving, versionError, slides, isVersionLoading, onCloseVersionPanel, onTogglePreviousVersions, onVersionClick, onCreateVersionClick, onCancelCreateVersion, onFormChange, onSubmitVersion, onArchiveVersion}: {selectedProgram: Program | null, selectedVersion: SongVersion | null, versions: VersionOption[], previousVersions: SongVersion[], isExpandedPreviousVersions: boolean, isCreatingVersion: boolean, newVersionForm: {label: string; content: string; audioUrl: string; bpm: number; previousVersionId: string; nextVersionId: string;}, isSubmitting: boolean, isArchiving: boolean, versionError: string | null, slides: SongSlideData[], isVersionLoading: boolean, onCloseVersionPanel: () => void, onTogglePreviousVersions: () => void, onVersionClick: (version: SongVersion) => void, onCreateVersionClick: () => void, onCancelCreateVersion: () => void, onFormChange: (updates: Partial<{label: string; content: string; audioUrl: string; bpm: number;}>) => void, onSubmitVersion: () => void, onArchiveVersion: () => void}) => {
   if (selectedProgram && !selectedVersion) {
     return (
       <div className="w-1/3 overflow-y-auto max-h-screen">
@@ -29,6 +29,7 @@ const ProgramViewPanel = ({selectedProgram, selectedVersion, versions, previousV
       isSubmitting={isSubmitting}
       isArchiving={isArchiving}
       error={versionError}
+      isLoadingVersion={isVersionLoading}
       onClose={onCloseVersionPanel}
       onTogglePreviousVersions={onTogglePreviousVersions}
       onVersionClick={onVersionClick}
