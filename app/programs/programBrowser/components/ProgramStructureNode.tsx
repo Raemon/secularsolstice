@@ -54,7 +54,6 @@ const ProgramStructureNode = ({
               onClick={onElementClick}
               canEdit={false}
               selectedVersionId={selectedVersionId}
-              showDropdown={false}
             />
           );
         })}
