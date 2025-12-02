@@ -24,7 +24,6 @@ const ProgramSlidesView = ({slides}:{slides: SongSlideData[]}) => {
       <div className="text-sm font-semibold">Program Slides</div>
       {slides.map((songData, songIndex) => (
         <div key={songData.versionId} className="space-y-2">
-          <div className="text-sm font-semibold">{songData.songTitle} - {songData.versionLabel}</div>
           {songData.slides.length === 0 ? (
             <div className="text-xs text-gray-500">No slides available</div>
           ) : (
