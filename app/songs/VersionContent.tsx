@@ -11,10 +11,10 @@ const VersionContent = ({version, print}: {
 }) => {
   const hasAudio = Boolean(version.audioUrl);
   const hasContent = Boolean(version.content);
-  const isTxtFile = version.label.toLowerCase().endsWith('.txt');
   const fileType = detectFileType(version.label, version.content || '');
   const isChordmarkFile = fileType === 'chordmark';
   const isLilypondFile = fileType === 'lilypond';
+  const isTxtFile = fileType === 'text';
   const audioUrl = version.audioUrl || '';
   const normalizedAudioUrl = audioUrl.toLowerCase();
   const isAudioFile = normalizedAudioUrl ? AUDIO_EXTENSIONS.some(ext => normalizedAudioUrl.endsWith(ext)) : false;

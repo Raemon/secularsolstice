@@ -66,9 +66,9 @@ const SongTags = ({songId, initialTags = []}: {songId?: string; initialTags?: st
   }
 
   return (
-    <div className="mt-4 pt-4 border-t border-gray-200">
-      <div className="text-xs text-gray-400 mb-2">Tags</div>
-      <div className="flex flex-wrap gap-2 mb-2">
+    <div className="mt-4 pt-4 border-t border-gray-200 flex items-center gap-2 mb-4">
+      <div className="text-xs text-gray-400">Tags</div>
+      <div className="flex flex-wrap gap-2">
         {tags.map(tag => (
           <span key={tag} className="text-xs px-2 py-1 bg-gray-100 text-gray-700 flex items-center gap-1">
             {tag}

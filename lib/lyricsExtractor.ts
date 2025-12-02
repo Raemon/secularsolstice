@@ -451,12 +451,16 @@ export const extractLyricsFromUltimateGuitar = (content: string): string => {
 /**
  * Detect file type from filename or content
  */
-export const detectFileType = (filename: string, content: string): 'lilypond' | 'chordmark' | 'ultimateguitar' | 'unknown' => {
+export const detectFileType = (filename: string, content: string): 'lilypond' | 'chordmark' | 'ultimateguitar' | 'text' |'unknown' => {
   const lowerFilename = filename.toLowerCase();
   
   // Check file extension first
   if (lowerFilename.endsWith('.ly') || lowerFilename.endsWith('.lilypond')) {
     return 'lilypond';
+  }
+
+  if (lowerFilename.endsWith('.txt') || lowerFilename.endsWith('.text')) {
+    return 'text';
   }
   
   if (lowerFilename.endsWith('.chordmark') || lowerFilename.endsWith('.cho')) {

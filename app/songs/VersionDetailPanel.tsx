@@ -55,6 +55,7 @@ const VersionDetailPanel = ({songTitle, version, previousVersions, isExpandedPre
         </button>
         {songTitle.replace(/_/g, ' ')}
       </h2>
+      <SongTags songId={songId} initialTags={initialTags} />
       <div className="mb-2 flex items-center justify-between sticky top-[-80px]">
         <VersionHeader version={version} />
         {canEdit && (
@@ -102,7 +103,6 @@ const VersionDetailPanel = ({songTitle, version, previousVersions, isExpandedPre
       ) : (
         <>
           <VersionContent version={version} />
-          <SongTags songId={songId} initialTags={initialTags} />
           <VersionMetadata version={version} />
           <PreviousVersionsList
             previousVersions={previousVersions}
