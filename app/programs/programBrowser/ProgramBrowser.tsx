@@ -149,6 +149,29 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
     }
   };
 
+  const handleReorderElements = useCallback(async (programId: string, reorderedElementIds: string[]) => {
+    const program = programMap[programId];
+    if (!program) {
+      return;
+    }
+    try {
+      const response = await fetch(`/api/programs/${programId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ elementIds: reorderedElementIds, programIds: program.programIds }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to reorder elements');
+      }
+      const data = await response.json();
+      setPrograms((prev) => prev.map((p) => (p.id === programId ? data.program : p)));
+    } catch (err) {
+      console.error('Failed to reorder elements:', err);
+      setDataError(err instanceof Error ? err.message : 'Failed to reorder elements');
+    }
+  }, [programMap]);
+
   const containsVersion = useCallback(
     (program: Program | null, targetVersionId: string, visited: Set<string>): boolean => {
       if (!program || visited.has(program.id)) {
@@ -249,6 +272,7 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
               versionMap={versionMap}
               selectedVersionId={selectedVersion?.id}
               onVersionClick={handleVersionClick}
+              onReorderElements={handleReorderElements}
             />
           </div>  
           {selectedVersion && (

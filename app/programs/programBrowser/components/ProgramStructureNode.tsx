@@ -2,6 +2,7 @@
 
 import { type ReactElement } from 'react';
 import ProgramElementItem from './ProgramElementItem';
+import DragAndDropList from '../../components/DragAndDropList';
 import type { Program, VersionOption } from '../../types';
 
 const noop = () => {};
@@ -15,6 +16,7 @@ export type ProgramStructureNodeProps = {
   versions: VersionOption[];
   selectedVersionId?: string;
   onElementClick: (versionId: string) => void;
+  onReorderElements: (programId: string, reorderedElementIds: string[]) => void | Promise<void>;
 };
 
 const ProgramStructureNode = ({
@@ -26,6 +28,7 @@ const ProgramStructureNode = ({
   versions,
   selectedVersionId,
   onElementClick,
+  onReorderElements,
 }: ProgramStructureNodeProps): ReactElement => {
   const nextTrail = new Set(trail);
   nextTrail.add(current.id);
@@ -39,24 +42,30 @@ const ProgramStructureNode = ({
           </div>
         )}
       </div>
-      <div className="mt-2 flex flex-col divide-y divide-gray-900">
-        {current.elementIds.map((elementId: string, index: number): ReactElement => {
-          const version = versionMap[elementId];
-          return (
-            <ProgramElementItem
-              key={`${elementId}-${current.id}`}
-              id={elementId}
-              index={index}
-              version={version}
-              allVersions={versions}
-              onRemove={noop}
-              onChangeVersion={noop}
-              onClick={onElementClick}
-              canEdit={false}
-              selectedVersionId={selectedVersionId}
-            />
-          );
-        })}
+      <div className="mt-2 flex flex-col">
+        <DragAndDropList
+          items={current.elementIds}
+          onReorder={(reorderedElementIds) => {
+            void onReorderElements(current.id, reorderedElementIds);
+          }}
+          renderItem={(elementId: string, index: number) => {
+            const version = versionMap[elementId];
+            return (
+              <ProgramElementItem
+                id={elementId}
+                index={index}
+                version={version}
+                allVersions={versions}
+                onRemove={noop}
+                onChangeVersion={noop}
+                onClick={onElementClick}
+                canEdit={false}
+                selectedVersionId={selectedVersionId}
+              />
+            );
+          }}
+          keyExtractor={(elementId: string) => `${elementId}-${current.id}`}
+        />
       </div>
       {current.programIds.length > 0 && (
         <div className="mt-3 flex flex-col gap-3">
@@ -87,6 +96,7 @@ const ProgramStructureNode = ({
                 versions={versions}
                 selectedVersionId={selectedVersionId}
                 onElementClick={onElementClick}
+                onReorderElements={onReorderElements}
               />
             );
           })}
