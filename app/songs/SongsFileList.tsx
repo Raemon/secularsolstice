@@ -9,6 +9,7 @@ import CreateVersionForm from './CreateVersionForm';
 import type { Song, SongVersion } from './types';
 import { useUser } from '../contexts/UserContext';
 import useVersionPanelManager from '../hooks/useVersionPanelManager';
+import useCreateSong from '../hooks/useCreateSong';
 
 const getLatestVersion = (versions: SongVersion[]) => maxBy(versions, (version) => new Date(version.createdAt).getTime());
 
@@ -24,9 +25,6 @@ const SongsFileList = ({ initialVersionId }: SongsFileListProps = {}) => {
   const [listError, setListError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const [isCreatingSong, setIsCreatingSong] = useState(false);
-  const [newSongTitle, setNewSongTitle] = useState('');
-  const [isSubmittingSong, setIsSubmittingSong] = useState(false);
   const [creatingVersionForSong, setCreatingVersionForSong] = useState<Song | null>(null);
   const [sortOption, setSortOption] = useState<'alphabetical' | 'recently-updated'>('recently-updated');
   const [isListCollapsed, setIsListCollapsed] = useState(false);
@@ -98,6 +96,21 @@ const SongsFileList = ({ initialVersionId }: SongsFileListProps = {}) => {
       return new Date(bLatestVersion.createdAt).getTime() - new Date(aLatestVersion.createdAt).getTime();
     }
     return 0;
+  });
+
+  const {
+    isCreatingSong,
+    setIsCreatingSong,
+    newSongTitle,
+    setNewSongTitle,
+    isSubmittingSong,
+    error: createSongError,
+    handleCreateSong,
+    resetError,
+  } = useCreateSong({
+    userName,
+    onSongCreated: fetchSongs,
+    onError: setListError,
   });
 
   const getBasePath = useCallback(() => '/songs', []);
@@ -191,38 +204,6 @@ const SongsFileList = ({ initialVersionId }: SongsFileListProps = {}) => {
   const handleCancelNewVersionForSong = () => {
     setCreatingVersionForSong(null);
     cancelVersionCreation();
-  };
-
-  const handleCreateSong = async () => {
-    if (!newSongTitle.trim()) {
-      setListError('Song title is required');
-      return;
-    }
-    
-    setIsSubmittingSong(true);
-    setListError(null);
-    
-    try {
-      const response = await fetch('/api/songs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: newSongTitle.trim(), createdBy: userName }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create song');
-      }
-
-      setIsCreatingSong(false);
-      setNewSongTitle('');
-      await fetchSongs();
-    } catch (err) {
-      console.error('Error creating song:', err);
-      setListError(err instanceof Error ? err.message : 'Failed to create song');
-    } finally {
-      setIsSubmittingSong(false);
-    }
   };
 
   const handleCollapsedSongClick = async (song: Song) => {
@@ -331,21 +312,26 @@ const SongsFileList = ({ initialVersionId }: SongsFileListProps = {}) => {
               </button>
             </div>
             {isCreatingSong && (
-              <div className="flex gap-2 items-center mb-3">
-                <input
-                  type="text"
-                  value={newSongTitle}
-                  onChange={(e) => setNewSongTitle(e.target.value)}
-                  placeholder="Song title"
-                  className="flex-1 px-2 py-1 text-sm bg-black border border-gray-300"
-                  onKeyDown={(e) => e.key === 'Enter' && handleCreateSong()}
-                />
-                <button onClick={handleCreateSong} disabled={isSubmittingSong} className="text-xs px-2 py-1 bg-green-600 text-white disabled:opacity-50">
-                  {isSubmittingSong ? '...' : 'Create'}
-                </button>
-                <button onClick={() => { setIsCreatingSong(false); setNewSongTitle(''); }} className="text-xs px-2 py-1 text-gray-400">
-                  Cancel
-                </button>
+              <div className="mb-3">
+                <div className="flex gap-2 items-center">
+                  <input
+                    type="text"
+                    value={newSongTitle}
+                    onChange={(e) => { setNewSongTitle(e.target.value); resetError(); }}
+                    placeholder="Song title"
+                    className="flex-1 px-2 py-1 text-sm bg-black border border-gray-300"
+                    onKeyDown={(e) => e.key === 'Enter' && handleCreateSong()}
+                  />
+                  <button onClick={handleCreateSong} disabled={isSubmittingSong} className="text-xs px-2 py-1 bg-green-600 text-white disabled:opacity-50">
+                    {isSubmittingSong ? '...' : 'Create'}
+                  </button>
+                  <button onClick={() => { setIsCreatingSong(false); setNewSongTitle(''); resetError(); }} className="text-xs px-2 py-1 text-gray-400">
+                    Cancel
+                  </button>
+                </div>
+                {createSongError && (
+                  <div className="text-red-600 text-xs mt-1">{createSongError}</div>
+                )}
               </div>
             )}
             
