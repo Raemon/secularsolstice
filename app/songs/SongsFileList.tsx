@@ -306,9 +306,9 @@ const SongsFileList = ({ initialVersionId }: SongsFileListProps = {}) => {
               )}
               <button
                 onClick={() => setIsListCollapsed(true)}
-                className="text-xs px-2 py-1 text-gray-400 whitespace-nowrap"
+                className="text-xl px-2 py-1 text-gray-400 whitespace-nowrap"
               >
-                Hide
+                «
               </button>
             </div>
             {isCreatingSong && (
