@@ -306,6 +306,7 @@ const ProgramManager = ({ initialProgramId, initialVersionId }: ProgramManagerPr
         songTitle: version.songTitle,
         versionLabel: version.label,
         slides,
+        tags: version.tags || [],
       };
     };
 
@@ -780,13 +781,15 @@ const ProgramManager = ({ initialProgramId, initialVersionId }: ProgramManagerPr
       if (!response.ok) {
         throw new Error(data.error || 'Failed to create version');
       }
+      const existingVersion = versions.find(v => v.songId === data.version.songId);
       setVersions(prev => [...prev, {
         id: data.version.id, 
         songId: data.version.songId, 
         label: data.version.label, 
-        songTitle: versions.find(v => v.songId === data.version.songId)?.songTitle || '', 
+        songTitle: existingVersion?.songTitle || '', 
         createdAt: data.version.createdAt, 
-        nextVersionId: data.version.nextVersionId || null
+        nextVersionId: data.version.nextVersionId || null,
+        tags: existingVersion?.tags || []
       }]);
       setFullVersions((prev) => ({ ...prev, [data.version.id]: data.version }));
       if (previousVersionId) {

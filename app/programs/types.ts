@@ -16,6 +16,7 @@ export type VersionOption = {
   songTitle: string;
   createdAt: string;
   nextVersionId: string | null;
+  tags: string[];
 };
 
 export type SongSlideData = {
@@ -23,6 +24,7 @@ export type SongSlideData = {
   songTitle: string;
   versionLabel: string;
   slides: Slide[];
+  tags: string[];
 };
 
 

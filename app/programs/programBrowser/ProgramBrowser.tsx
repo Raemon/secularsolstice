@@ -395,6 +395,7 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
         songTitle: version.songTitle,
         versionLabel: version.label,
         slides,
+        tags: version.tags || [],
       };
     };
 

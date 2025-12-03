@@ -453,14 +453,15 @@ export const listAllVersionsWithSongTitles = async () => {
       v.label,
       s.title as "songTitle",
       v.created_at as "createdAt",
-      v.next_version_id as "nextVersionId"
+      v.next_version_id as "nextVersionId",
+      s.tags
     from song_versions v
     join songs s on s.id = v.song_id
     where v.archived = false
       and s.archived = false
     order by s.title asc, v.label asc
   `;
-  return rows as { id: string; songId: string; label: string; songTitle: string; createdAt: string; nextVersionId: string | null; }[];
+  return rows as { id: string; songId: string; label: string; songTitle: string; createdAt: string; nextVersionId: string | null; tags: string[]; }[];
 };
 
 export const updateSongTags = async (songId: string, tags: string[]): Promise<SongRecord> => {
