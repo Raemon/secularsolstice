@@ -269,12 +269,8 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
   );
 
   useEffect(() => {
-    if (!initialVersionId || hasHydratedInitialVersion.current) {
-      return;
-    }
-    if (!programs.length) {
-      return;
-    }
+    if (!initialVersionId || hasHydratedInitialVersion.current) return;
+    if (!programs.length) return;
 
     hasHydratedInitialVersion.current = true;
 
