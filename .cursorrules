@@ -1,0 +1,2 @@
+CRITICAL: Do not add trailing whitespace or extra newlines at the end of files. Preserve the exact whitespace formatting of files when editing. Do not insert final newlines unless the file already has one and you're maintaining that pattern.
+

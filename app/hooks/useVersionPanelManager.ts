@@ -101,7 +101,7 @@ const useVersionPanelManager = ({
   const handleCancelCreateVersion = useCallback(() => {
     cancelEditing();
     resetPanelError();
-  }, [cancelEditing]);
+  }, [cancelEditing, resetPanelError]);
 
   const handleFormChange = useCallback(
     (updates: Partial<typeof newVersionForm>) => {

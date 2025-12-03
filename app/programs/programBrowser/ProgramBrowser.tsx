@@ -22,7 +22,6 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
   const [isLoadingVersions, setIsLoadingVersions] = useState(true);
   const [dataError, setDataError] = useState<string | null>(null);
   const [selectedProgramId, setSelectedProgramId] = useState<string | null>(initialProgramId ?? null);
-  // const [_, setFullVersions] = useState<Record<string, SongVersion>>({});
   const hasHydratedInitialVersion = useRef(false);
   const getBasePath = useCallback(
     () => (selectedProgramId ? `/programs/${selectedProgramId}` : '/programs'),
@@ -127,74 +126,6 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
   }, [versions]);
 
   const selectedProgram = selectedProgramId ? programMap[selectedProgramId] ?? null : null;
-
-  useEffect(() => {
-    const collectVersionIds = (program: Program | null, visited: Set<string> = new Set()): string[] => {
-      if (!program || visited.has(program.id)) {
-        return [];
-      }
-      visited.add(program.id);
-      let ids: string[] = [...program.elementIds];
-      for (const childId of program.programIds) {
-        const childProgram = programMap[childId] || null;
-        ids = ids.concat(collectVersionIds(childProgram, visited));
-      }
-      visited.delete(program.id);
-      return ids;
-    };
-
-    let isCancelled = false;
-
-    const fetchVersions = () => {
-      if (!selectedProgram) {
-        setFullVersions({});
-        return;
-      }
-
-      const versionIdSet = new Set<string>(collectVersionIds(selectedProgram));
-      if (versionIdSet.size === 0) {
-        setFullVersions({});
-        return;
-      }
-
-      setFullVersions((prev) => {
-        const next = { ...prev };
-        let changed = false;
-        Object.keys(next).forEach((existingId) => {
-          if (!versionIdSet.has(existingId)) {
-            delete next[existingId];
-            changed = true;
-          }
-        });
-        return changed ? next : prev;
-      });
-      
-      versionIdSet.forEach((versionId) => {
-        fetch(`/api/songs/versions/${versionId}`)
-          .then((response) => {
-            if (!response.ok) {
-              return null;
-            }
-            return response.json();
-          })
-          .then((data) => {
-            if (!data || !data.version || isCancelled) {
-              return;
-            }
-            setFullVersions((prev) => ({ ...prev, [versionId]: data.version }));
-          })
-          .catch((err) => {
-            console.error(`Failed to fetch version ${versionId}:`, err);
-          });
-      });
-    };
-    
-    fetchVersions();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [selectedProgram, programMap]);
 
   useEffect(() => {
     if (!selectedProgramId && programs.length > 0) {
