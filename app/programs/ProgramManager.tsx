@@ -359,7 +359,7 @@ const ProgramManager = ({ initialProgramId, initialVersionId }: ProgramManagerPr
       prev.map((program) => (program.id === updatedProgram.id ? updatedProgram : program))
     );
   }, []);
-  const { handleReorder, handleAdd, handleDelete } = useProgram(selectedProgram, refreshProgram, setError);
+  const { handleAdd } = useProgram(selectedProgram, refreshProgram, setError);
   const updateProgramElementReferences = useCallback(async (oldVersionId: string, newVersionId: string) => {
     if (!selectedProgram) {
       return;

@@ -10,7 +10,29 @@ const noopRemove = () => {};
 const noopChangeVersion = () => {};
 const noopCreateVersion = () => {};
 
-const ProgramElementsSection = ({selectedProgram, versions, versionMap, selectedVersionId, filteredVersions, searchTerm, onSearchChange, refreshProgram, onChangeVersion, onElementClick, onCreateVersion, onKeyDown, canEdit, programs, programMap, onAddProgram, onRemoveProgram, onReorderProgramIds, canReferenceProgram}: {selectedProgram: Program | null, versions: VersionOption[], versionMap: Record<string, VersionOption>, selectedVersionId: string | undefined, filteredVersions: VersionOption[], searchTerm: string, onSearchChange: (value: string) => void, refreshProgram: (updatedProgram: Program) => void, onChangeVersion: (oldId: string, newId: string) => void, onElementClick: (versionId: string) => void, onCreateVersion: (songId: string) => void, onKeyDown: (event: KeyboardEvent<HTMLInputElement>) => void, canEdit: boolean, programs: Program[], programMap: Record<string, Program>, onAddProgram: (programId: string) => void, onRemoveProgram: (programId: string) => void, onReorderProgramIds: (ids: string[]) => void, canReferenceProgram: (sourceProgram: Program | null, targetProgramId: string) => boolean}) => {
+type ProgramElementsSectionProps = {
+  selectedProgram: Program | null;
+  versions: VersionOption[];
+  versionMap: Record<string, VersionOption>;
+  selectedVersionId: string | undefined;
+  filteredVersions: VersionOption[];
+  searchTerm: string;
+  onSearchChange: (value: string) => void;
+  refreshProgram: (updatedProgram: Program) => void;
+  onChangeVersion: (oldId: string, newId: string) => void;
+  onElementClick: (versionId: string) => void;
+  onCreateVersion: (songId: string) => void;
+  onKeyDown: (event: KeyboardEvent<HTMLInputElement>) => void;
+  canEdit: boolean;
+  programs: Program[];
+  programMap: Record<string, Program>;
+  onAddProgram: (programId: string) => void;
+  onRemoveProgram: (programId: string) => void;
+  onReorderProgramIds: (ids: string[]) => void;
+  canReferenceProgram: (sourceProgram: Program | null, targetProgramId: string) => boolean;
+};
+
+const ProgramElementsSection = ({selectedProgram, versions, versionMap, selectedVersionId, filteredVersions, searchTerm, onSearchChange, refreshProgram, onChangeVersion, onElementClick, onCreateVersion, onKeyDown, canEdit, programs, programMap, onAddProgram, onRemoveProgram, onReorderProgramIds, canReferenceProgram}: ProgramElementsSectionProps): ReactElement => {
   const { handleReorder, handleAdd: handleAddBase, handleDelete } = useProgram(selectedProgram, refreshProgram);
   const handleAdd = useCallback(async (versionId: string) => {
     await handleAddBase(versionId, () => onSearchChange(''));
