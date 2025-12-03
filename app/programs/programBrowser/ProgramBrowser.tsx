@@ -3,14 +3,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import VersionDetailPanel from '../../songs/VersionDetailPanel';
 import { useUser } from '../../contexts/UserContext';
-import type { Program, VersionOption, SongSlideData } from '../types';
+import type { Program, VersionOption } from '../types';
 import type { SongVersion } from '../../songs/types';
 import ProgramSelector from './components/ProgramSelector';
 import ProgramStructurePanel from './ProgramStructurePanel';
 import useVersionPanelManager from '../../hooks/useVersionPanelManager';
-import { generateSlidesFromHtml } from '../../../src/components/slides/slideGenerators';
-import type { Slide } from '../../../src/components/slides/types';
-import { extractLyrics } from '../../../lib/lyricsExtractor';
 
 type ProgramBrowserProps = {
   initialProgramId?: string;
@@ -25,7 +22,7 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
   const [isLoadingVersions, setIsLoadingVersions] = useState(true);
   const [dataError, setDataError] = useState<string | null>(null);
   const [selectedProgramId, setSelectedProgramId] = useState<string | null>(initialProgramId ?? null);
-  const [fullVersions, setFullVersions] = useState<Record<string, SongVersion>>({});
+  // const [_, setFullVersions] = useState<Record<string, SongVersion>>({});
   const hasHydratedInitialVersion = useRef(false);
   const getBasePath = useCallback(
     () => (selectedProgramId ? `/programs/${selectedProgramId}` : '/programs'),

@@ -169,12 +169,24 @@ const ProgramSlidesPage = ({ params }: ProgramSlidesPageProps) => {
       };
     };
 
-    const collectSlides = (program: Program | null, visited: Set<string> = new Set()): SongSlideData[] => {
+    const collectSlides = (program: Program | null, visited: Set<string> = new Set(), isSubprogram: boolean = false): SongSlideData[] => {
       if (!program || visited.has(program.id)) {
         return [];
       }
       visited.add(program.id);
       const result: SongSlideData[] = [];
+      
+      if (isSubprogram) {
+        const programTitleSlide: Slide = [{ text: program.title, isHeading: true, level: 1 }];
+        const programTitleData: SongSlideData = {
+          versionId: `program-${program.id}`,
+          songTitle: program.title,
+          versionLabel: '',
+          slides: [programTitleSlide],
+          tags: [],
+        };
+        result.push(programTitleData);
+      }
       
       for (const versionId of program.elementIds) {
         const songSlides = buildSongSlides(versionId);
@@ -185,7 +197,7 @@ const ProgramSlidesPage = ({ params }: ProgramSlidesPageProps) => {
       
       for (const childId of program.programIds) {
         const childProgram = programMap[childId] || null;
-        result.push(...collectSlides(childProgram, visited));
+        result.push(...collectSlides(childProgram, visited, true));
       }
       
       visited.delete(program.id);
