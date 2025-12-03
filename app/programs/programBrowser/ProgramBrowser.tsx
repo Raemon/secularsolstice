@@ -270,6 +270,34 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
     }
   }, [programMap]);
 
+  const handleAddElement = useCallback(async (programId: string, versionId: string) => {
+    const program = programMap[programId];
+    if (!program) {
+      return;
+    }
+    if (program.elementIds.includes(versionId)) {
+      return;
+    }
+    const nextElementIds = [...program.elementIds, versionId];
+    try {
+      const response = await fetch(`/api/programs/${programId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ elementIds: nextElementIds, programIds: program.programIds }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to add element');
+      }
+      const data = await response.json();
+      setPrograms((prev) => prev.map((p) => (p.id === programId ? data.program : p)));
+      setDataError(null);
+    } catch (err) {
+      console.error('Failed to add element:', err);
+      setDataError(err instanceof Error ? err.message : 'Failed to add element');
+    }
+  }, [programMap]);
+
   const containsVersion = useCallback(
     (program: Program | null, targetVersionId: string, visited: Set<string>): boolean => {
       if (!program || visited.has(program.id)) {
@@ -448,6 +476,7 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
               onVersionClick={handleVersionClick}
               onReorderElements={handleReorderElements}
               onChangeVersion={handleChangeVersion}
+              onAddElement={handleAddElement}
             />
           </div>  
           {selectedVersion ? (
