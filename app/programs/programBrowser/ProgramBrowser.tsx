@@ -354,6 +354,7 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
               onAddElement={handleAddElement}
               onRemoveElement={handleRemoveElement}
               canEdit={canEdit}
+              onSongCreated={loadVersionOptions}
             />
           </div>  
           {selectedVersion ? (

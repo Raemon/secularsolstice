@@ -200,10 +200,10 @@ export const getSongWithVersions = async (songId: string): Promise<SongWithVersi
   };
 };
 
-export const createSong = async (title: string, createdBy?: string | null): Promise<SongRecord> => {
+export const createSong = async (title: string, createdBy?: string | null, tags: string[] = ['song']): Promise<SongRecord> => {
   const rows = await sql`
-    insert into songs (title, created_by)
-    values (${title}, ${createdBy ?? null})
+    insert into songs (title, created_by, tags)
+    values (${title}, ${createdBy ?? null}, ${tags}::text[])
     returning id, title, created_by as "createdBy", created_at as "createdAt", archived, tags
   `;
   return (rows as SongRowResult[])[0];

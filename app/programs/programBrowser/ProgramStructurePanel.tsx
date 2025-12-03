@@ -3,6 +3,7 @@
 import { type ReactElement } from 'react';
 import ProgramStructureNode from './components/ProgramStructureNode';
 import type { Program, VersionOption } from '../types';
+import type { SongRecord, SongVersionRecord } from '@/lib/songsRepository';
 
 export type ProgramStructurePanelProps = {
   program: Program | null;
@@ -16,6 +17,7 @@ export type ProgramStructurePanelProps = {
   onAddElement: (programId: string, versionId: string) => void | Promise<void>;
   onRemoveElement: (programId: string, elementId: string) => void | Promise<void>;
   canEdit: boolean;
+  onSongCreated?: (data?: { song?: SongRecord; version?: SongVersionRecord }) => Promise<void> | void;
 };
 
 const ProgramStructurePanel = ({
@@ -30,6 +32,7 @@ const ProgramStructurePanel = ({
   onAddElement,
   onRemoveElement,
   canEdit,
+  onSongCreated,
 }: ProgramStructurePanelProps): ReactElement => {
   if (!program) {
     return (
@@ -59,6 +62,7 @@ const ProgramStructurePanel = ({
         onAddElement={onAddElement}
         onRemoveElement={onRemoveElement}
         canEdit={canEdit}
+        onSongCreated={onSongCreated}
       />
     </div>
   );

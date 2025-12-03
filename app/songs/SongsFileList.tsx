@@ -9,7 +9,7 @@ import CreateVersionForm from './CreateVersionForm';
 import type { Song, SongVersion } from './types';
 import { useUser } from '../contexts/UserContext';
 import useVersionPanelManager from '../hooks/useVersionPanelManager';
-import useCreateSong from '../hooks/useCreateSong';
+import CreateSongButton from '../components/CreateSongButton';
 
 const getLatestVersion = (versions: SongVersion[]) => maxBy(versions, (version) => new Date(version.createdAt).getTime());
 
@@ -19,7 +19,7 @@ type SongsFileListProps = {
 
 const SongsFileList = ({ initialVersionId }: SongsFileListProps = {}) => {
   console.log('SongsFileList component rendering');
-  const { canEdit, userName } = useUser();
+  const { userName } = useUser();
   const [songs, setSongs] = useState<Song[]>([]);
   const [loading, setLoading] = useState(true);
   const [listError, setListError] = useState<string | null>(null);
@@ -98,20 +98,6 @@ const SongsFileList = ({ initialVersionId }: SongsFileListProps = {}) => {
     return 0;
   });
 
-  const {
-    isCreatingSong,
-    setIsCreatingSong,
-    newSongTitle,
-    setNewSongTitle,
-    isSubmittingSong,
-    error: createSongError,
-    handleCreateSong,
-    resetError,
-  } = useCreateSong({
-    userName,
-    onSongCreated: fetchSongs,
-    onError: setListError,
-  });
 
   const getBasePath = useCallback(() => '/songs', []);
   const resolveSongContext = useCallback(
@@ -296,14 +282,10 @@ const SongsFileList = ({ initialVersionId }: SongsFileListProps = {}) => {
                   Recent
                 </button>
               </div>
-              {canEdit && (
-                <button
-                  onClick={() => setIsCreatingSong(!isCreatingSong)}
-                  className="text-xs px-2 py-1 border border-gray-500 rounded-sm text-white whitespace-nowrap"
-                >
-                  + Song
-                </button>
-              )}
+              <CreateSongButton
+                onSongCreated={fetchSongs}
+                onError={setListError}
+              />
               <button
                 onClick={() => setIsListCollapsed(true)}
                 className="text-xl px-2 py-1 text-gray-400 whitespace-nowrap"
@@ -311,29 +293,6 @@ const SongsFileList = ({ initialVersionId }: SongsFileListProps = {}) => {
                 «
               </button>
             </div>
-            {isCreatingSong && (
-              <div className="mb-3">
-                <div className="flex gap-2 items-center">
-                  <input
-                    type="text"
-                    value={newSongTitle}
-                    onChange={(e) => { setNewSongTitle(e.target.value); resetError(); }}
-                    placeholder="Song title"
-                    className="flex-1 px-2 py-1 text-sm bg-black border border-gray-300"
-                    onKeyDown={(e) => e.key === 'Enter' && handleCreateSong()}
-                  />
-                  <button onClick={handleCreateSong} disabled={isSubmittingSong} className="text-xs px-2 py-1 bg-green-600 text-white disabled:opacity-50">
-                    {isSubmittingSong ? '...' : 'Create'}
-                  </button>
-                  <button onClick={() => { setIsCreatingSong(false); setNewSongTitle(''); resetError(); }} className="text-xs px-2 py-1 text-gray-400">
-                    Cancel
-                  </button>
-                </div>
-                {createSongError && (
-                  <div className="text-red-600 text-xs mt-1">{createSongError}</div>
-                )}
-              </div>
-            )}
             
             {filteredSongs.map((song) => (
               <SongItem

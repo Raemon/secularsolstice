@@ -1,14 +1,16 @@
 'use client';
 
 import { useCallback, useState } from 'react';
+import type { SongRecord, SongVersionRecord } from '@/lib/songsRepository';
 
 type UseCreateSongOptions = {
-  userName: string | null;
-  onSongCreated?: () => Promise<void> | void;
+  createdBy: string | null;
+  onSongCreated?: (data?: { song?: SongRecord; version?: SongVersionRecord }) => Promise<void> | void;
   onError?: (error: string) => void;
+  defaultTags?: string[];
 };
 
-const useCreateSong = ({ userName, onSongCreated, onError }: UseCreateSongOptions) => {
+const useCreateSong = ({ createdBy, onSongCreated, onError, defaultTags }: UseCreateSongOptions) => {
   const [isCreatingSong, setIsCreatingSong] = useState(false);
   const [newSongTitle, setNewSongTitle] = useState('');
   const [isSubmittingSong, setIsSubmittingSong] = useState(false);
@@ -29,7 +31,7 @@ const useCreateSong = ({ userName, onSongCreated, onError }: UseCreateSongOption
       const response = await fetch('/api/songs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: newSongTitle.trim(), createdBy: userName }),
+        body: JSON.stringify({ title: newSongTitle.trim(), createdBy, tags: defaultTags }),
       });
 
       if (!response.ok) {
@@ -43,9 +45,10 @@ const useCreateSong = ({ userName, onSongCreated, onError }: UseCreateSongOption
         throw new Error(errorMessage);
       }
 
+      const data = await response.json();
       setIsCreatingSong(false);
       setNewSongTitle('');
-      await onSongCreated?.();
+      await onSongCreated?.(data);
     } catch (err) {
       console.error('Error creating song:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to create song';
@@ -54,7 +57,7 @@ const useCreateSong = ({ userName, onSongCreated, onError }: UseCreateSongOption
     } finally {
       setIsSubmittingSong(false);
     }
-  }, [newSongTitle, userName, onSongCreated, onError]);
+  }, [newSongTitle, createdBy, onSongCreated, onError, defaultTags, setIsCreatingSong, setNewSongTitle, setError, setIsSubmittingSong]);
 
   const resetError = useCallback(() => setError(null), []);
 

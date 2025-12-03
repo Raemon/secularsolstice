@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createSong, findVersionBySongTitleAndLabel, listSongsWithVersions } from '@/lib/songsRepository';
+import { createSong, findVersionBySongTitleAndLabel, listSongsWithVersions, createVersionWithLineage } from '@/lib/songsRepository';
 
 export async function GET(request: Request) {
   try {
@@ -38,14 +38,25 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { title, createdBy } = body;
+    const { title, createdBy, versionLabel, tags } = body;
     
     if (!title || typeof title !== 'string' || !title.trim()) {
       return NextResponse.json({ error: 'Title is required' }, { status: 400 });
     }
     
-    const song = await createSong(title.trim(), createdBy ?? null);
-    return NextResponse.json({ song });
+    const song = await createSong(title.trim(), createdBy ?? null, tags);
+    
+    let version = null;
+    if (versionLabel && typeof versionLabel === 'string' && versionLabel.trim()) {
+      version = await createVersionWithLineage({
+        songId: song.id,
+        label: versionLabel.trim(),
+        content: null,
+        createdBy: createdBy ?? null,
+      });
+    }
+    
+    return NextResponse.json({ song, version });
   } catch (error) {
     console.error('Failed to create song:', error);
     const errorMessage = error instanceof Error ? error.message : String(error);
