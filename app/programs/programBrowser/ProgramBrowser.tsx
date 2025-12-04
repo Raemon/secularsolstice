@@ -340,7 +340,9 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
                 selectedProgramId={selectedProgramId}
                 onSelect={handleProgramSelect}
               />
-              <a href={`/programs/${selectedProgramId}/slides`} className="text-sm">View Slides</a>
+              <a href={`/programs/${selectedProgramId}/program`} className="text-sm">Program</a>
+
+              <a href={`/programs/${selectedProgramId}/slides`} className="text-sm">Slides</a>
             </div>
             <ProgramStructurePanel
               program={selectedProgram}
