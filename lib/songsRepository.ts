@@ -478,6 +478,7 @@ export const listAllVersionsWithSongTitles = async () => {
       s.title as "songTitle",
       v.created_at as "createdAt",
       v.next_version_id as "nextVersionId",
+      v.program_credits as "programCredits",
       s.tags
     from song_versions v
     join songs s on s.id = v.song_id
@@ -485,7 +486,7 @@ export const listAllVersionsWithSongTitles = async () => {
       and s.archived = false
     order by s.title asc, v.label asc
   `;
-  return rows as { id: string; songId: string; label: string; songTitle: string; createdAt: string; nextVersionId: string | null; tags: string[]; }[];
+  return rows as { id: string; songId: string; label: string; songTitle: string; createdAt: string; nextVersionId: string | null; programCredits: string | null; tags: string[]; }[];
 };
 
 export const updateSongTags = async (songId: string, tags: string[]): Promise<SongRecord> => {

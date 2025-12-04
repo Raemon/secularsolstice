@@ -61,29 +61,31 @@ const PrintProgram = ({ programId }: PrintProgramProps) => {
 
   const selectedProgram = programId ? programMap[programId] ?? null : null;
 
-  const renderProgram = (program: Program | null, level: number = 0, visited: Set<string> = new Set()): JSX.Element[] => {
+  const renderProgram = (program: Program | null, level: number = 0, visited: Set<string> = new Set()): React.ReactElement[] => {
     if (!program || visited.has(program.id)) {
       return [];
     }
     visited.add(program.id);
     
     const elements: JSX.Element[] = [];
-    const isTopLevel = level === 0;
     
     if (level > 0) {
       elements.push(
-        <h2 key={`program-${program.id}`} className="text-xl font-bold mt-6 mb-2">
+        <h2 key={`program-${program.id}`} className="text-3xl font-georgia mt-6 mb-2">
           {program.title}
         </h2>
       );
     }
     
-    program.elementIds.forEach((versionId, idx) => {
+    program.elementIds.forEach((versionId) => {
       const version = versionMap[versionId];
       if (version) {
         elements.push(
           <div key={`version-${versionId}`} className="ml-4 mb-1">
-            {version.songTitle}
+            <div style={{fontFamily: 'Georgia, serif'}}>{version.songTitle}</div>
+            {version.programCredits && (
+              <div className="text-sm text-gray-600 ml-2">{version.programCredits}</div>
+            )}
           </div>
         );
       }

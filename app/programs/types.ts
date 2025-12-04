@@ -17,6 +17,7 @@ export type VersionOption = {
   songTitle: string;
   createdAt: string;
   nextVersionId: string | null;
+  programCredits: string | null;
   tags: string[];
 };
 
