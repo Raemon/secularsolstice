@@ -24,7 +24,7 @@ const VideoFrameUploader = ({programId, onUploadComplete}:{programId: string, on
         throw new Error('Failed to upload video');
       }
 
-      const result = await response.json();
+      await response.json();
       setStatus('Successfully uploaded video');
 
       if (onUploadComplete) {
