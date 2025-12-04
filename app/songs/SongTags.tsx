@@ -80,7 +80,7 @@ const SongTags = ({songId, initialTags = []}: {songId?: string; initialTags?: st
       <div className="text-xs text-gray-400">Tags</div>
       <div className="flex flex-wrap gap-2">
         {tags.map(tag => (
-          <span key={tag} className="text-xs px-2 py-1 bg-gray-100 text-gray-700 flex items-center gap-1">
+          <span key={tag} className="text-xs px-2 py-1 bg-black text-gray-200 border border-gray-500 flex items-center gap-1">
             {tag}
             <button
               onClick={() => handleRemoveTag(tag)}
@@ -124,10 +124,10 @@ const SongTags = ({songId, initialTags = []}: {songId?: string; initialTags?: st
             }}
             placeholder="Add tag"
             disabled={isUpdatingTags}
-            className="text-xs px-2 py-1 border border-gray-300 disabled:opacity-50"
+            className="text-xs px-2 py-1 border-none bg-transparent outline-none disabled:opacity-50"
           />
           {showDropdown && filteredSuggestions.length > 0 && (
-            <div ref={dropdownRef} className="absolute top-full left-0 mt-1 bg-white border border-gray-300 shadow-sm z-10 min-w-[120px]">
+            <div ref={dropdownRef} className="absolute top-full left-0 mt-1 bg-black border border-gray-500 shadow-sm z-10 min-w-[120px]">
               {filteredSuggestions.map((tag, index) => (
                 <div
                   key={tag}
@@ -142,13 +142,6 @@ const SongTags = ({songId, initialTags = []}: {songId?: string; initialTags?: st
             </div>
           )}
         </div>
-        <button
-          onClick={() => handleAddTag()}
-          disabled={isUpdatingTags || !newTag.trim() || tags.includes(newTag.trim())}
-          className="text-xs px-2 py-1 text-blue-400 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Add
-        </button>
       </div>
     </div>
   );
