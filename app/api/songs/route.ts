@@ -53,6 +53,8 @@ export async function POST(request: Request) {
         label: versionLabel.trim(),
         content: null,
         createdBy: createdBy ?? null,
+        slideCredits: null,
+        programCredits: null,
       });
     }
     

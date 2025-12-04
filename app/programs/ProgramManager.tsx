@@ -7,6 +7,7 @@ import ProgramElementsSection from './components/ProgramElementsSection';
 import ProgramViewPanel from './components/ProgramViewPanel';
 import CreateProgramModal from './components/CreateProgramModal';
 import type { SongVersion } from '../songs/types';
+import { createFallbackSongVersion } from '../songs/types';
 import { useUser } from '../contexts/UserContext';
 import { generateSlidesFromHtml } from '../../src/components/slides/slideGenerators';
 import type { Slide } from '../../src/components/slides/types';
@@ -606,23 +607,13 @@ const ProgramManager = ({ initialProgramId, initialVersionId }: ProgramManagerPr
           if (!fallbackOption) {
             return null;
           }
-          return {
+          return createFallbackSongVersion({
             id: fallbackOption.id,
             songId: fallbackOption.songId,
             label: fallbackOption.label,
-            content: '',
-            audioUrl: '',
-            previousVersionId: null,
-            nextVersionId: fallbackOption.nextVersionId,
-            originalVersionId: null,
-            renderedContent: null,
-            bpm: null,
-            archived: false,
             createdAt: fallbackOption.createdAt,
-            slideCredits: null,
-            programCredits: null,
-            createdBy: null,
-          } as SongVersion;
+            nextVersionId: fallbackOption.nextVersionId,
+          });
         })();
     const version = await selectVersionById(versionId, {
       initialVersion: fallback || undefined,
@@ -696,7 +687,7 @@ const ProgramManager = ({ initialProgramId, initialVersionId }: ProgramManagerPr
     setSearchTerm('');
   };
 
-  const handleFormChange = (updates: Partial<{label: string; content: string; audioUrl: string; bpm: number; transpose: number}>) => {
+  const handleFormChange = (updates: Partial<{label: string; content: string; audioUrl: string; bpm: number; transpose: number; slideCredits: string; programCredits: string}>) => {
     updateForm(updates);
   };
 
@@ -715,7 +706,7 @@ const ProgramManager = ({ initialProgramId, initialVersionId }: ProgramManagerPr
       const response = await fetch('/api/songs/versions', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({songId: selectedVersion.songId, label: newVersionForm.label, content: newVersionForm.content, audioUrl: newVersionForm.audioUrl, bpm: newVersionForm.bpm, transpose: newVersionForm.transpose ?? null, previousVersionId, createdBy: userName, renderedContent}),
+        body: JSON.stringify({songId: selectedVersion.songId, label: newVersionForm.label, content: newVersionForm.content, audioUrl: newVersionForm.audioUrl, bpm: newVersionForm.bpm, transpose: newVersionForm.transpose ?? null, previousVersionId, createdBy: userName, renderedContent, slideCredits: newVersionForm.slideCredits, programCredits: newVersionForm.programCredits}),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {

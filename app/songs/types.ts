@@ -38,3 +38,22 @@ export type Song = {
   tags: string[];
 };
 
+export const createFallbackSongVersion = (partial: Pick<SongVersion, 'id' | 'songId' | 'label' | 'createdAt'> & Partial<Pick<SongVersion, 'nextVersionId'>>): SongVersion => ({
+  id: partial.id,
+  songId: partial.songId,
+  label: partial.label,
+  createdAt: partial.createdAt,
+  content: '',
+  audioUrl: '',
+  previousVersionId: null,
+  nextVersionId: partial.nextVersionId ?? null,
+  originalVersionId: null,
+  renderedContent: null,
+  bpm: null,
+  transpose: null,
+  archived: false,
+  slideCredits: null,
+  programCredits: null,
+  createdBy: null,
+});
+
