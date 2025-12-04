@@ -340,9 +340,14 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
                 selectedProgramId={selectedProgramId}
                 onSelect={handleProgramSelect}
               />
-              <a href={`/programs/${selectedProgramId}/program`} className="text-sm">Program</a>
-
-              <a href={`/programs/${selectedProgramId}/slides`} className="text-sm">Slides</a>
+              <div className="flex items-center gap-2">
+                <a href={`/programs/${selectedProgramId}/program`} className="text-sm hover:opacity-50">
+                  Program
+                </a>
+                <a href={`/programs/${selectedProgramId}/slides`} className="text-sm hover:opacity-50">
+                  Slides
+                </a>
+              </div>
             </div>
             <ProgramStructurePanel
               program={selectedProgram}
