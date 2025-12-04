@@ -1,20 +1,30 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useUser } from '../contexts/UserContext';
+
+const SUGGESTED_TAGS = ['song', 'speech', 'act 1', 'act 2', 'act 3', 'act 4'];
 
 const SongTags = ({songId, initialTags = []}: {songId?: string; initialTags?: string[]}) => {
   const { canEdit } = useUser();
   const [tags, setTags] = useState<string[]>(initialTags);
   const [newTag, setNewTag] = useState('');
   const [isUpdatingTags, setIsUpdatingTags] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setTags(initialTags);
   }, [initialTags]);
 
-  const handleAddTag = async () => {
-    const trimmedTag = newTag.trim();
+  const filteredSuggestions = SUGGESTED_TAGS.filter(tag => 
+    !tags.includes(tag) && tag.toLowerCase().includes(newTag.toLowerCase())
+  );
+
+  const handleAddTag = async (tagOverride?: string) => {
+    const trimmedTag = (tagOverride ?? newTag).trim();
     if (!trimmedTag || tags.includes(trimmedTag) || !songId) {
       return;
     }
@@ -82,23 +92,58 @@ const SongTags = ({songId, initialTags = []}: {songId?: string; initialTags?: st
           </span>
         ))}
       </div>
-      <div className="flex gap-2">
-        <input
-          type="text"
-          value={newTag}
-          onChange={(e) => setNewTag(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              handleAddTag();
-            }
-          }}
-          placeholder="Add tag"
-          disabled={isUpdatingTags}
-          className="text-xs px-2 py-1 border border-gray-300 disabled:opacity-50"
-        />
+      <div className="flex gap-2 relative">
+        <div className="relative">
+          <input
+            ref={inputRef}
+            type="text"
+            value={newTag}
+            onChange={(e) => { setNewTag(e.target.value); setShowDropdown(true); setHighlightedIndex(-1); }}
+            onFocus={() => setShowDropdown(true)}
+            onBlur={(e) => { if (!dropdownRef.current?.contains(e.relatedTarget as Node)) setShowDropdown(false); }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                if (highlightedIndex >= 0 && filteredSuggestions[highlightedIndex]) {
+                  handleAddTag(filteredSuggestions[highlightedIndex]);
+                  setShowDropdown(false);
+                  setHighlightedIndex(-1);
+                } else {
+                  handleAddTag();
+                }
+              } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                setHighlightedIndex(prev => Math.min(prev + 1, filteredSuggestions.length - 1));
+              } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                setHighlightedIndex(prev => Math.max(prev - 1, -1));
+              } else if (e.key === 'Escape') {
+                setShowDropdown(false);
+                setHighlightedIndex(-1);
+              }
+            }}
+            placeholder="Add tag"
+            disabled={isUpdatingTags}
+            className="text-xs px-2 py-1 border border-gray-300 disabled:opacity-50"
+          />
+          {showDropdown && filteredSuggestions.length > 0 && (
+            <div ref={dropdownRef} className="absolute top-full left-0 mt-1 bg-white border border-gray-300 shadow-sm z-10 min-w-[120px]">
+              {filteredSuggestions.map((tag, index) => (
+                <div
+                  key={tag}
+                  className={`text-xs px-2 py-1 bg-black/90 text-white hover:text-primary cursor-pointer ${index === highlightedIndex ? 'text-primary' : 'hover:bg-gray-100'}`}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => { handleAddTag(tag); setShowDropdown(false); setHighlightedIndex(-1); }}
+                  onMouseEnter={() => setHighlightedIndex(index)}
+                >
+                  {tag}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
         <button
-          onClick={handleAddTag}
+          onClick={() => handleAddTag()}
           disabled={isUpdatingTags || !newTag.trim() || tags.includes(newTag.trim())}
           className="text-xs px-2 py-1 text-blue-400 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
         >
