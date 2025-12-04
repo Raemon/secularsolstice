@@ -1,12 +1,14 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import SlideItem from '../../../../src/components/slides/SlideItem';
 import { generateSlidesFromHtml } from '../../../../src/components/slides/slideGenerators';
+import { extractFrames } from '../../../../src/components/slides/utils';
 import type { Slide } from '../../../../src/components/slides/types';
 import { extractLyrics } from '../../../../lib/lyricsExtractor';
 import type { Program, VersionOption, SongSlideData } from '../../types';
 import type { SongVersion } from '../../../songs/types';
+import VideoFrameUploader from '../../components/VideoFrameUploader';
 
 type ProgramSlidesProps = {
   programId: string;
@@ -20,6 +22,11 @@ const ProgramSlides = ({ programId }: ProgramSlidesProps) => {
   const [error, setError] = useState<string | null>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [totalVersionsToLoad, setTotalVersionsToLoad] = useState(0);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [extractedFrames, setExtractedFrames] = useState<string[]>([]);
+  const [showUploader, setShowUploader] = useState(false);
+  const [isExtractingFrames, setIsExtractingFrames] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -68,6 +75,19 @@ const ProgramSlides = ({ programId }: ProgramSlidesProps) => {
   }, [versions]);
 
   const selectedProgram = programId ? programMap[programId] ?? null : null;
+
+  useEffect(() => {
+    if (selectedProgram?.id) {
+      fetch(`/api/programs/${selectedProgram.id}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.program?.videoUrl) {
+            setVideoUrl(data.program.videoUrl);
+          }
+        })
+        .catch(err => console.error('Failed to fetch program details:', err));
+    }
+  }, [selectedProgram?.id]);
 
   useEffect(() => {
     if (!selectedProgram) return;
@@ -217,6 +237,63 @@ const ProgramSlides = ({ programId }: ProgramSlidesProps) => {
     return processedSlides.flatMap(songData => songData.slides);
   }, [processedSlides]);
 
+  const programTitleSlideIndices = useMemo(() => {
+    const indices = new Set<number>();
+    let currentIndex = 0;
+    for (const songData of processedSlides) {
+      if (songData.versionId.startsWith('program-')) {
+        indices.add(currentIndex);
+      }
+      currentIndex += songData.slides.length;
+    }
+    return indices;
+  }, [processedSlides]);
+
+  useEffect(() => {
+    if (!videoUrl || flattenedSlides.length === 0 || isExtractingFrames) return;
+
+    const extractFramesFromVideo = async () => {
+      const video = videoRef.current;
+      if (!video) return;
+
+      setIsExtractingFrames(true);
+      video.src = videoUrl;
+
+      try {
+        const numFrames = Math.min(flattenedSlides.length, 100);
+        const frames = await extractFrames(video, numFrames);
+        setExtractedFrames(frames);
+      } catch (error) {
+        console.error('Error extracting frames from video:', error);
+      } finally {
+        setIsExtractingFrames(false);
+      }
+    };
+
+    extractFramesFromVideo();
+  }, [videoUrl, flattenedSlides.length, isExtractingFrames]);
+
+  const getBackgroundForSlide = (slideIndex: number): string | undefined => {
+    if (!extractedFrames || extractedFrames.length === 0) return undefined;
+    if (flattenedSlides.length === 0) return undefined;
+    const frameIndex = Math.floor((slideIndex / flattenedSlides.length) * extractedFrames.length);
+    return extractedFrames[Math.min(frameIndex, extractedFrames.length - 1)];
+  };
+
+  const handleUploadComplete = () => {
+    if (selectedProgram?.id) {
+      fetch(`/api/programs/${selectedProgram.id}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.program?.videoUrl) {
+            setVideoUrl(data.program.videoUrl);
+            setExtractedFrames([]);
+          }
+        })
+        .catch(err => console.error('Failed to refresh program details:', err));
+    }
+  };
+
   useEffect(() => {
     setCurrentSlide(0);
   }, [flattenedSlides.length]);
@@ -272,12 +349,30 @@ const ProgramSlides = ({ programId }: ProgramSlidesProps) => {
 
   return (
     <div className="relative w-screen h-screen flex items-center justify-center">
+      <video ref={videoRef} style={{display: 'none'}} crossOrigin="anonymous" />
       {!isFullyLoaded && totalVersionsToLoad > 0 && (
         <div className="fixed top-4 left-4 text-white text-sm bg-black bg-opacity-50 px-3 py-1 rounded">
           Loading: {loadedVersionsCount}/{totalVersionsToLoad} songs
         </div>
       )}
-      <SlideItem slide={flattenedSlides[currentSlide]} className="bg-black w-screen h-screen flex items-center justify-center p-4 font-georgia" />
+      {isExtractingFrames && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 text-white text-sm bg-black bg-opacity-50 px-3 py-1 rounded">
+          Extracting frames from video...
+        </div>
+      )}
+      <div className="fixed top-4 right-4 z-10">
+        {showUploader ? (
+          <div className="bg-black bg-opacity-75 px-3 py-2 rounded">
+            <VideoFrameUploader programId={programId} onUploadComplete={handleUploadComplete} />
+            <button onClick={() => setShowUploader(false)} className="text-xs text-gray-400 mt-1">Close</button>
+          </div>
+        ) : (
+          <button onClick={() => setShowUploader(true)} className="text-white text-xs bg-black bg-opacity-50 px-3 py-1 rounded">
+            Video Backgrounds
+          </button>
+        )}
+      </div>
+      <SlideItem slide={flattenedSlides[currentSlide]} className="bg-black w-screen h-screen flex items-center justify-center p-4 font-georgia" backgroundImageUrl={getBackgroundForSlide(currentSlide)} backgroundOpacity={programTitleSlideIndices.has(currentSlide) ? 1.0 : 0.5} />
       <div className="fixed bottom-4 right-4 text-white text-sm bg-black bg-opacity-50 px-3 py-1 rounded">
         {currentSlide + 1} / {flattenedSlides.length}
       </div>

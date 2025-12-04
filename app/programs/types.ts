@@ -7,6 +7,7 @@ export type Program = {
   programIds: string[];
   createdAt: string;
   archived: boolean;
+  videoUrl?: string | null;
 };
 
 export type VersionOption = {

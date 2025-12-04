@@ -8,6 +8,7 @@ create table if not exists programs (
   archived boolean not null default false,
   created_by text,
   program_ids uuid[] not null default '{}'::uuid[],
+  video_url text,
   constraint programs_pkey PRIMARY KEY (id)
 );
 
@@ -27,8 +28,8 @@ create table if not exists song_versions (
   bpm integer,
   archived boolean not null default false,
   created_by text,
-  rendered_content jsonb,
   transpose integer default 0,
+  rendered_content jsonb,
   constraint song_versions_next_version_id_fkey FOREIGN KEY (next_version_id) REFERENCES song_versions(id) ON DELETE SET NULL,
   constraint song_versions_original_version_id_fkey FOREIGN KEY (original_version_id) REFERENCES song_versions(id) ON DELETE SET NULL,
   constraint song_versions_pkey PRIMARY KEY (id),
