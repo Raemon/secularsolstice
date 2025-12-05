@@ -84,10 +84,10 @@ const PrintProgram = ({ programId }: PrintProgramProps) => {
       const version = versionMap[versionId];
       if (version) {
         elements.push(
-          <div key={`version-${versionId}`} className="ml-4 mb-1">
+          <div key={`version-${versionId}`} className="mb-1">
             <div style={{fontFamily: 'Georgia, serif'}}>{version.songTitle}</div>
             {version.programCredits && (
-              <div className="text-sm text-gray-600 ml-2">{version.programCredits}</div>
+              <div className="text-sm text-gray-600">{version.programCredits}</div>
             )}
           </div>
         );
