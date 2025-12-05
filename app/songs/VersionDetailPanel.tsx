@@ -9,6 +9,49 @@ import SongTitle from './SongTitle';
 import ChangelogPage from '../changelog/ChangelogPage';
 import type { SongVersion } from './types';
 import { useUser } from '../contexts/UserContext';
+import Tooltip from '../components/Tooltip';
+
+const VersionActionButtons = ({isCreatingVersion, version, isSubmitting, isArchiving, canEdit, onSubmitVersion, onArchiveVersion, onCreateVersionClick, onCancelCreateVersion}: {
+  isCreatingVersion: boolean;
+  version: SongVersion & { songId?: string; nextVersionId?: string | null; originalVersionId?: string | null };
+  isSubmitting: boolean;
+  isArchiving: boolean;
+  canEdit: boolean;
+  onSubmitVersion: () => void;
+  onArchiveVersion: () => void;
+  onCreateVersionClick: () => void;
+  onCancelCreateVersion: () => void;
+}) => {
+  return (
+    <div className="flex items-center gap-2">
+      {isCreatingVersion && (
+        <button
+          onClick={onSubmitVersion}
+          className="text-blue-400 text-xs hover:text-blue-800 disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={isSubmitting || isArchiving || !canEdit}
+        >
+          Save
+        </button>
+      )}
+      {isCreatingVersion && version.id !== 'new' && (
+        <button
+          onClick={onArchiveVersion}
+          className="text-red-600 text-xs hover:text-red-800 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-red-800"
+          disabled={isSubmitting || isArchiving || !canEdit}
+        >
+          Delete
+        </button>
+      )}
+      <button
+        onClick={isCreatingVersion ? onCancelCreateVersion : onCreateVersionClick}
+        className="text-gray-400 text-xs hover:text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+        disabled={isSubmitting || isArchiving || !canEdit}
+      >
+        {isCreatingVersion ? 'Cancel' : 'Edit'}
+      </button>
+    </div>
+  );
+};
 
 const VersionDetailPanel = ({songTitle, version, isCreatingVersion, newVersionForm, isSubmitting, isArchiving, error, isLoadingVersion = false, songId, tags: initialTags = [], onClose, onCreateVersionClick, onCancelCreateVersion, onFormChange, onSubmitVersion, onArchiveVersion, onTitleChange}: {
   songTitle: string;
@@ -60,35 +103,33 @@ const VersionDetailPanel = ({songTitle, version, isCreatingVersion, newVersionFo
       <SongTags songId={songId} initialTags={initialTags} />
       <div className="mb-2 flex items-center justify-between sticky top-[-80px]">
         <VersionHeader version={version} />
-        {canEdit && (
-          <div className="flex items-center gap-2">
-            {isCreatingVersion && (
-              <button
-                onClick={onSubmitVersion}
-                className="text-blue-400 text-xs hover:text-blue-800"
-                disabled={isSubmitting || isArchiving}
-              >
-                Save
-              </button>
-            )}
-            {isCreatingVersion && version.id !== 'new' && (
-              <button
-                onClick={onArchiveVersion}
-                className="text-red-600 text-xs hover:text-red-800"
-                disabled={isSubmitting || isArchiving}
-              >
-                Delete
-              </button>
-            )}
-            <button
-              onClick={isCreatingVersion ? onCancelCreateVersion : onCreateVersionClick}
-              className="text-gray-400 text-xs hover:text-gray-200"
-              disabled={isSubmitting || isArchiving}
-            >
-              {isCreatingVersion ? 'Cancel' : 'Edit'}
-            </button>
-          </div>
-        )}
+          {canEdit ? (
+            <VersionActionButtons
+              isCreatingVersion={isCreatingVersion}
+              version={version}
+              isSubmitting={isSubmitting}
+              isArchiving={isArchiving}
+              canEdit={canEdit}
+              onSubmitVersion={onSubmitVersion}
+              onArchiveVersion={onArchiveVersion}
+              onCreateVersionClick={onCreateVersionClick}
+              onCancelCreateVersion={onCancelCreateVersion}
+            />
+          ) : (
+            <Tooltip content="to edit, type your name in the top-right">
+              <VersionActionButtons
+                isCreatingVersion={isCreatingVersion}
+                version={version}
+                isSubmitting={isSubmitting}
+                isArchiving={isArchiving}
+                canEdit={canEdit}
+                onSubmitVersion={onSubmitVersion}
+                onArchiveVersion={onArchiveVersion}
+                onCreateVersionClick={onCreateVersionClick}
+                onCancelCreateVersion={onCancelCreateVersion}
+              />
+            </Tooltip>
+          )}
       </div>
       
       {isCreatingVersion ? (

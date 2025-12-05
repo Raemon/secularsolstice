@@ -1,4 +1,6 @@
 import React from 'react';
+import sql from '@/lib/db';
+import { getProgramById } from '@/lib/programsRepository';
 
 type Program = {
   id: string;
@@ -25,15 +27,114 @@ type ProgramScriptProps = {
 };
 
 async function loadProgramScriptData(programId: string) {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/programs/${programId}/script`, {
-    cache: 'no-store',
-  });
-  
-  if (!response.ok) {
-    throw new Error('Failed to load program script data');
+  const currentProgram = await getProgramById(programId);
+  if (!currentProgram) {
+    throw new Error('Program not found');
   }
   
-  return response.json();
+  type ProgramRow = {
+    id: string;
+    title: string;
+    element_ids: string[] | null;
+    program_ids: string[] | null;
+  };
+  
+  const allPrograms = await sql`
+    select id, title, element_ids, program_ids
+    from programs
+    where archived = false
+  ` as ProgramRow[];
+  
+  const programs: Program[] = allPrograms.map((p) => ({
+    id: p.id,
+    title: p.title,
+    elementIds: p.element_ids ?? [],
+    programIds: p.program_ids ?? [],
+  }));
+  
+  const programMap: Record<string, Program> = {};
+  programs.forEach((program) => {
+    programMap[program.id] = program;
+  });
+  
+  const collectVersionIds = (prog: Program | null, visited: Set<string> = new Set()): string[] => {
+    if (!prog || visited.has(prog.id)) {
+      return [];
+    }
+    visited.add(prog.id);
+    
+    const ids: string[] = [...prog.elementIds];
+    prog.programIds.forEach((childId) => {
+      const childProg = programMap[childId];
+      if (childProg) {
+        ids.push(...collectVersionIds(childProg, visited));
+      }
+    });
+    return ids;
+  };
+  
+  const versionIds = collectVersionIds(programMap[programId]);
+  
+  if (versionIds.length === 0) {
+    return {
+      program: {
+        id: currentProgram.id,
+        title: currentProgram.title,
+        elementIds: currentProgram.elementIds,
+        programIds: currentProgram.programIds,
+      },
+      programs,
+      versions: {},
+    };
+  }
+  
+  type VersionRow = {
+    id: string;
+    song_id: string;
+    song_title: string;
+    label: string;
+    content: string | null;
+    rendered_content: { htmlLyricsOnly?: string; plainText?: string } | null;
+    tags: string[] | null;
+  };
+  
+  const versions = await sql`
+    select 
+      v.id, 
+      v.song_id, 
+      s.title as song_title,
+      v.label,
+      v.content,
+      v.rendered_content,
+      s.tags
+    from song_versions v
+    join songs s on v.song_id = s.id
+    where v.id = ANY(${versionIds})
+  ` as VersionRow[];
+  
+  const versionsMap: Record<string, SongVersion> = {};
+  versions.forEach((v) => {
+    versionsMap[v.id] = {
+      id: v.id,
+      songId: v.song_id,
+      songTitle: v.song_title,
+      label: v.label,
+      content: v.content,
+      renderedContent: v.rendered_content,
+      tags: v.tags || [],
+    };
+  });
+  
+  return {
+    program: {
+      id: currentProgram.id,
+      title: currentProgram.title,
+      elementIds: currentProgram.elementIds,
+      programIds: currentProgram.programIds,
+    },
+    programs,
+    versions: versionsMap,
+  };
 }
 
 const ProgramScript = async ({ programId }: ProgramScriptProps) => {
