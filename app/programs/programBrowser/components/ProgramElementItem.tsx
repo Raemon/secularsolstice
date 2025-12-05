@@ -31,10 +31,9 @@ const ProgramElementItem = ({id, index, version, allVersions, onRemove, onChange
 
   return (
     <div className={`text-sm px-2 py-1 flex items-center gap-2 hover:bg-black cursor-pointer group ${selectedVersionId === id && 'text-primary'}`} onClick={() => onClick?.(id)}>
-      <span className="font-semibold w-[20px] text-center text-gray-400">{index + 1}.</span>
-      <span className="font-georgia text-base w-[250px] truncate hover:text-blue-400">{version?.songTitle.replace(/_/g, ' ')}</span>
+      <span className="font-georgia text-base w-[250px] truncate hover:text-blue-400">{version?.songTitle}</span>
       <div className="flex items-center gap-1">
-        <div className={`text-gray-400 w-[180px] truncate flex items-center justify-between gap-1 ${!isLatestVersion && 'opacity-50'}`}>
+        <div className={`text-gray-400 w-[150px] truncate flex items-center justify-between gap-1 ${!isLatestVersion && 'opacity-50'}`}>
           <span className={`${selectedVersionId === id ? 'text-primary' : 'text-gray-300'} w-[180px] truncate`}>{version?.label ?? id}</span>
           <span className="text-gray-400 text-xs">{formatRelativeTimestamp(version?.createdAt ?? '')}</span>
         </div>
