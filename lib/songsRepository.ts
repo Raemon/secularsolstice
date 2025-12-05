@@ -301,6 +301,36 @@ export const getVersionById = async (versionId: string): Promise<SongVersionReco
   return typedRows.length > 0 ? typedRows[0] : null;
 };
 
+export const getVersionsByIds = async (versionIds: string[]): Promise<SongVersionRecord[]> => {
+  if (versionIds.length === 0) {
+    return [];
+  }
+  const rows = await sql`
+    select
+      v.id as "id",
+      v.song_id as "songId",
+      v.label,
+      v.content,
+      v.audio_url as "audioUrl",
+      v.bpm,
+      v.transpose,
+      v.previous_version_id as "previousVersionId",
+      v.next_version_id as "nextVersionId",
+      v.original_version_id as "originalVersionId",
+      v.rendered_content as "renderedContent",
+      v.archived as "archived",
+      v.created_by as "createdBy",
+      v.created_at as "createdAt",
+      s.title as "songTitle",
+      v.slide_credits as "slideCredits",
+      v.program_credits as "programCredits"
+    from song_versions v
+    join songs s on v.song_id = s.id
+    where v.id = ANY(${versionIds}) and v.archived = false
+  `;
+  return rows as SongVersionRecord[];
+};
+
 export const getPreviousVersionsChain = async (versionId: string): Promise<SongVersionRecord[]> => {
   const currentVersion = await getVersionById(versionId);
   if (!currentVersion) {

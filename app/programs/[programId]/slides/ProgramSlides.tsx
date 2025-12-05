@@ -105,27 +105,30 @@ const ProgramSlides = ({ programId }: ProgramSlidesProps) => {
       return ids;
     };
 
-    const versionIdSet = new Set<string>(collectVersionIds(selectedProgram));
-    setTotalVersionsToLoad(versionIdSet.size);
+    const versionIdArray = Array.from(new Set<string>(collectVersionIds(selectedProgram)));
+    setTotalVersionsToLoad(versionIdArray.length);
     
-    versionIdSet.forEach((versionId) => {
-      fetch(`/api/songs/versions/${versionId}`)
+    if (versionIdArray.length > 0) {
+      fetch('/api/songs/versions/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ versionIds: versionIdArray })
+      })
         .then((response) => {
           if (!response.ok) {
-            return null;
+            throw new Error('Failed to fetch versions batch');
           }
           return response.json();
         })
         .then((data) => {
-          if (!data || !data.version) {
-            return;
+          if (data && data.versions) {
+            setFullVersions(data.versions);
           }
-          setFullVersions((prev) => ({ ...prev, [versionId]: data.version }));
         })
         .catch((err) => {
-          console.error(`Failed to fetch version ${versionId}:`, err);
+          console.error('Failed to fetch versions batch:', err);
         });
-    });
+    }
   }, [selectedProgram, programMap]);
 
   const loadedVersionsCount = Object.keys(fullVersions).length;

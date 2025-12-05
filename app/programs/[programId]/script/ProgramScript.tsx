@@ -1,8 +1,11 @@
-'use client';
+import React from 'react';
 
-import { useEffect, useState, useMemo } from 'react';
-import type { Program, VersionOption } from '../../types';
-import { extractLyrics } from '@/lib/lyricsExtractor';
+type Program = {
+  id: string;
+  title: string;
+  elementIds: string[];
+  programIds: string[];
+};
 
 type SongVersion = {
   id: string;
@@ -21,94 +24,46 @@ type ProgramScriptProps = {
   programId: string;
 };
 
-const ProgramScript = ({ programId }: ProgramScriptProps) => {
-  const [programs, setPrograms] = useState<Program[]>([]);
-  const [versions, setVersions] = useState<Map<string, SongVersion>>(new Map());
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+async function loadProgramScriptData(programId: string) {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/programs/${programId}/script`, {
+    cache: 'no-store',
+  });
+  
+  if (!response.ok) {
+    throw new Error('Failed to load program script data');
+  }
+  
+  return response.json();
+}
 
-  useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      try {
-        const programsResponse = await fetch('/api/programs');
-        if (!programsResponse.ok) {
-          throw new Error('Failed to load programs');
-        }
-        const programsData = await programsResponse.json();
-        const allPrograms = programsData.programs || [];
-        setPrograms(allPrograms);
+const ProgramScript = async ({ programId }: ProgramScriptProps) => {
+  let data;
+  try {
+    data = await loadProgramScriptData(programId);
+  } catch (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white text-black">
+        <div>Error: {error instanceof Error ? error.message : 'Failed to load program'}</div>
+      </div>
+    );
+  }
 
-        const programMap: Record<string, Program> = {};
-        allPrograms.forEach((program: Program) => {
-          programMap[program.id] = program;
-        });
+  const programs: Program[] = data.programs || [];
+  const versions: Record<string, SongVersion> = data.versions || {};
+  const selectedProgram: Program | null = data.program || null;
 
-        const collectVersionIds = (prog: Program | null, visited: Set<string> = new Set()): string[] => {
-          if (!prog || visited.has(prog.id)) return [];
-          visited.add(prog.id);
-          
-          const ids: string[] = [...prog.elementIds];
-          prog.programIds.forEach((childId) => {
-            const childProg = programMap[childId];
-            if (childProg) {
-              ids.push(...collectVersionIds(childProg, visited));
-            }
-          });
-          return ids;
-        };
+  const programMap: Record<string, Program> = {};
+  programs.forEach((program) => {
+    programMap[program.id] = program;
+  });
 
-        const currentProgram = programMap[programId];
-        if (!currentProgram) {
-          throw new Error('Program not found');
-        }
-
-        const versionIds = collectVersionIds(currentProgram);
-        const versionsMap = new Map<string, SongVersion>();
-
-        for (const versionId of versionIds) {
-          try {
-            const versionDetailResponse = await fetch(`/api/songs/versions/${versionId}`);
-            if (versionDetailResponse.ok) {
-              const versionDetail = await versionDetailResponse.json();
-              const ver = versionDetail.version;
-              versionsMap.set(versionId, {
-                id: versionId,
-                songId: ver.songId,
-                songTitle: ver.songTitle,
-                label: ver.label,
-                content: ver.content,
-                renderedContent: ver.renderedContent,
-                tags: [], // Will be loaded from song data if needed
-              });
-            }
-          } catch (err) {
-            console.error(`Failed to load version ${versionId}:`, err);
-          }
-        }
-
-        setVersions(versionsMap);
-        setError(null);
-      } catch (err) {
-        console.error('Failed to load data:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load program');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
-  }, [programId]);
-
-  const programMap = useMemo(() => {
-    const map: Record<string, Program> = {};
-    programs.forEach((program) => {
-      map[program.id] = program;
-    });
-    return map;
-  }, [programs]);
-
-  const selectedProgram = programId ? programMap[programId] ?? null : null;
+  if (!selectedProgram) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white text-black">
+        <div>Program not found</div>
+      </div>
+    );
+  }
 
   const renderProgram = (program: Program | null, level: number = 0, visited: Set<string> = new Set()): React.ReactElement[] => {
     if (!program || visited.has(program.id)) {
@@ -127,7 +82,7 @@ const ProgramScript = ({ programId }: ProgramScriptProps) => {
     }
     
     program.elementIds.forEach((versionId) => {
-      const version = versions.get(versionId);
+      const version = versions[versionId];
       if (version) {
         const isText = version.tags?.includes('text');
         const isSpeech = version.tags?.includes('speech');
@@ -136,8 +91,10 @@ const ProgramScript = ({ programId }: ProgramScriptProps) => {
         let contentToDisplay = '';
         if (showFullContent && version.content) {
           contentToDisplay = version.content;
+        } else if (version.renderedContent?.plainText) {
+          contentToDisplay = version.renderedContent.plainText;
         } else if (version.content) {
-          contentToDisplay = extractLyrics(version.content, version.label);
+          contentToDisplay = version.content;
         }
         
         elements.push(
@@ -161,30 +118,6 @@ const ProgramScript = ({ programId }: ProgramScriptProps) => {
     visited.delete(program.id);
     return elements;
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white text-black">
-        <div>Loading...</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white text-black">
-        <div>Error: {error}</div>
-      </div>
-    );
-  }
-
-  if (!selectedProgram) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white text-black">
-        <div>Program not found</div>
-      </div>
-    );
-  }
 
   const elements = renderProgram(selectedProgram, 0);
 
