@@ -28,11 +28,17 @@ export const lyricsToHtml = (lyrics: string): string => {
   return `<div>${lyrics
     .split('\n')
     .map(line => {
-      // Check if line starts with [[ and ends with ]]
-      const metaMatch = line.match(/^\[\[(.*)\]\]$/);
-      if (metaMatch) {
+      // Check if line starts with [[ and ends with ]] (double brackets)
+      const doubleMetaMatch = line.match(/^\[\[(.*)\]\]$/);
+      if (doubleMetaMatch) {
         // Convert [[text]] to [text] and mark as meta
-        return `<p class="slideMeta">${escapeHtml(`[ ${metaMatch[1]} ]`)}</p>`;
+        return `<p class="slideMeta">${escapeHtml(`[ ${doubleMetaMatch[1]} ]`)}</p>`;
+      }
+      // Check if line starts with [ and ends with ] (single brackets)
+      const singleMetaMatch = line.match(/^\[(.*)\]$/);
+      if (singleMetaMatch) {
+        // Keep [text] as-is and mark as meta
+        return `<p class="slideMeta">${escapeHtml(`[ ${singleMetaMatch[1]} ]`)}</p>`;
       }
       return `<p>${line ? escapeHtml(line) : '&nbsp;'}</p>`;
     })

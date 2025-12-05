@@ -55,6 +55,12 @@ body {
   font-size: 12px;
 }
 
+.slideMeta {
+  color: #999;
+  font-style: italic;
+  opacity: 0.85;
+}
+
 .markdown-content {
   line-height: 1.5;
   font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', 'Consolas', 'Courier New', monospace;
