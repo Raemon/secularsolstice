@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import { Slide, ParsedLine } from './types';
 
 /**
@@ -7,13 +8,35 @@ import { Slide, ParsedLine } from './types';
  * Used for preview/thumbnail views (not full-screen presentation)
  */
 const SlideItem = ({slide, className, backgroundImageUrl, backgroundOpacity = 0.5, isProgramTitle = false}:{slide: Slide, className?: string, backgroundImageUrl?: string, backgroundOpacity?: number, isProgramTitle?: boolean}) => {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [containerHeight, setContainerHeight] = useState<number | null>(null);
   const backgroundStyle = backgroundImageUrl ? {backgroundImage: `url(${backgroundImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center'} : {};
   const overlayStyle = backgroundImageUrl ? {position: 'absolute' as const, inset: 0, backgroundColor: 'black', opacity: 1 - backgroundOpacity} : {};
-  const baseFontSize = isProgramTitle ? 'clamp(1.25rem, 2.5vw, 3rem)' : 'clamp(0.75rem, 1.5vw, 1.75rem)';
-  const headingFontSize = isProgramTitle ? 'clamp(3rem, 7vw, 10rem)' : 'clamp(1.5rem, 3.625vw, 5rem)';
+  
+  const baseScale = isProgramTitle ? 0.2 : 0.05;
+  const headingScale = isProgramTitle ? 0.08 : 0.04;
+
+  const getSize = (scale: number, fallback: string) => containerHeight !== null ? `${containerHeight * scale}px` : fallback;
+  const baseFontSize = getSize(baseScale, isProgramTitle ? '2.5vh' : '1.5vh');
+  const headingFontSize = getSize(headingScale, isProgramTitle ? '7vh' : '3.625vh');
+  
+  useEffect(() => {
+    const node = containerRef.current;
+    if (!node) return;
+    const updateSize = () => setContainerHeight(node.clientHeight);
+    updateSize();
+    const observer = new ResizeObserver(updateSize);
+    observer.observe(node);
+    window.addEventListener('resize', updateSize);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', updateSize);
+    };
+  }, []);
+  
   return (
     <div>
-      <div className={className || "bg-black aspect-[16/9] flex items-center justify-center p-4 font-georgia"} style={{fontSize: baseFontSize, ...backgroundStyle, position: 'relative'}}>
+      <div ref={containerRef} className={className || "bg-black aspect-[16/9] flex items-center justify-center p-4 font-georgia"} style={{fontSize: baseFontSize, ...backgroundStyle, position: 'relative'}}>
         {backgroundImageUrl && <div style={overlayStyle} />}
         <div className="space-y-1 text-center" style={{position: 'relative', zIndex: 1}}> 
           {slide.map((line: ParsedLine, lineIndex: number) => {
