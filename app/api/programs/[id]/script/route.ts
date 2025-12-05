@@ -85,7 +85,17 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
       where v.id = ANY(${versionIds})
     ` as VersionRow[];
 
-    const versionsMap: Record<string, any> = {};
+    type VersionMapValue = {
+      id: string;
+      songId: string;
+      songTitle: string;
+      label: string;
+      content: string | null;
+      renderedContent: { htmlLyricsOnly?: string; plainText?: string } | null;
+      tags: string[];
+    };
+
+    const versionsMap: Record<string, VersionMapValue> = {};
     versions.forEach((v) => {
       versionsMap[v.id] = {
         id: v.id,

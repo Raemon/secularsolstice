@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getVersionsByIds } from '@/lib/songsRepository';
+import { getVersionsByIds, SongVersionRecord } from '@/lib/songsRepository';
 
 export async function POST(request: Request) {
   try {
@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     
     const versions = await getVersionsByIds(versionIds);
     
-    const versionsMap: Record<string, any> = {};
+    const versionsMap: Record<string, SongVersionRecord> = {};
     versions.forEach(version => {
       versionsMap[version.id] = version;
     });
