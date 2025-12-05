@@ -7,18 +7,20 @@ import { Slide, ParsedLine } from './types';
  * Renders a single slide with its content lines
  * Used for preview/thumbnail views (not full-screen presentation)
  */
-const SlideItem = ({slide, className, backgroundImageUrl, backgroundOpacity = 0.5, isProgramTitle = false}:{slide: Slide, className?: string, backgroundImageUrl?: string, backgroundOpacity?: number, isProgramTitle?: boolean}) => {
+const SlideItem = ({slide, className, backgroundImageUrl, isProgramTitle = false}:{slide: Slide, className?: string, backgroundImageUrl?: string, backgroundOpacity?: number, isProgramTitle?: boolean}) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [containerHeight, setContainerHeight] = useState<number | null>(null);
   const backgroundStyle = backgroundImageUrl ? {backgroundImage: `url(${backgroundImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center'} : {};
-  const overlayStyle = backgroundImageUrl ? {position: 'absolute' as const, inset: 0, backgroundColor: 'black', opacity: 1 - backgroundOpacity} : {};
-  
-  const baseScale = isProgramTitle ? 0.2 : 0.05;
-  const headingScale = isProgramTitle ? 0.08 : 0.04;
 
-  const getSize = (scale: number, fallback: string) => containerHeight !== null ? `${containerHeight * scale}px` : fallback;
-  const baseFontSize = getSize(baseScale, isProgramTitle ? '2.5vh' : '1.5vh');
-  const headingFontSize = getSize(headingScale, isProgramTitle ? '7vh' : '3.625vh');
+  const backgroundOpacity = isProgramTitle ? .2 : .65;
+  const overlayStyle = backgroundImageUrl ? {position: 'absolute' as const, inset: 0, backgroundColor: 'black', opacity: backgroundOpacity} : {};
+  
+  const baseScale = .04
+  const headingScale = isProgramTitle ? baseScale * 3.5 : baseScale * 1.85;
+
+  const getSize = (scale: number) => containerHeight !== null ? `${containerHeight * scale}px` : '16px';
+  const baseFontSize = getSize(baseScale);
+  const headingFontSize = getSize(headingScale);
   
   useEffect(() => {
     const node = containerRef.current;
