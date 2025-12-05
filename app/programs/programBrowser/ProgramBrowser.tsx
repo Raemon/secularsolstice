@@ -7,6 +7,7 @@ import type { Program, VersionOption } from '../types';
 import type { SongVersion } from '../../songs/types';
 import ProgramSelector from './components/ProgramSelector';
 import ProgramStructurePanel from './ProgramStructurePanel';
+import ProgramViews from './ProgramViews';
 import useVersionPanelManager from '../../hooks/useVersionPanelManager';
 
 type ProgramBrowserProps = {
@@ -340,17 +341,7 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
                 selectedProgramId={selectedProgramId}
                 onSelect={handleProgramSelect}
               />
-              <div className="flex items-center gap-2">
-                <a href={`/programs/${selectedProgramId}/program`} className="text-sm hover:opacity-50">
-                  Program
-                </a>
-                <a href={`/programs/${selectedProgramId}/slides`} className="text-sm hover:opacity-50">
-                  Slides
-                </a>
-                <a href={`/programs/${selectedProgramId}/edit`} className="text-sm hover:opacity-50">
-                  Edit
-                </a>
-              </div>
+              <ProgramViews programId={selectedProgramId} />
             </div>
             <ProgramStructurePanel
               program={selectedProgram}
