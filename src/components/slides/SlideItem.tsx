@@ -15,7 +15,7 @@ const SlideItem = ({slide, className, backgroundImageUrl, isProgramTitle = false
   const backgroundOpacity = isProgramTitle ? .2 : .65;
   const overlayStyle = backgroundImageUrl ? {position: 'absolute' as const, inset: 0, backgroundColor: 'black', opacity: backgroundOpacity} : {};
   
-  const baseScale = .05
+  const baseScale = .04
   const headingScale = isProgramTitle ? baseScale * 3.5 : baseScale * 1.85;
 
   const getSize = (scale: number) => containerHeight !== null ? `${containerHeight * scale}px` : '16px';
@@ -46,7 +46,7 @@ const SlideItem = ({slide, className, backgroundImageUrl, isProgramTitle = false
               return <img key={lineIndex} src={line.src} alt="" className="max-w-full h-auto mx-auto" />; 
             }
             if (line.isHeading) {
-              return <div key={lineIndex} style={{fontSize: headingFontSize, textShadow: '0 0 10px rgba(0, 0, 0, .8)'}}>{line.text?.replace(/[_]/g, ' ')}</div>;
+              return <div key={lineIndex} className="text-balance -mt-[5vh]" style={{fontSize: headingFontSize, textShadow: '0 0 10px rgba(0, 0, 0, .8)'}}>{line.text?.replace(/[_]/g, ' ')}</div>;
             }
             if (line.isEmpty) {
               return <div key={lineIndex}>&nbsp;</div>;

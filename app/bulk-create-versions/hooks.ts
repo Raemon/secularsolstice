@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { parseHTMLContent } from '../../src/components/slides/utils';
+import { parseHTMLContent } from '../../src/components/slides/slideUtils';
 import type { Song, Section, ProcessResult, StatusType } from './types';
 import { ParsedLine } from '../../src/components/slides/types';
 

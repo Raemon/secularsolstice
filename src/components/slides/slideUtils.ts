@@ -231,8 +231,12 @@ export function parseHTMLContent(htmlContent: string): ParsedLine[] {
               lines.push({ text, isHeading: false, isSlideMeta });
             }
           } else {
-            // Empty paragraph/line - treat as empty line marker
-            lines.push({ text: '', isEmpty: true });
+            // Empty paragraph/line - only add if it's slideMeta (double brackets)
+            // Single brackets that become empty after stripping should be skipped entirely
+            if (isSlideMeta) {
+              lines.push({ text: '', isEmpty: true });
+            }
+            // Otherwise, skip it - don't add empty lines for single brackets
           }
         } else if (hasSvg) {
           // Process SVG within this element
