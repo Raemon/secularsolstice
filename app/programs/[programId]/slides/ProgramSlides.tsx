@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
 import SlideItem from '../../../../src/components/slides/SlideItem';
 import { generateSlidesFromHtml, lyricsToHtml } from '../../../../src/components/slides/slideGenerators';
-import { extractFrames } from '../../../../src/components/slides/utils';
+import { extractFrames } from '../../../../src/components/slides/slideUtils';
 import type { Slide } from '../../../../src/components/slides/types';
 import { extractLyrics } from '../../../../lib/lyricsExtractor';
 import type { Program, VersionOption, SongSlideData } from '../../types';

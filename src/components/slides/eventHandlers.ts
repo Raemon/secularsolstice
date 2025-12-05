@@ -1,4 +1,4 @@
-import { extractFramesForPreview } from './utils';
+import { extractFramesForPreview } from './slideUtils';
 import { StatusType } from './types';
 
 // Handle video load and frame extraction

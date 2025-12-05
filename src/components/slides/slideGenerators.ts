@@ -1,5 +1,5 @@
 import { extractLyrics } from '../../../lib/lyricsExtractor';
-import { parseHTMLContent, groupIntoSlides } from './utils';
+import { parseHTMLContent, groupIntoSlides } from './slideUtils';
 import type { Slide } from './types';
 
 /**
