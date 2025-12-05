@@ -191,7 +191,22 @@ export function parseHTMLContent(htmlContent: string): ParsedLine[] {
               const rawPartText = tempDiv.textContent?.trim() || '';
               const partText = isSlideMeta ? rawPartText : stripBracketedText(rawPartText);
               if (partText.length > 0) {
-                lines.push({ text: partText, isHeading: false, isSlideMeta });
+                // Check if part contains "---" and split on it
+                if (partText.includes('---')) {
+                  const subParts = partText.split('---');
+                  subParts.forEach((subPart, subIndex) => {
+                    const trimmedSubPart = subPart.trim();
+                    if (trimmedSubPart.length > 0) {
+                      lines.push({ text: trimmedSubPart, isHeading: false, isSlideMeta });
+                    }
+                    // Add slide break after each sub-part except the last one
+                    if (subIndex < subParts.length - 1) {
+                      lines.push({ text: '', isHr: true });
+                    }
+                  });
+                } else {
+                  lines.push({ text: partText, isHeading: false, isSlideMeta });
+                }
               }
               // Add slide break after each part except the last one
               if (index < parts.length - 1) {
@@ -199,7 +214,22 @@ export function parseHTMLContent(htmlContent: string): ParsedLine[] {
               }
             });
           } else if (text.length > 0) {
-            lines.push({ text, isHeading: false, isSlideMeta });
+            // Check if text contains "---" and split on it
+            if (text.includes('---')) {
+              const parts = text.split('---');
+              parts.forEach((part, index) => {
+                const trimmedPart = part.trim();
+                if (trimmedPart.length > 0) {
+                  lines.push({ text: trimmedPart, isHeading: false, isSlideMeta });
+                }
+                // Add slide break after each part except the last one
+                if (index < parts.length - 1) {
+                  lines.push({ text: '', isHr: true });
+                }
+              });
+            } else {
+              lines.push({ text, isHeading: false, isSlideMeta });
+            }
           } else {
             // Empty paragraph/line - treat as empty line marker
             lines.push({ text: '', isEmpty: true });
@@ -287,7 +317,7 @@ export function groupIntoSlides(lines: ParsedLine[], linesPerSlide: number): Sli
     }
     
     // Handle empty lines - end current paragraph (but don't add the empty line itself)
-    if (line.isEmpty) {
+    if (line.isEmpty || line.text?.trim() === '---') {
       if (currentParagraph.length > 0) {
         paragraphs.push(currentParagraph);
         currentParagraph = [];
@@ -314,8 +344,16 @@ export function groupIntoSlides(lines: ParsedLine[], linesPerSlide: number): Sli
   
   // Now group paragraphs into slides, trying to fit as many as possible without exceeding linesPerSlide
   for (const paragraph of paragraphs) {
+    // Handle hr tags - just end current slide and start new one, don't create a slide for the hr marker
+    if (paragraph.length === 1 && paragraph[0].isHr) {
+      if (currentSlide.length > 0) {
+        slides.push(currentSlide);
+        currentSlide = [];
+      }
+      continue;
+    }
     // Images and headers always get their own slide
-    if (paragraph.length === 1 && (paragraph[0].isImage || paragraph[0].isHeading || paragraph[0].isHr)) {
+    if (paragraph.length === 1 && (paragraph[0].isImage || paragraph[0].isHeading)) {
       if (currentSlide.length > 0) {
         slides.push(currentSlide);
         currentSlide = [];

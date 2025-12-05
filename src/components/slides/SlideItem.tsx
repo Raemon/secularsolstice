@@ -15,7 +15,7 @@ const SlideItem = ({slide, className, backgroundImageUrl, isProgramTitle = false
   const backgroundOpacity = isProgramTitle ? .2 : .65;
   const overlayStyle = backgroundImageUrl ? {position: 'absolute' as const, inset: 0, backgroundColor: 'black', opacity: backgroundOpacity} : {};
   
-  const baseScale = .04
+  const baseScale = .05
   const headingScale = isProgramTitle ? baseScale * 3.5 : baseScale * 1.85;
 
   const getSize = (scale: number) => containerHeight !== null ? `${containerHeight * scale}px` : '16px';
