@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
 import type { Program, VersionOption } from '../../types';
 import { useUser } from '@/app/contexts/UserContext';
+import TiptapEditor from './TiptapEditor';
 
 type PrintProgramProps = {
   programId: string;
@@ -132,7 +133,7 @@ const PrintProgram = ({ programId }: PrintProgramProps) => {
     return elements;
   };
 
-  // Split content evenly between two pages
+  // Generate program content elements
   useEffect(() => {
     if (displayProgram && !loading) {
       const elements = renderProgram(displayProgram, 0);
@@ -140,10 +141,6 @@ const PrintProgram = ({ programId }: PrintProgramProps) => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayProgram, loading, isEditMode, editedVersions]);
-
-  const midpoint = Math.ceil(allElements.length / 2);
-  const page2Elements = allElements.slice(0, midpoint);
-  const page3Elements = allElements.slice(midpoint);
 
   const handleSave = async () => {
     if (!editedProgram || !selectedProgram || !userName) return;
@@ -310,17 +307,15 @@ const PrintProgram = ({ programId }: PrintProgramProps) => {
           {/* Page 4: Epitaph Page */}
           <div className="w-[5.5in] h-[8.5in] p-[0.75in] box-border flex flex-col justify-center items-center border-r border-dashed border-gray-300 print:border-0">
             {isEditMode && editedProgram ? (
-              <textarea
+              <TiptapEditor
                 value={editedProgram.printProgramEpitaph || ''}
-                onChange={(e) => setEditedProgram({...editedProgram, printProgramEpitaph: e.target.value})}
+                onChange={(html) => setEditedProgram({...editedProgram, printProgramEpitaph: html})}
                 placeholder="Epitaph"
-                className="text-center whitespace-pre-wrap font-georgia w-full h-full border border-gray-300 p-2 resize-none"
+                className="text-center whitespace-pre-wrap font-georgia w-full h-full border border-gray-300 p-2"
               />
             ) : (
               displayProgram.printProgramEpitaph && (
-                <div className="text-center whitespace-pre-wrap font-georgia">
-                  {displayProgram.printProgramEpitaph}
-                </div>
+                <div className="text-center whitespace-pre-wrap font-georgia" dangerouslySetInnerHTML={{__html: displayProgram.printProgramEpitaph}} />
               )
             )}
           </div>
@@ -334,34 +329,21 @@ const PrintProgram = ({ programId }: PrintProgramProps) => {
         </div>
         
         {/* Sheet 2: Page 2 (left) | Page 3 (right) */}
-        <div className="w-[11in] h-[8.5in] flex flex-row my-5 mx-auto shadow-[0_0_10px_rgba(0,0,0,0.1)] bg-white print:shadow-none print:m-0 print:break-after-auto" ref={contentRef}>
-          {/* Page 2: First half of content */}
-          <div className="w-[5.5in] h-[8.5in] p-[0.75in] box-border flex flex-col overflow-hidden border-r border-dashed border-gray-300 print:border-0">
-            <div className="space-y-1">
-              {isEditMode && editedProgram ? (
-                <textarea
-                  value={editedProgram.printProgramForeword || ''}
-                  onChange={(e) => setEditedProgram({...editedProgram, printProgramForeword: e.target.value})}
-                  placeholder="Foreword"
-                  className="mb-4 whitespace-pre-wrap font-georgia w-full border border-gray-300 p-2 resize-none"
-                  style={{fontSize: '16px'}}
-                />
-              ) : (
-                displayProgram.printProgramForeword && (
-                  <div className="mb-4 whitespace-pre-wrap font-georgia" style={{fontSize: '16px'}}>
-                    {displayProgram.printProgramForeword}
-                  </div>
-                )
-              )}
-              {page2Elements}
-            </div>
-          </div>
-          
-          {/* Page 3: Second half of content */}
-          <div className="w-[5.5in] h-[8.5in] p-[0.75in] box-border flex flex-col overflow-hidden">
-            <div className="space-y-1">
-              {page3Elements}
-            </div>
+        <div className="w-[11in] h-[8.5in] my-5 mx-auto shadow-[0_0_10px_rgba(0,0,0,0.1)] bg-white print:shadow-none print:m-0 print:break-after-auto" ref={contentRef}>
+          <div className="h-full p-[0.75in] box-border" style={{columnCount: 2, columnGap: '0.75in', columnFill: 'auto'}}>
+            {isEditMode && editedProgram ? (
+              <TiptapEditor
+                value={editedProgram.printProgramForeword || ''}
+                onChange={(html) => setEditedProgram({...editedProgram, printProgramForeword: html})}
+                placeholder="Foreword"
+                className="mb-4 whitespace-pre-wrap font-georgia w-full border border-gray-300 p-2"
+              />
+            ) : (
+              displayProgram.printProgramForeword && (
+                <div className="mb-4 whitespace-pre-wrap font-georgia" style={{fontSize: '16px'}} dangerouslySetInnerHTML={{__html: displayProgram.printProgramForeword}} />
+              )
+            )}
+            {allElements}
           </div>
         </div>
       </div>
