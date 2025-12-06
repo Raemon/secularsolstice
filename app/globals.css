@@ -48,7 +48,7 @@ body {
 }
 
 .font-georgia {
-  font-family: 'Georgia', serif;
+  font-family: var(--font-eb-garamond), 'Georgia', serif;
 }
 
 .text-sm {

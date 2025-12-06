@@ -14,7 +14,7 @@ export default {
         foreground: "var(--foreground)",
       },
       fontFamily: {
-        georgia: ['Georgia', 'serif'],
+        georgia: ['var(--font-eb-garamond)', 'Georgia', 'serif'],
       },
     },
   },

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, EB_Garamond } from "next/font/google";
 import "./globals.css";
 import Header from "./Header";
 import { UserProvider } from "./contexts/UserContext";
@@ -14,6 +14,12 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const ebGaramond = EB_Garamond({
+  variable: "--font-eb-garamond",
+  subsets: ["latin"],
+  weight: ["400", "600", "700"],
+});
+
 export const metadata: Metadata = {
   title: "Secular Solstice",
 };
@@ -26,7 +32,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-black/90 text-gray-100`}
+        className={`${geistSans.variable} ${geistMono.variable} ${ebGaramond.variable} antialiased bg-black/90 text-gray-100`}
       >
         <UserProvider>
           <Header />
