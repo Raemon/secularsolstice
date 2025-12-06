@@ -9,6 +9,7 @@ type VersionOption = {
   label: string;
   songTitle: string;
   createdAt: string;
+  tags: string[];
 };
 
 export type ProgramElementItemProps = {
@@ -28,10 +29,11 @@ const ProgramElementItem = ({id, version, allVersions, onRemove, onChangeVersion
   const songVersions = version ? allVersions.filter(v => v.songId === version.songId).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) : [];
   const dropdownOptions = songVersions.map(v => ({value: v.id, label: `${v.label} - ${formatRelativeTimestamp(v.createdAt)}`}));
   const isLatestVersion = songVersions.length === 0 || version?.id === songVersions[0]?.id;
+  const isSpeech = version?.tags?.includes('speech');
 
   return (
     <div className={`text-sm px-2 py-1 flex items-center gap-2 hover:bg-black cursor-pointer group ${selectedVersionId === id && 'text-primary'}`} onClick={() => onClick?.(id)}>
-      <span className="font-georgia text-base w-[250px] truncate hover:text-blue-400">{version?.songTitle}</span>
+      <span className={`font-georgia text-base w-[250px] truncate hover:text-blue-400 ${isSpeech ? 'italic' : ''}`}>{version?.songTitle}</span>
       <div className="flex items-center gap-1">
         <div className={`text-gray-400 w-[150px] truncate flex items-center justify-between gap-1 ${!isLatestVersion && 'opacity-50'}`}>
           <span className={`${selectedVersionId === id ? 'text-primary' : 'text-gray-300'} w-[180px] truncate`}>{version?.label ?? id}</span>
