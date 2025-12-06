@@ -12,6 +12,7 @@ const VersionMetadata = ({version}: {
       {version.nextVersionId && <div className="text-gray-400">Next Version ID: <span className="font-mono text-gray-200">{version.nextVersionId}</span></div>}
       {version.originalVersionId && <div className="text-gray-400">Original Version ID: <span className="font-mono text-gray-200">{version.originalVersionId}</span></div>}
       {version.audioUrl && <div className="text-gray-400">Audio URL: <span className="font-mono text-gray-200 break-all">{version.audioUrl}</span></div>}
+      {version.slidesMovieUrl && <div className="text-gray-400">Slides Movie URL: <span className="font-mono text-gray-200 break-all">{version.slidesMovieUrl}</span></div>}
       {version.bpm && <div className="text-gray-400">BPM: <span className="text-gray-200">{version.bpm}</span></div>}
       {version.transpose && <div className="text-gray-400">Transpose: <span className="text-gray-200">{version.transpose}</span></div>}
     </div>

@@ -59,7 +59,7 @@ const VersionDetailPanel = ({songTitle, version, isCreatingVersion, newVersionFo
   previousVersions: SongVersion[];
   isExpandedPreviousVersions: boolean;
   isCreatingVersion: boolean;
-  newVersionForm: { label: string; content: string; audioUrl: string; bpm: number; transpose: number; previousVersionId: string; nextVersionId: string; slideCredits: string; programCredits: string };
+  newVersionForm: { label: string; content: string; audioUrl: string; slidesMovieUrl: string; bpm: number; transpose: number; previousVersionId: string; nextVersionId: string; slideCredits: string; programCredits: string };
   isSubmitting: boolean;
   isArchiving: boolean;
   error: string | null;
@@ -71,7 +71,7 @@ const VersionDetailPanel = ({songTitle, version, isCreatingVersion, newVersionFo
   onVersionClick: (version: SongVersion) => void;
   onCreateVersionClick: () => void;
   onCancelCreateVersion: () => void;
-  onFormChange: (updates: Partial<{ label: string; content: string; audioUrl: string; bpm: number; transpose: number; previousVersionId: string; nextVersionId: string; slideCredits: string; programCredits: string }>) => void;
+  onFormChange: (updates: Partial<{ label: string; content: string; audioUrl: string; slidesMovieUrl: string; bpm: number; transpose: number; previousVersionId: string; nextVersionId: string; slideCredits: string; programCredits: string }>) => void;
   onSubmitVersion: () => void;
   onArchiveVersion: () => void;
   onTitleChange?: (newTitle: string) => void;
@@ -142,6 +142,7 @@ const VersionDetailPanel = ({songTitle, version, isCreatingVersion, newVersionFo
           error={error}
           autosaveKey={`version-${version.id}`}
           versionCreatedAt={version.createdAt}
+          songId={songId}
         />
       ) : (
         <>

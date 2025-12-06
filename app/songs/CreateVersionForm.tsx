@@ -1,18 +1,20 @@
 import ChordmarkEditor from '../chordmark-converter/ChordmarkEditor';
 import { detectFileType } from '../../lib/lyricsExtractor';
+import SlidesMovieUpload from './SlidesMovieUpload';
 
-type CreateVersionFormProps = {
-  form: { label: string; content: string; audioUrl: string; bpm: number; transpose: number; previousVersionId: string; nextVersionId: string; slideCredits: string; programCredits: string };
-  onFormChange: (updates: Partial<{ label: string; content: string; audioUrl: string; bpm: number; transpose: number; previousVersionId: string; nextVersionId: string; slideCredits: string; programCredits: string }>) => void;
+export type CreateVersionFormProps = {
+  form: { label: string; content: string; audioUrl: string; slidesMovieUrl: string; bpm: number; transpose: number; previousVersionId: string; nextVersionId: string; slideCredits: string; programCredits: string };
+  onFormChange: (updates: Partial<{ label: string; content: string; audioUrl: string; slidesMovieUrl: string; bpm: number; transpose: number; previousVersionId: string; nextVersionId: string; slideCredits: string; programCredits: string }>) => void;
   onSubmit: () => void;
   onCancel: () => void;
   isSubmitting: boolean;
   error: string | null;
   autosaveKey?: string;
   versionCreatedAt?: string;
+  songId?: string;
 };
 
-const CreateVersionForm = ({form, onFormChange, onSubmit, onCancel, isSubmitting, error, autosaveKey, versionCreatedAt}: CreateVersionFormProps) => {
+const CreateVersionForm = ({form, onFormChange, onSubmit, onCancel, isSubmitting, error, autosaveKey, versionCreatedAt, songId}: CreateVersionFormProps) => {
   const fileType = detectFileType(form.label, form.content);
   const isChordmarkFile = fileType === 'chordmark';
 
@@ -81,6 +83,9 @@ const CreateVersionForm = ({form, onFormChange, onSubmit, onCancel, isSubmitting
           className="w-full px-2 py-1 text-xs border border-gray-300 bg-black"
           placeholder="Audio URL"
         />
+      </div>
+      <div>
+        <SlidesMovieUpload slidesMovieUrl={form.slidesMovieUrl} onFormChange={onFormChange} songId={songId} />
       </div>
       <div>
         <label className="text-xs text-gray-400">Previous Version ID (optional)</label>

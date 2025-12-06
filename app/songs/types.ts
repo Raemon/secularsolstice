@@ -15,6 +15,7 @@ export type SongVersion = {
   label: string;
   content: string | null;
   audioUrl: string | null;
+  slidesMovieUrl: string | null;
   previousVersionId: string | null;
   nextVersionId: string | null;
   originalVersionId: string | null;

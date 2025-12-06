@@ -139,7 +139,7 @@ const useVersionPanelManager = ({
           ? generateChordmarkRenderedContent(newVersionForm.content)
           : undefined;
 
-      const form = newVersionForm as typeof newVersionForm & { slideCredits?: string; programCredits?: string };
+      const form = newVersionForm as typeof newVersionForm & { slideCredits?: string; programCredits?: string; slidesMovieUrl?: string; };
 
       const response = await fetch('/api/songs/versions', {
         method: 'POST',
@@ -151,6 +151,7 @@ const useVersionPanelManager = ({
           label: trimmedLabel,
           content: form.content || null,
           audioUrl: form.audioUrl || null,
+          slidesMovieUrl: form.slidesMovieUrl || null,
           bpm: form.bpm || null,
           transpose: form.transpose ?? null,
           previousVersionId: previousVersionId || null,

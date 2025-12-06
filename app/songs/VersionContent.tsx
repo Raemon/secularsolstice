@@ -10,6 +10,7 @@ const VersionContent = ({version, print}: {
   print?: boolean;
 }) => {
   const hasAudio = Boolean(version.audioUrl);
+  const hasSlidesMovie = Boolean(version.slidesMovieUrl);
   const hasContent = Boolean(version.content);
   const fileType = detectFileType(version.label, version.content || '');
   const isChordmarkFile = fileType === 'chordmark';
@@ -18,8 +19,12 @@ const VersionContent = ({version, print}: {
   const audioUrl = version.audioUrl || '';
   const normalizedAudioUrl = audioUrl.toLowerCase();
   const isAudioFile = normalizedAudioUrl ? AUDIO_EXTENSIONS.some(ext => normalizedAudioUrl.endsWith(ext)) : false;
+  const movieUrl = version.slidesMovieUrl || '';
+  const normalizedMovieUrl = movieUrl.toLowerCase();
+  const videoExtensions = ['.mp4', '.mov', '.webm', '.m4v'];
+  const isVideoFile = normalizedMovieUrl ? videoExtensions.some(ext => normalizedMovieUrl.endsWith(ext)) : false;
 
-  if (!hasAudio && !hasContent) {
+  if (!hasAudio && !hasSlidesMovie && !hasContent) {
     return <p className="text-gray-500 text-xs">No stored content for this version.</p>;
   }
 
@@ -48,6 +53,17 @@ const VersionContent = ({version, print}: {
             className="markdown-content text-xs whitespace-pre-wrap"
             dangerouslySetInnerHTML={{ __html: marked.parse(version.content || '', { breaks: true }) as string }}
           />
+        )
+      )}
+      {hasSlidesMovie && (
+        isVideoFile ? (
+          <video controls src={version.slidesMovieUrl || undefined} className="w-full">
+            Your browser does not support the video element.
+          </video>
+        ) : (
+          <a href={version.slidesMovieUrl || undefined} target="_blank" rel="noreferrer" className="text-blue-400 underline text-xs">
+            Open slides movie
+          </a>
         )
       )}
     </div>
