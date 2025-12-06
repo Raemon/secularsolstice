@@ -343,7 +343,7 @@ export function groupIntoSlides(lines: ParsedLine[], linesPerSlide: number): Sli
         paragraphs.push(currentParagraph);
         currentParagraph = [];
       }
-      paragraphs.push([line]);
+      // Don't add empty lines as their own paragraphs - they just serve as separators
       continue;
     }
     
@@ -374,8 +374,6 @@ export function groupIntoSlides(lines: ParsedLine[], linesPerSlide: number): Sli
   
   // Now group paragraphs into slides, trying to fit as many as possible without exceeding linesPerSlide
   for (const paragraph of paragraphs) {
-    const isEmptyParagraph = paragraph.length === 1 && paragraph[0].isEmpty;
-    
     // Handle hr tags - just end current slide and start new one, don't create a slide for the hr marker
     if (paragraph.length === 1 && paragraph[0].isHr) {
       if (currentSlide.length > 0) {
@@ -408,7 +406,7 @@ export function groupIntoSlides(lines: ParsedLine[], linesPerSlide: number): Sli
     
     // Check if adding this paragraph would exceed the limit
     // Account for the empty line separator that will be added between paragraphs
-    const separatorLines = currentSlide.length > 0 && !isEmptyParagraph ? 1 : 0;
+    const separatorLines = currentSlide.length > 0 ? 1 : 0;
     if (currentSlide.length > 0 && currentSlide.length + separatorLines + paragraph.length > linesPerSlide) {
       // Start a new slide with this paragraph
       slides.push(currentSlide);
