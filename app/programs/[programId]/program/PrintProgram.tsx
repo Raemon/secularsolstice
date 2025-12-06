@@ -265,11 +265,11 @@ const PrintProgram = ({ programId }: PrintProgramProps) => {
       <style dangerouslySetInnerHTML={{__html: `
         @page {
           size: 11in 8.5in landscape;
-          margin: 0.5in;
+          margin: 0;
         }
       `}} />
       
-      <div className="bg-white text-black min-h-screen pb-6">
+      <div className="bg-white text-black min-h-screen pb-6 print:p-0 print:m-0 print:min-h-0">
         <div className="print:hidden fixed top-4 right-4 z-50 flex gap-2">
           {isEditMode ? (
             <>
@@ -303,7 +303,7 @@ const PrintProgram = ({ programId }: PrintProgramProps) => {
         </div>
         
         {/* Sheet 1: Page 4 (left) | Page 1 (right) */}
-        <div className="mb-5 w-[11in] h-[8.5in] flex flex-row my-5 mx-auto shadow-[0_0_10px_rgba(0,0,0,0.1)] bg-white print:shadow-none print:m-0 print:break-after-page">
+        <div className="mb-5 w-[11in] h-[8.5in] flex flex-row my-5 mx-auto shadow-[0_0_10px_rgba(0,0,0,0.1)] bg-white print:shadow-none print:my-0 print:mx-0 print:mb-0 print:break-after-page print:w-full print:h-full">
           {/* Page 4: Epitaph Page */}
           <div className="w-[5.5in] h-[8.5in] p-[0.75in] box-border flex flex-col justify-center items-center border-r border-dashed border-gray-300 print:border-0">
             {isEditMode && editedProgram ? (
@@ -329,7 +329,7 @@ const PrintProgram = ({ programId }: PrintProgramProps) => {
         </div>
         
         {/* Sheet 2: Page 2 (left) | Page 3 (right) */}
-        <div className="w-[11in] h-[8.5in] my-5 mx-auto shadow-[0_0_10px_rgba(0,0,0,0.1)] bg-white print:shadow-none print:m-0 print:break-after-auto" ref={contentRef}>
+        <div className="w-[11in] h-[8.5in] my-5 mx-auto shadow-[0_0_10px_rgba(0,0,0,0.1)] bg-white print:shadow-none print:my-0 print:mx-0 print:w-full print:h-full" ref={contentRef}>
           <div className="h-full p-[0.75in] box-border" style={{columnCount: 2, columnGap: '0.75in', columnFill: 'auto'}}>
             {isEditMode && editedProgram ? (
               <TiptapEditor
