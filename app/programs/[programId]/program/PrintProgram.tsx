@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo, useRef } from 'react';
 import type { Program, VersionOption } from '../../types';
 import { useUser } from '@/app/contexts/UserContext';
 import TiptapEditor from './TiptapEditor';
+import PrintProgramRenderer from './PrintProgramRenderer';
 
 type PrintProgramProps = {
   programId: string;
@@ -81,61 +82,10 @@ const PrintProgram = ({ programId }: PrintProgramProps) => {
   const selectedProgram = programId ? programMap[programId] ?? null : null;
   const displayProgram = isEditMode && editedProgram ? editedProgram : selectedProgram;
 
-  const renderProgram = (program: Program | null, level: number = 0, visited: Set<string> = new Set()): React.ReactElement[] => {
-    if (!program || visited.has(program.id)) {
-      return [];
-    }
-    visited.add(program.id);
-    
-    const elements: React.ReactElement[] = [];
-    
-    if (level > 0) {
-      elements.push(
-        <h2 key={`program-${program.id}`} className="font-georgia mb-2 font-semibold" style={{fontSize: '24px'}}>
-          {program.title}
-        </h2>
-      );
-    }
-    
-    program.elementIds.forEach((versionId) => {
-      const version = versionMap[versionId];
-      if (version) {
-        const creditsValue = isEditMode ? (editedVersions[versionId] ?? '') : (version.programCredits || '');
-        elements.push(
-          <div key={`version-${versionId}`} className="mb-1">
-            <div style={{fontFamily: 'Georgia, serif', fontSize: '16px'}}>{version.songTitle}</div>
-            {isEditMode ? (
-              <input
-                type="text"
-                value={creditsValue}
-                onChange={(e) => setEditedVersions({...editedVersions, [versionId]: e.target.value})}
-                placeholder="Program credits"
-                className="bg-transparent text-black w-full border border-gray-300 px-1 py-0.5"
-                style={{fontSize: '12px'}}
-              />
-            ) : (
-              creditsValue && (
-                <div className="text-gray-600" style={{fontSize: '12px'}}>{creditsValue}</div>
-              )
-            )}
-          </div>
-        );
-      }
-    });
-    
-    program.programIds.forEach((childProgramId) => {
-      const childProgram = programMap[childProgramId] || null;
-      elements.push(...renderProgram(childProgram, level + 1, visited));
-    });
-    
-    visited.delete(program.id);
-    return elements;
-  };
-
   // Generate program content elements
   const allElements = useMemo(() => {
     if (displayProgram && !loading) {
-      return renderProgram(displayProgram, 0);
+      return PrintProgramRenderer({program: displayProgram, level: 0, visited: new Set(), versionMap, programMap, isEditMode, editedVersions, setEditedVersions});
     }
     return [];
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -317,7 +267,7 @@ const PrintProgram = ({ programId }: PrintProgramProps) => {
         {/* Sheet 1: Page 4 (left) | Page 1 (right) */}
         <div className="mb-5 w-[11in] h-[8.5in] flex flex-row my-5 mx-auto shadow-[0_0_10px_rgba(0,0,0,0.1)] bg-white print:shadow-none print:my-0 print:mx-0 print:mb-0 print:break-after-page print:w-full print:h-full">
           {/* Page 4: Epitaph Page */}
-          <div className="w-[5.5in] h-[8.5in] p-[0.75in] box-border flex flex-col justify-center items-center border-r border-dashed border-gray-300 print:border-0">
+          <div className="w-[5.5in] h-[8.5in] p-[0.5in] box-border flex flex-col justify-center items-center border-r border-dashed border-gray-300 print:border-0">
             {isEditMode && editedProgram ? (
               <TiptapEditor
                 value={editedProgram.printProgramEpitaph || ''}
@@ -342,7 +292,7 @@ const PrintProgram = ({ programId }: PrintProgramProps) => {
         
         {/* Sheet 2: Page 2 (left) | Page 3 (right) */}
         <div className="w-[11in] h-[8.5in] my-5 mx-auto shadow-[0_0_10px_rgba(0,0,0,0.1)] bg-white print:shadow-none print:my-0 print:mx-0 print:w-full print:h-full" ref={contentRef}>
-          <div className="h-full p-[0.75in] box-border" style={{columnCount: 2, columnGap: '0.75in', columnFill: 'auto'}}>
+          <div className="h-full px-[0.6in] py-[0.4in] box-border" style={{columnCount: 2, columnGap: '0.75in', columnFill: 'auto'}}>
             {isEditMode && editedProgram ? (
               <TiptapEditor
                 value={editedProgram.printProgramForeword || ''}
