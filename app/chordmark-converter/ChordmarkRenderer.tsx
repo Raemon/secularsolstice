@@ -278,8 +278,19 @@ const ChordmarkRenderer = ({
   print?: boolean;
   renderedContent?: {htmlFull?: string; htmlChordsOnly?: string; htmlLyricsOnly?: string; slides?: string; [key: string]: string | undefined} | null;
 }) => {
-  const [mode, setMode] = useState<ChordmarkViewMode>(defaultMode);
+  const [mode, setMode] = useState<ChordmarkViewMode>(() => {
+    if (typeof window === 'undefined') return defaultMode;
+    const saved = localStorage.getItem('chordmark-view-mode');
+    if (saved && ['lyrics+chords', 'lyrics', 'chords', 'one-line', 'slides', 'raw'].includes(saved)) {
+      return saved as ChordmarkViewMode;
+    }
+    return defaultMode;
+  });
   const [transposeSteps, setTransposeSteps] = useState(initialTranspose);
+  
+  useEffect(() => {
+    localStorage.setItem('chordmark-view-mode', mode);
+  }, [mode]);
   
   useEffect(() => {
     setTransposeSteps(initialTranspose);
