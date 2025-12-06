@@ -46,6 +46,7 @@ export const createFallbackSongVersion = (partial: Pick<SongVersion, 'id' | 'son
   createdAt: partial.createdAt,
   content: '',
   audioUrl: '',
+  slidesMovieUrl: null,
   previousVersionId: null,
   nextVersionId: partial.nextVersionId ?? null,
   originalVersionId: null,

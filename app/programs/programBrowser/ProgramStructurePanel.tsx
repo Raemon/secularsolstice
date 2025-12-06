@@ -16,6 +16,7 @@ export type ProgramStructurePanelProps = {
   onAddElement: (programId: string, versionId: string) => void | Promise<void>;
   onRemoveElement: (programId: string, elementId: string) => void | Promise<void>;
   canEdit: boolean;
+  onSongCreated?: () => void | Promise<void>;
 };
 
 const ProgramStructurePanel = ({
@@ -30,6 +31,7 @@ const ProgramStructurePanel = ({
   onAddElement,
   onRemoveElement,
   canEdit,
+  onSongCreated,
 }: ProgramStructurePanelProps): ReactElement => {
   if (!program) {
     return (
@@ -59,6 +61,7 @@ const ProgramStructurePanel = ({
         onAddElement={onAddElement}
         onRemoveElement={onRemoveElement}
         canEdit={canEdit}
+        onSongCreated={onSongCreated}
       />
     </div>
   );

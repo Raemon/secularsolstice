@@ -14,6 +14,7 @@ type ProgramViewPanelProps = {
     label: string;
     content: string;
     audioUrl: string;
+    slidesMovieUrl: string;
     bpm: number;
     transpose: number;
     previousVersionId: string;
@@ -31,7 +32,7 @@ type ProgramViewPanelProps = {
   onVersionClick: (version: SongVersion) => void;
   onCreateVersionClick: () => void;
   onCancelCreateVersion: () => void;
-  onFormChange: (updates: Partial<{label: string; content: string; audioUrl: string; bpm: number; transpose: number;}>) => void;
+  onFormChange: (updates: Partial<{label: string; content: string; audioUrl: string; slidesMovieUrl: string; bpm: number; transpose: number;}>) => void;
   onSubmitVersion: () => void;
   onArchiveVersion: () => void;
 };
