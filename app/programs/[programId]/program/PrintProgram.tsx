@@ -111,7 +111,7 @@ const PrintProgram = ({ programId }: PrintProgramProps) => {
                 value={creditsValue}
                 onChange={(e) => setEditedVersions({...editedVersions, [versionId]: e.target.value})}
                 placeholder="Program credits"
-                className="text-sm text-gray-600 w-full border border-gray-300 px-1 py-0.5"
+                className="text-sm bg-transparent text-black w-full border border-gray-300 px-1 py-0.5"
                 style={{fontSize: `${fontSize}px`}}
               />
             ) : (

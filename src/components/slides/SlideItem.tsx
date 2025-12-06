@@ -18,7 +18,7 @@ const SlideItem = ({slide, className, backgroundImageUrl, isProgramTitle = false
   const baseScale = .04
   const headingScale = isProgramTitle ? baseScale * 3.5 : baseScale * 1.85;
 
-  const getSize = (scale: number) => `${containerHeight * scale}px`
+  const getSize = (scale: number) => `${containerHeight ? containerHeight * scale : 'auto'}`
   const baseFontSize = getSize(baseScale);
   const headingFontSize = getSize(headingScale);
   
