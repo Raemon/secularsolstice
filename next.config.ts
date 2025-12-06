@@ -6,14 +6,7 @@ const nextConfig: NextConfig = {
   
   webpack: (config, { isServer }) => {
     if (isServer) {
-      // Prevent webpack from bundling pdfjs-dist worker files
-      config.externals = config.externals || [];
-      config.externals.push({
-        'pdfjs-dist/legacy/build/pdf.worker.mjs': 'commonjs pdfjs-dist/legacy/build/pdf.worker.mjs',
-        'pdfjs-dist/build/pdf.worker.mjs': 'commonjs pdfjs-dist/build/pdf.worker.mjs',
-      });
-      
-      // Tell webpack to ignore these modules
+      // Tell webpack to ignore these modules on the server
       config.resolve.alias = {
         ...config.resolve.alias,
         'pdfjs-dist/legacy/build/pdf.worker.mjs': false,
