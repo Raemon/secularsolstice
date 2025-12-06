@@ -198,8 +198,9 @@ const PrintProgram = ({ programId }: PrintProgramProps) => {
       // Update program with all changes at once
       const allProgramUpdates: {printProgramForeword?: string | null; printProgramEpitaph?: string | null; elementIds?: string[]; programIds?: string[]} = {...programUpdates};
       if (Object.keys(versionIdMap).length > 0) {
-        allProgramUpdates.elementIds = editedProgram.elementIds.map(id => versionIdMap[id] || id);
-        allProgramUpdates.programIds = editedProgram.programIds;
+        // Replace old version IDs with new version IDs in the program's elementIds
+        allProgramUpdates.elementIds = selectedProgram.elementIds.map(id => versionIdMap[id] || id);
+        allProgramUpdates.programIds = selectedProgram.programIds;
       }
 
       if (Object.keys(allProgramUpdates).length > 0) {
