@@ -3,7 +3,6 @@
 import { type ReactElement } from 'react';
 import ProgramStructureNode from './components/ProgramStructureNode';
 import type { Program, VersionOption } from '../types';
-import type { SongRecord, SongVersionRecord } from '@/lib/songsRepository';
 
 export type ProgramStructurePanelProps = {
   program: Program | null;
@@ -17,7 +16,6 @@ export type ProgramStructurePanelProps = {
   onAddElement: (programId: string, versionId: string) => void | Promise<void>;
   onRemoveElement: (programId: string, elementId: string) => void | Promise<void>;
   canEdit: boolean;
-  onSongCreated?: (data?: { song?: SongRecord; version?: SongVersionRecord }) => Promise<void> | void;
 };
 
 const ProgramStructurePanel = ({
@@ -32,11 +30,10 @@ const ProgramStructurePanel = ({
   onAddElement,
   onRemoveElement,
   canEdit,
-  onSongCreated,
 }: ProgramStructurePanelProps): ReactElement => {
   if (!program) {
     return (
-      <div className="border-l border-gray-200 pl-4 w-full max-w-xl h-[calc(100vh-2rem)] overflow-y-auto scrollbar-hide">
+      <div className="border-l border-gray-200 pl-4 w-full">
         <p className="text-sm text-gray-400">Select a program to explore its contents.</p>
       </div>
     );
@@ -47,7 +44,7 @@ const ProgramStructurePanel = ({
   };
 
   return (
-    <div className="w-full max-w-xl h-[calc(100vh-100px)] overflow-y-auto scrollbar-hide">
+    <div className="w-full max-w-xl">
       <ProgramStructureNode
         current={program}
         depth={0}
@@ -62,7 +59,6 @@ const ProgramStructurePanel = ({
         onAddElement={onAddElement}
         onRemoveElement={onRemoveElement}
         canEdit={canEdit}
-        onSongCreated={onSongCreated}
       />
     </div>
   );
