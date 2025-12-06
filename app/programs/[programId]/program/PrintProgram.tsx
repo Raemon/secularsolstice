@@ -92,7 +92,7 @@ const PrintProgram = ({ programId }: PrintProgramProps) => {
     
     if (level > 0) {
       elements.push(
-        <h2 key={`program-${program.id}`} className="font-georgia mt-6 mb-2" style={{fontSize: '24px'}}>
+        <h2 key={`program-${program.id}`} className="font-georgia mb-2" style={{fontSize: '24px'}}>
           {program.title}
         </h2>
       );
@@ -269,7 +269,7 @@ const PrintProgram = ({ programId }: PrintProgramProps) => {
         }
       `}} />
       
-      <div className="bg-white text-black min-h-screen">
+      <div className="bg-white text-black min-h-screen pb-6">
         <div className="print:hidden fixed top-4 right-4 z-50 flex gap-2">
           {isEditMode ? (
             <>
@@ -303,7 +303,7 @@ const PrintProgram = ({ programId }: PrintProgramProps) => {
         </div>
         
         {/* Sheet 1: Page 4 (left) | Page 1 (right) */}
-        <div className="w-[11in] h-[8.5in] flex flex-row my-5 mx-auto shadow-[0_0_10px_rgba(0,0,0,0.1)] bg-white print:shadow-none print:m-0 print:break-after-page">
+        <div className="mb-5 w-[11in] h-[8.5in] flex flex-row my-5 mx-auto shadow-[0_0_10px_rgba(0,0,0,0.1)] bg-white print:shadow-none print:m-0 print:break-after-page">
           {/* Page 4: Epitaph Page */}
           <div className="w-[5.5in] h-[8.5in] p-[0.75in] box-border flex flex-col justify-center items-center border-r border-dashed border-gray-300 print:border-0">
             {isEditMode && editedProgram ? (
