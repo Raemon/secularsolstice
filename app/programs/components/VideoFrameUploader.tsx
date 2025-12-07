@@ -2,7 +2,7 @@
 
 import {useState, useRef} from 'react';
 
-const VideoFrameUploader = ({programId, onUploadComplete}:{programId: string, onUploadComplete?: () => void}) => {
+const VideoFrameUploader = ({programId, onUploadComplete}:{programId: string, onUploadComplete?: (uploadedUrl?: string) => void}) => {
   const [status, setStatus] = useState<string>('');
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -24,11 +24,11 @@ const VideoFrameUploader = ({programId, onUploadComplete}:{programId: string, on
         throw new Error('Failed to upload video');
       }
 
-      await response.json();
+      const data = await response.json();
       setStatus('Successfully uploaded video');
 
       if (onUploadComplete) {
-        onUploadComplete();
+        onUploadComplete(data?.videoUrl);
       }
 
       setTimeout(() => {

@@ -114,7 +114,7 @@ export const updateProgramVideoUrl = async (programId: string, videoUrl: string)
   return mapProgramRow(typedRows[0]);
 };
 
-export const updateProgram = async (programId: string, updates: {title?: string; printProgramForeword?: string | null; printProgramEpitaph?: string | null}): Promise<ProgramRecord> => {
+export const updateProgram = async (programId: string, updates: {title?: string; printProgramForeword?: string | null; printProgramEpitaph?: string | null; videoUrl?: string | null}): Promise<ProgramRecord> => {
   const program = await getProgramById(programId);
   if (!program) {
     throw new Error(`Program ${programId} not found or archived`);
@@ -123,7 +123,8 @@ export const updateProgram = async (programId: string, updates: {title?: string;
     update programs
     set title = ${updates.title ?? program.title},
         print_program_foreword = ${updates.printProgramForeword !== undefined ? updates.printProgramForeword : program.printProgramForeword},
-        print_program_epitaph = ${updates.printProgramEpitaph !== undefined ? updates.printProgramEpitaph : program.printProgramEpitaph}
+        print_program_epitaph = ${updates.printProgramEpitaph !== undefined ? updates.printProgramEpitaph : program.printProgramEpitaph},
+        video_url = ${updates.videoUrl !== undefined ? updates.videoUrl : program.videoUrl}
     where id = ${programId} and archived = false
     returning id, title, element_ids, program_ids, created_by, created_at, archived, video_url, print_program_foreword, print_program_epitaph
   `;

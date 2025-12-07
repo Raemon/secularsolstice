@@ -12,3 +12,4 @@ create table if not exists votes (
 
 CREATE INDEX if not exists votes_version_id_idx on votes USING btree (version_id);
 
+

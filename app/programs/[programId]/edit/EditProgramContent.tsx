@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import type { Program } from '../../types';
+import VideoFrameUploader from '../../components/VideoFrameUploader';
 
 type EditProgramContentProps = {
   programId: string;
@@ -14,6 +15,7 @@ const EditProgramContent = ({ programId }: EditProgramContentProps) => {
   const [title, setTitle] = useState('');
   const [foreword, setForeword] = useState('');
   const [epitaph, setEpitaph] = useState('');
+  const [videoUrl, setVideoUrl] = useState('');
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
@@ -30,6 +32,7 @@ const EditProgramContent = ({ programId }: EditProgramContentProps) => {
         setTitle(data.program.title);
         setForeword(data.program.printProgramForeword || '');
         setEpitaph(data.program.printProgramEpitaph || '');
+        setVideoUrl(data.program.videoUrl || '');
         setError(null);
       } catch (err) {
         console.error('Failed to load program:', err);
@@ -53,6 +56,7 @@ const EditProgramContent = ({ programId }: EditProgramContentProps) => {
           title,
           printProgramForeword: foreword || null,
           printProgramEpitaph: epitaph || null,
+          videoUrl: videoUrl || null,
         }),
       });
       if (!response.ok) {
@@ -104,6 +108,18 @@ const EditProgramContent = ({ programId }: EditProgramContentProps) => {
         <div>
           <label className="block text-sm mb-1">Title</label>
           <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full px-2 py-1 border border-gray-300 bg-white text-black"/>
+        </div>
+        <div>
+          <label className="block text-sm mb-1">Video URL</label>
+          <div className="flex items-center gap-2">
+            <input type="text" value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} className="w-full px-2 py-1 border border-gray-300 bg-white text-black"/>
+            <VideoFrameUploader programId={programId} onUploadComplete={(uploadedUrl) => {
+              if (uploadedUrl) {
+                setVideoUrl(uploadedUrl);
+                setProgram((prev) => prev ? {...prev, videoUrl: uploadedUrl} : prev);
+              }
+            }}/>
+          </div>
         </div>
         <div>
           <label className="block text-sm mb-1">Print Program Foreword (appears at the start of page 2)</label>

@@ -13,7 +13,7 @@ type ProgramSlidesProps = {
   programId: string;
 };
 
-type SongSlideDataWithMovie = SongSlideData & { slidesMovieUrl?: string | null; slideMovieStart?: number | null };
+type SongSlideDataWithMovie = SongSlideData & { slidesMovieUrl?: string | null; slideMovieStart?: number | null; programId: string };
 
 const ProgramSlides = ({ programId }: ProgramSlidesProps) => {
   const [programs, setPrograms] = useState<Program[]>([]);
@@ -24,12 +24,15 @@ const ProgramSlides = ({ programId }: ProgramSlidesProps) => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [totalVersionsToLoad, setTotalVersionsToLoad] = useState(0);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
-  const [extractedFrames, setExtractedFrames] = useState<string[]>([]);
+  const [programFrames, setProgramFrames] = useState<Record<string, string[]>>({});
   const [showUploader, setShowUploader] = useState(false);
   const [isExtractingFrames, setIsExtractingFrames] = useState(false);
+  const [extractingProgramId, setExtractingProgramId] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const slidesMovieRef = useRef<HTMLVideoElement>(null);
   const [backgroundMovieUrl, setBackgroundMovieUrl] = useState<string | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -78,6 +81,19 @@ const ProgramSlides = ({ programId }: ProgramSlidesProps) => {
   }, [versions]);
 
   const selectedProgram = programId ? programMap[programId] ?? null : null;
+
+  const programVideoMap = useMemo(() => {
+    const map: Record<string, string | null> = {};
+    programs.forEach((program) => {
+      if (program.videoUrl !== undefined) {
+        map[program.id] = program.videoUrl ?? null;
+      }
+    });
+    if (selectedProgram?.id && videoUrl !== null && videoUrl !== undefined) {
+      map[selectedProgram.id] = videoUrl;
+    }
+    return map;
+  }, [programs, selectedProgram?.id, videoUrl]);
 
   useEffect(() => {
     if (selectedProgram?.id) {
@@ -143,7 +159,7 @@ const ProgramSlides = ({ programId }: ProgramSlidesProps) => {
     
     const linesPerSlide = 10;
 
-    const buildSongSlides = (versionId: string): SongSlideDataWithMovie | null => {
+    const buildSongSlides = (versionId: string, programId: string): SongSlideDataWithMovie | null => {
       const version = versionMap[versionId];
       if (!version) {
         return null;
@@ -179,6 +195,7 @@ const ProgramSlides = ({ programId }: ProgramSlidesProps) => {
         tags: version.tags || [],
         slidesMovieUrl: fullVersion?.slidesMovieUrl,
         slideMovieStart: fullVersion?.slideMovieStart ?? null,
+        programId,
       };
     };
 
@@ -197,12 +214,13 @@ const ProgramSlides = ({ programId }: ProgramSlidesProps) => {
           versionLabel: '',
           slides: [programTitleSlide],
           tags: [],
+          programId: program.id,
         };
         result.push(programTitleData);
       }
       
       for (const versionId of program.elementIds) {
-        const songSlides = buildSongSlides(versionId);
+        const songSlides = buildSongSlides(versionId, program.id);
         if (songSlides) {
           result.push(songSlides);
         }
@@ -262,6 +280,43 @@ const ProgramSlides = ({ programId }: ProgramSlidesProps) => {
     return indices;
   }, [processedSlides]);
 
+  const slideToProgramId = useMemo(() => {
+    const ids: string[] = [];
+    processedSlides.forEach((songData) => {
+      songData.slides.forEach(() => ids.push(songData.programId));
+      ids.push(songData.programId);
+    });
+    return ids;
+  }, [processedSlides]);
+
+  const programSlideCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    slideToProgramId.forEach((programId) => {
+      if (!programId) return;
+      counts[programId] = (counts[programId] || 0) + 1;
+    });
+    return counts;
+  }, [slideToProgramId]);
+
+  const slidePositionInProgram = useMemo(() => {
+    const counters: Record<string, number> = {};
+    return slideToProgramId.map((programId) => {
+      if (!programId) {
+        return 0;
+      }
+      counters[programId] = (counters[programId] || 0) + 1;
+      return counters[programId] - 1;
+    });
+  }, [slideToProgramId]);
+
+  const programIdsInSlides = useMemo(() => {
+    const ids = new Set<string>();
+    processedSlides.forEach((songData) => {
+      ids.add(songData.programId);
+    });
+    return Array.from(ids);
+  }, [processedSlides]);
+
   const songSlideRanges = useMemo(() => {
     const ranges: { start: number; length: number }[] = [];
     let currentIndex = 0;
@@ -273,34 +328,51 @@ const ProgramSlides = ({ programId }: ProgramSlidesProps) => {
   }, [processedSlides]);
 
   useEffect(() => {
-    if (!videoUrl || flattenedSlides.length === 0 || isExtractingFrames) return;
+    if (flattenedSlides.length === 0 || isExtractingFrames) return;
+    const video = videoRef.current;
+    if (!video) return;
+
+    const nextProgramId = programIdsInSlides.find((programId) => {
+      const videoForProgram = programVideoMap[programId];
+      return videoForProgram && !programFrames[programId];
+    });
+
+    if (!nextProgramId) return;
+    const videoForProgram = programVideoMap[nextProgramId];
+    if (!videoForProgram) return;
 
     const extractFramesFromVideo = async () => {
-      const video = videoRef.current;
-      if (!video) return;
-
       setIsExtractingFrames(true);
-      video.src = videoUrl;
+      setExtractingProgramId(nextProgramId);
+      video.src = videoForProgram;
 
       try {
-        const numFrames = Math.min(flattenedSlides.length, 100);
+        const slideCount = programSlideCounts[nextProgramId] || flattenedSlides.length;
+        const numFrames = Math.min(Math.max(slideCount, 1), 100);
         const frames = await extractFrames(video, numFrames);
-        setExtractedFrames(frames);
+        setProgramFrames(prev => ({ ...prev, [nextProgramId]: frames }));
       } catch (error) {
-        console.error('Error extracting frames from video:', error);
+        console.error(`Error extracting frames from video for program ${nextProgramId}:`, error);
       } finally {
         setIsExtractingFrames(false);
+        setExtractingProgramId(null);
       }
     };
 
     extractFramesFromVideo();
-  }, [videoUrl, flattenedSlides.length, isExtractingFrames]);
+  }, [programIdsInSlides, programVideoMap, programFrames, flattenedSlides.length, isExtractingFrames, programSlideCounts]);
 
   const getBackgroundForSlide = (slideIndex: number): string | undefined => {
-    if (!extractedFrames || extractedFrames.length === 0) return undefined;
-    if (flattenedSlides.length === 0) return undefined;
-    const frameIndex = Math.floor((slideIndex / flattenedSlides.length) * extractedFrames.length);
-    return extractedFrames[Math.min(frameIndex, extractedFrames.length - 1)];
+    const programIdForSlide = slideToProgramId[slideIndex] || selectedProgram?.id || null;
+    const framesForProgram = programIdForSlide ? programFrames[programIdForSlide] : undefined;
+    const fallbackProgramId = selectedProgram?.id && programIdForSlide !== selectedProgram.id ? selectedProgram.id : null;
+    const fallbackFrames = fallbackProgramId ? programFrames[fallbackProgramId] : undefined;
+    const chosenFrames = framesForProgram && framesForProgram.length > 0 ? framesForProgram : fallbackFrames;
+    if (!chosenFrames || chosenFrames.length === 0) return undefined;
+    const slideCount = framesForProgram && framesForProgram.length > 0 ? programSlideCounts[programIdForSlide as string] || flattenedSlides.length : flattenedSlides.length;
+    const positionInProgram = framesForProgram && framesForProgram.length > 0 ? slidePositionInProgram[slideIndex] ?? slideIndex : slideIndex;
+    const frameIndex = Math.floor((positionInProgram / Math.max(slideCount, 1)) * chosenFrames.length);
+    return chosenFrames[Math.min(frameIndex, chosenFrames.length - 1)];
   };
 
   useEffect(() => {
@@ -325,6 +397,14 @@ const ProgramSlides = ({ programId }: ProgramSlidesProps) => {
     }
     setBackgroundMovieUrl(null);
   }, [currentSlide, slideToSongIndex, processedSlides, songSlideRanges]);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(document.fullscreenElement === containerRef.current);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
 
   useEffect(() => {
     const video = slidesMovieRef.current;
@@ -391,9 +471,20 @@ const ProgramSlides = ({ programId }: ProgramSlidesProps) => {
 
   const backgroundImageUrl = backgroundMovieUrl ? undefined : getBackgroundForSlide(currentSlide);
   const overlayOpacity = programTitleSlideIndices.has(currentSlide) ? .75 : 0.5;
+  const toggleFullscreen = () => {
+    const container = containerRef.current;
+    if (!container) return;
+    if (!document.fullscreenElement) {
+      container.requestFullscreen().catch(err => console.error('Failed to enter fullscreen:', err));
+      return;
+    }
+    if (document.exitFullscreen) {
+      document.exitFullscreen().catch(err => console.error('Failed to exit fullscreen:', err));
+    }
+  };
 
   return (
-    <div className="relative w-screen h-screen flex items-center justify-center">
+    <div ref={containerRef} className="relative w-screen h-screen flex items-center justify-center">
       <style>
         {`
           .slideMeta {
@@ -417,12 +508,15 @@ const ProgramSlides = ({ programId }: ProgramSlidesProps) => {
       )}
       {isExtractingFrames && (
         <div className="fixed top-4 left-1/2 transform -translate-x-1/2 text-white text-sm bg-black bg-opacity-50 px-3 py-1 rounded">
-          Extracting frames from video...
+          Extracting frames from video{extractingProgramId && programMap[extractingProgramId]?.title ? ` (${programMap[extractingProgramId].title})` : ''}...
         </div>
       )}
-      <div className={`fixed top-4 right-4 z-10 ${isFullyLoaded ? 'opacity-0 hover:opacity-100' : 'opacity-100'} hover:opacity-100`}>
+      <div className={`fixed top-4 right-4 z-10 ${isFullyLoaded ? 'opacity-0 hover:opacity-100' : 'opacity-100'} hover:opacity-100 space-x-2`}>
         <button onClick={() => setShowUploader(!showUploader)} className="text-white text-xs bg-black bg-opacity-50 px-3 py-1 rounded">
           {showUploader ? 'Close' : 'Video Backgrounds'}
+        </button>
+        <button onClick={toggleFullscreen} className="text-white text-xs bg-black bg-opacity-50 px-3 py-1 rounded">
+          {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
         </button>
       </div>
       <SlideItem slide={flattenedSlides[currentSlide]} className={backgroundMovieUrl ? "w-screen h-screen flex items-center justify-center p-4 font-georgia bg-transparent" : "bg-black w-screen h-screen flex items-center justify-center p-4 font-georgia"} backgroundImageUrl={backgroundImageUrl} backgroundOpacity={programTitleSlideIndices.has(currentSlide) ? .75 : 0.5} isProgramTitle={programTitleSlideIndices.has(currentSlide)} hasMovie={!!backgroundMovieUrl} />
