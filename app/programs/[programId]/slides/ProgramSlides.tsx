@@ -380,6 +380,10 @@ const ProgramSlides = ({ programId }: ProgramSlidesProps) => {
   }, [flattenedSlides.length]);
 
   useEffect(() => {
+    setBackgroundMovieUrl(null);
+  }, [selectedProgram?.id]);
+
+  useEffect(() => {
     if (slideToSongIndex.length === 0) return;
     const songIndex = slideToSongIndex[Math.min(currentSlide, slideToSongIndex.length - 1)];
     const songData = typeof songIndex === 'number' ? processedSlides[songIndex] : undefined;
@@ -390,13 +394,13 @@ const ProgramSlides = ({ programId }: ProgramSlidesProps) => {
         const positionInSong = currentSlide - range.start + 1;
         const startAt = songData.slideMovieStart ?? 1;
         if (positionInSong >= startAt) {
-          setBackgroundMovieUrl(songData.slidesMovieUrl);
-          return;
+          if (backgroundMovieUrl !== songData.slidesMovieUrl) {
+            setBackgroundMovieUrl(songData.slidesMovieUrl);
+          }
         }
       }
     }
-    setBackgroundMovieUrl(null);
-  }, [currentSlide, slideToSongIndex, processedSlides, songSlideRanges]);
+  }, [currentSlide, slideToSongIndex, processedSlides, songSlideRanges, backgroundMovieUrl]);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
