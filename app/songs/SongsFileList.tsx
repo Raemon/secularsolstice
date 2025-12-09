@@ -10,6 +10,7 @@ import type { Song, SongVersion } from './types';
 import { useUser } from '../contexts/UserContext';
 import useVersionPanelManager from '../hooks/useVersionPanelManager';
 import CreateSongButton from '../components/CreateSongButton';
+import DownloadAllSongsButton from './DownloadAllSongsButton';
 
 const getLatestVersion = (versions: SongVersion[]) => maxBy(versions, (version) => new Date(version.createdAt).getTime());
 
@@ -286,6 +287,7 @@ const SongsFileList = ({ initialVersionId }: SongsFileListProps = {}) => {
                 onSongCreated={fetchSongs}
                 onError={setListError}
               />
+              <DownloadAllSongsButton />
               <button
                 onClick={() => setIsListCollapsed(true)}
                 className="text-xl px-2 py-1 text-gray-400 whitespace-nowrap"
