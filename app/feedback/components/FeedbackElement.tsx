@@ -27,9 +27,8 @@ const FeedbackElement = ({ version, index, onClick, isSelected }: FeedbackElemen
   return (
     <div
       className={`flex flex-wrap md:flex-nowrap relative group/feedback-element justify-start items-center gap-2 text-sm px-2 py-1 cursor-pointer w-[300px]] border-b border-gray-500`}
-      onClick={() => {setSelected(!selected); onClick();}}
     >
-      <div className={`${isSelected ? 'text-primary' : ''} flex-2 w-full md:w-[275px] font-georgia text-base ${isSpeech ? 'italic' : ''}`}>
+      <div className={`${isSelected ? 'text-primary' : ''} flex-2 w-full md:w-[275px] font-georgia text-base ${isSpeech ? 'italic' : ''}`} onClick={() => {setSelected(!selected); onClick();}}>
         {version?.songTitle}
       </div>
       <div className="flex-1">

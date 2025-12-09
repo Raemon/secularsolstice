@@ -325,7 +325,7 @@ const SongsFileList = ({ initialVersionId }: SongsFileListProps = {}) => {
         {selectedVersion && (() => {
           const song = songs.find(s => s.versions.some(v => v.id === selectedVersion.id));
           return (
-            <div className="flex-3 flex-grow">
+            <div className="flex-1">
               <VersionDetailPanel
                 songTitle={song?.title || ''}
                 version={selectedVersion}
