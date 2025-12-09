@@ -83,6 +83,7 @@ create table if not exists votes (
   version_id uuid not null,
   created_at timestamptz not null default now(),
   song_id uuid not null,
+  category text not null default 'quality'::text,
   constraint votes_pkey PRIMARY KEY (id),
   constraint votes_song_id_fkey FOREIGN KEY (song_id) REFERENCES songs(id) ON DELETE CASCADE,
   constraint votes_version_id_fkey FOREIGN KEY (version_id) REFERENCES song_versions(id) ON DELETE CASCADE
@@ -90,4 +91,4 @@ create table if not exists votes (
 
 CREATE INDEX if not exists votes_song_id_idx on votes USING btree (song_id);
 CREATE INDEX if not exists votes_version_id_idx on votes USING btree (version_id);
-CREATE UNIQUE INDEX if not exists votes_version_id_name_idx on votes USING btree (version_id, name);
+CREATE UNIQUE INDEX if not exists votes_version_id_name_category_idx on votes USING btree (version_id, name, category);

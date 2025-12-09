@@ -28,6 +28,13 @@ const InlineCommentBox = ({ versionId, onCommentPosted }: InlineCommentBoxProps)
     }
   }, [isExpanded]);
 
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
+    }
+  }, [newComment]);
+
   const handleFocus = () => {
     setIsExpanded(true);
   };
@@ -99,9 +106,9 @@ const InlineCommentBox = ({ versionId, onCommentPosted }: InlineCommentBoxProps)
         onFocus={handleFocus}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
-        placeholder="comment..."
-        className="w-64 bg-transparent px-2 py-1 text-xs border-top border-gray-600 outline-none focus:outline-gray-500 focus:outline-1 resize-none transition-all rounded-sm placeholder:text-gray-600"
-        rows={isExpanded ? 3 : 1}
+        placeholder="comments..."
+        className="w-full bg-transparent px-2 py-1 text-xs border-top border-gray-600 outline-none resize-none transition-all rounded-sm placeholder:text-gray-600"
+        rows={1}
         disabled={isSubmitting}
       />
       {error && <p className="text-red-500 text-xs mt-1">{error}</p>}

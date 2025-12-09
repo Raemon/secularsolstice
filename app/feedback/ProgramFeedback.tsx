@@ -184,7 +184,7 @@ const ProgramFeedback = ({ initialProgramId }: SimpleProgramProps) => {
               />
             </div>
           )}
-        <div className="flex flex-col gap-1 w-full lg:max-w-3xl mx-auto">
+        <div className="flex flex-col gap-1 w-full lg:max-w-4xl mx-auto">
           <div className="mb-4">
             <select
               value={selectedProgramId || ''}
@@ -203,6 +203,12 @@ const ProgramFeedback = ({ initialProgramId }: SimpleProgramProps) => {
               return (
                 <div key={subProgramId} className="mb-3">
                   <div className="font-georgia text-2xl text-center my-4">{subProgram.title}</div>
+                  <div className="grid grid-cols-[275px_310px_200px_1fr] items-center gap-4 text-sm px-2 py-1 border-b border-gray-700 text-gray-400 font-medium">
+                    <div>song/speech</div>
+                    <div>quality</div>
+                    <div>singability</div>
+                    <div>comments</div>
+                  </div>
                   <div className="flex flex-col">
                     {subProgram.elementIds.map((elementId, index) => {
                       const version = versionMap[elementId];
@@ -220,20 +226,28 @@ const ProgramFeedback = ({ initialProgramId }: SimpleProgramProps) => {
                 </div>
               );
             })}
-            {selectedProgram?.elementIds.map((elementId, index) => {
-              const version = versionMap[elementId];
-              return (
-                <div>
-                  <FeedbackElement
-                    key={elementId}
-                    version={version}
-                    index={index}
-                    onClick={() => setSelectedVersionId(elementId)}
-                    isSelected={selectedVersionId === elementId}
-                  />
+            {selectedProgram?.elementIds && selectedProgram.elementIds.length > 0 && (
+              <>
+                <div className="grid grid-cols-[275px_310px_200px_1fr] items-center gap-4 text-sm px-2 py-1 border-b border-gray-700 text-gray-400 font-medium">
+                  <div>song/speech</div>
+                  <div>quality</div>
+                  <div>singability</div>
+                  <div>comments</div>
                 </div>
-              );
-            })}
+                {selectedProgram.elementIds.map((elementId, index) => {
+                  const version = versionMap[elementId];
+                  return (
+                    <FeedbackElement
+                      key={elementId}
+                      version={version}
+                      index={index}
+                      onClick={() => setSelectedVersionId(elementId)}
+                      isSelected={selectedVersionId === elementId}
+                    />
+                  );
+                })}
+              </>
+            )}
           </div>
         </div>
 

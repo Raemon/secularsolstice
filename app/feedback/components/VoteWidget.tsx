@@ -12,17 +12,30 @@ type VoteRecord = {
   versionId: string;
   songId: string;
   createdAt: string;
+  category: string;
 };
 
-const voteOptions = [
-  { weight: -3, label: 'Hate' },
-  { weight: -1, label: 'Dislike' },
-  { weight: 0, label: 'Eh' },
-  { weight: 1, label: 'Like' },
-  { weight: 3, label: 'Love' },
-];
+type VoteOption = {
+  weight: number;
+  label: string;
+  tooltip?: string;
+};
+export const voteOptions: Record<string, VoteOption[]> = {
+  "quality": [
+    { weight: -3, label: 'Hate' },
+    { weight: -1, label: 'Dislike' },
+    { weight: 0, label: 'Eh' },
+    { weight: 1, label: 'Like' },
+    { weight: 3, label: 'Love' },
+  ],
+  "singability": [
+    { weight: -1, label: 'Easy', tooltip: 'Easy to sing' },
+    { weight: 0, label: 'Med', tooltip: 'Medium difficulty to sing' },
+    { weight: 1, label: 'Hard', tooltip: 'Hard to sing' },
+  ],
+};
 
-const VoteWidget = ({ versionId, songId, hideVotes = false }: {versionId: string; songId: string, hideVotes?: boolean}) => {
+const VoteWidget = ({ versionId, songId, category, hideVotes = false }: {versionId: string; songId: string, category: 'quality' | 'singability', hideVotes?: boolean}) => {
   const { userName } = useUser();
   const [votes, setVotes] = useState<VoteRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -35,7 +48,7 @@ const VoteWidget = ({ versionId, songId, hideVotes = false }: {versionId: string
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/votes?versionId=${versionId}`);
+      const response = await fetch(`/api/votes?versionId=${versionId}&category=${category}`);
       if (!response.ok) {
         throw new Error('Failed to load votes');
       }
@@ -48,7 +61,7 @@ const VoteWidget = ({ versionId, songId, hideVotes = false }: {versionId: string
     } finally {
       setIsLoading(false);
     }
-  }, [versionId]);
+  }, [versionId, category]);
 
   useEffect(() => {
     loadVotes();
@@ -72,7 +85,7 @@ const VoteWidget = ({ versionId, songId, hideVotes = false }: {versionId: string
       setIsSaving(true);
 
       try {
-        const response = await fetch(`/api/votes?versionId=${versionId}&name=${encodeURIComponent(trimmedName)}`, {
+        const response = await fetch(`/api/votes?versionId=${versionId}&name=${encodeURIComponent(trimmedName)}&category=${category}`, {
           method: 'DELETE',
         });
 
@@ -101,6 +114,7 @@ const VoteWidget = ({ versionId, songId, hideVotes = false }: {versionId: string
       versionId,
       songId,
       createdAt: existing?.createdAt || new Date().toISOString(),
+      category,
     };
 
     const updatedVotes = existing
@@ -120,6 +134,7 @@ const VoteWidget = ({ versionId, songId, hideVotes = false }: {versionId: string
           name: trimmedName,
           weight: option.weight,
           type: option.label,
+          category,
         }),
       });
 
@@ -150,19 +165,29 @@ const VoteWidget = ({ versionId, songId, hideVotes = false }: {versionId: string
 
   const voteDots = <VoteDots votes={votes} isLoading={isLoading} />;
 
+  const options = voteOptions[category];
+  
+
   return (
     <div className="flex items-center gap-2 text-xs">
-      <div className="flex items-center gap-2 px-2 py-1 p-1">
-        {voteOptions.map((option) => (
-            <button
+      <div className="flex items-center gap-2 py-1 p-1">
+        {options.map((option) => {
+          const button = <button
+              key={option.label}
               onClick={() => handleVote(option)}
               aria-label={option.label}
               aria-pressed={currentWeight === option.weight}
-              className={`px-2 py-1 rounded-md disabled:opacity-50 border border-gray-500 ${currentWeight === option.weight ? 'bg-gray-500' : ''}`}
+              className={`px-2 py-1 rounded-md disabled:opacity-50 
+                ${currentWeight === option.weight && 'bg-gray-500'} 
+                ${category === 'quality' && 'border border-gray-500'}`}
             >
               {option.label}
             </button>
-        ))}
+          if (option.tooltip) {
+            return <Tooltip key={option.label} content={option.tooltip}>{button}</Tooltip>;
+          }
+          return button;
+        })}
       </div>
 
       {!hideVotes && <div className="flex items-center gap-1">
