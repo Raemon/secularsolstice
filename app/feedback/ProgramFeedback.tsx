@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Program } from '../programs/types';
-import SimpleProgramElement from './components/SimpleProgramElement';
-import SimpleDetailPanel from './components/SimpleDetailPanel';
+import FeedbackElement from './components/FeedbackElement';
+import FeedbackDetail from './components/FeedbackDetail';
 
 type VersionOption = {
   id: string;
@@ -146,13 +146,13 @@ const ProgramFeedback = ({ initialProgramId }: SimpleProgramProps) => {
       <div className="flex gap-4">
         {selectedVersion && (
             <div className="flex-1 max-w-xl">
-              <SimpleDetailPanel
+              <FeedbackDetail
                 version={selectedVersion}
                 onClose={() => setSelectedVersionId(null)}
               />
             </div>
           )}
-        <div className="flex flex-col gap-1 w-full max-w-lg mx-auto">
+        <div className="flex flex-col gap-1 w-full max-w-2xl mx-auto">
           <div className="mb-4">
             <select
               value={selectedProgramId || ''}
@@ -175,7 +175,7 @@ const ProgramFeedback = ({ initialProgramId }: SimpleProgramProps) => {
                     {subProgram.elementIds.map((elementId, index) => {
                       const version = versionMap[elementId];
                       return (
-                        <SimpleProgramElement
+                        <FeedbackElement
                           key={elementId}
                           version={version}
                           index={index}
@@ -192,7 +192,7 @@ const ProgramFeedback = ({ initialProgramId }: SimpleProgramProps) => {
               const version = versionMap[elementId];
               return (
                 <div>
-                  <SimpleProgramElement
+                  <FeedbackElement
                     key={elementId}
                     version={version}
                     index={index}

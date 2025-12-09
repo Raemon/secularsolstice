@@ -15,11 +15,11 @@ type VoteRecord = {
 };
 
 const voteOptions = [
-  { weight: -3, label: 'Hate', type: 'Hate' },
-  { weight: -1, label: 'Dislike', type: 'Dislike' },
-  { weight: 0, label: 'Eh', type: 'Eh' },
-  { weight: 1, label: 'Like', type: 'Like' },
-  { weight: 3, label: 'Love', type: 'Love' },
+  { weight: -3, label: 'Hate' },
+  { weight: -1, label: 'Dislike' },
+  { weight: 0, label: 'Eh' },
+  { weight: 1, label: 'Like' },
+  { weight: 3, label: 'Love' },
 ];
 
 const VoteWidget = ({ versionId, songId, hideVotes = false }: {versionId: string; songId: string, hideVotes?: boolean}) => {
@@ -31,10 +31,7 @@ const VoteWidget = ({ versionId, songId, hideVotes = false }: {versionId: string
   const [voting, setVoting] = useState(false);
 
   const loadVotes = useCallback(async () => {
-    if (hideVotes) {
-      setIsLoading(false);
-      return;
-    }
+    if (hideVotes) return
     setIsLoading(true);
     setError(null);
     try {
@@ -51,13 +48,13 @@ const VoteWidget = ({ versionId, songId, hideVotes = false }: {versionId: string
     } finally {
       setIsLoading(false);
     }
-  }, [hideVotes, versionId]);
+  }, [versionId]);
 
   useEffect(() => {
     loadVotes();
   }, [loadVotes]);
 
-  const handleVote = async (option: { weight: number; label: string; type: string; }) => {
+  const handleVote = async (option: { weight: number; label: string; }) => {
     const trimmedName = userName.trim();
     if (trimmedName.length < 3) {
       setError('Set your name (3+ chars) to vote');
@@ -71,7 +68,7 @@ const VoteWidget = ({ versionId, songId, hideVotes = false }: {versionId: string
       id: existing?.id || `temp-${Date.now()}`,
       name: trimmedName,
       weight: option.weight,
-      type: option.type,
+      type: option.label,
       versionId,
       songId,
       createdAt: existing?.createdAt || new Date().toISOString(),
@@ -93,7 +90,7 @@ const VoteWidget = ({ versionId, songId, hideVotes = false }: {versionId: string
           songId,
           name: trimmedName,
           weight: option.weight,
-          type: option.type,
+          type: option.label,
         }),
       });
 
@@ -128,17 +125,15 @@ const VoteWidget = ({ versionId, songId, hideVotes = false }: {versionId: string
     <div className="flex items-center gap-2 text-xs">
       <div className="flex items-center gap-2 px-2 py-1 p-1">
         {voteOptions.map((option) => (
-          <Tooltip key={option.weight} content={option.label}>
             <button
               onClick={() => handleVote(option)}
               disabled={isSaving || isLoading}
               aria-label={option.label}
               aria-pressed={currentWeight === option.weight}
-              className={`p-1 rounded-full disabled:opacity-50 ${currentWeight === option.weight ? 'bg-gray-600' : ''}`}
+              className={`p-1 rounded-full disabled:opacity-50 ${currentWeight === option.weight ? 'bg-gray-200' : ''}`}
             >
               {option.label}
             </button>
-          </Tooltip>
         ))}
       </div>
 
@@ -147,17 +142,6 @@ const VoteWidget = ({ versionId, songId, hideVotes = false }: {versionId: string
       </div>}
       {error && <span className="text-red-600 ml-2">{error}</span>}
     </div>
-  );
-};
-
-const OptionDot = ({option, isActive}: {option: { weight: number; label: string; }; isActive: boolean}) => {
-  const size = Math.abs(option.weight) === 3 ? 16 : 8;
-  const color = option.weight > 0 ? 'var(--primary)' : option.weight === 0 ? '#fff' : '#9ca3af';
-  return (
-    <span
-      className={`inline-block rounded-full ${isActive ? 'ring-2 ring-white' : ''}`}
-      style={{ width: `${size}px`, height: `${size}px`, backgroundColor: color }}
-    />
   );
 };
 

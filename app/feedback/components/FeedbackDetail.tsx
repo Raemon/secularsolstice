@@ -23,12 +23,12 @@ type SongVersion = {
   content?: string | null;
 };
 
-type SimpleDetailPanelProps = {
+type FeedbackDetailProps = {
   version: VersionOption;
   onClose: () => void;
 };
 
-const SimpleDetailPanel = ({ version, onClose }: SimpleDetailPanelProps) => {
+const FeedbackDetail = ({ version, onClose }: FeedbackDetailProps) => {
   const [fullVersion, setFullVersion] = useState<SongVersion | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -83,4 +83,4 @@ const SimpleDetailPanel = ({ version, onClose }: SimpleDetailPanelProps) => {
   );
 };
 
-export default SimpleDetailPanel;
+export default FeedbackDetail;
