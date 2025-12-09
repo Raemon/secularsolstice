@@ -178,6 +178,47 @@ export const listSongsWithVersions = async (): Promise<SongWithVersions[]> => {
   }));
 };
 
+export const listSongsWithAllVersions = async (): Promise<SongWithVersions[]> => {
+  const rows = await sql`
+    select
+      s.id as song_id,
+      s.title,
+      s.created_by as song_created_by,
+      s.created_at as song_created_at,
+      s.archived as song_archived,
+      s.tags as song_tags,
+      v.id as version_id,
+      v.label,
+      v.content,
+      v.audio_url,
+      v.slides_movie_url,
+      v.previous_version_id,
+      v.next_version_id,
+      v.original_version_id,
+      v.rendered_content,
+      v.bpm,
+      v.transpose,
+      v.archived,
+      v.created_by as version_created_by,
+      v.created_at as version_created_at,
+      v.slide_credits,
+      v.program_credits
+    from songs s
+    left join song_versions v on v.song_id = s.id and v.archived = false
+    where s.archived = false
+    order by s.title asc, v.created_at desc nulls last
+  `;
+
+  const typedRows = rows as SongVersionQueryRow[];
+  const grouped = groupBy(typedRows, (row) => row.song_id);
+  return Object.values(grouped).map((group) => ({
+    ...mapSongRow(group[0]!),
+    versions: group
+      .filter(hasVersionData)
+      .map(mapVersionRow),
+  }));
+};
+
 export const getSongWithVersions = async (songId: string): Promise<SongWithVersions | null> => {
   const rows = await sql`
     select
