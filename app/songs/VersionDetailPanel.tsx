@@ -7,6 +7,7 @@ import VersionHeader from './VersionHeader';
 import SongTags from './SongTags';
 import SongTitle from './SongTitle';
 import ChangelogPage from '../changelog/ChangelogPage';
+import Comments from './Comments';
 import type { SongVersion } from './types';
 import { useUser } from '../contexts/UserContext';
 import Tooltip from '../components/Tooltip';
@@ -147,8 +148,9 @@ const VersionDetailPanel = ({songTitle, version, isCreatingVersion, newVersionFo
       ) : (
         <>
           <VersionContent version={version} />
-          <VersionMetadata version={version} />
-
+          {songId && version.id && version.id !== 'new' && (
+            <Comments songId={songId} currentVersionId={version.id} />
+          )}
           <div className="mt-4 pt-4 border-t border-gray-200 flex gap-4">
             <a
               href={`/songs/${version.id}/print`}

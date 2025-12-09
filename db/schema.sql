@@ -1,5 +1,18 @@
 create extension if not exists "pgcrypto";
 
+create table if not exists comments (
+  id uuid not null default gen_random_uuid(),
+  version_id uuid not null,
+  content text not null,
+  created_by text not null,
+  created_at timestamptz not null default now(),
+  constraint comments_pkey PRIMARY KEY (id),
+  constraint comments_version_id_fkey FOREIGN KEY (version_id) REFERENCES song_versions(id) ON DELETE CASCADE
+);
+
+CREATE INDEX if not exists comments_created_at_idx on comments USING btree (created_at);
+CREATE INDEX if not exists comments_version_id_idx on comments USING btree (version_id);
+
 create table if not exists programs (
   id uuid not null default gen_random_uuid(),
   title text not null,
@@ -33,9 +46,9 @@ create table if not exists song_versions (
   transpose integer default 0,
   slide_credits text,
   program_credits text,
-  rendered_content jsonb,
   slides_movie_url text,
   slide_movie_start integer,
+  rendered_content jsonb,
   constraint song_versions_next_version_id_fkey FOREIGN KEY (next_version_id) REFERENCES song_versions(id) ON DELETE SET NULL,
   constraint song_versions_original_version_id_fkey FOREIGN KEY (original_version_id) REFERENCES song_versions(id) ON DELETE SET NULL,
   constraint song_versions_pkey PRIMARY KEY (id),
@@ -68,13 +81,13 @@ create table if not exists votes (
   weight integer not null,
   type text not null,
   version_id uuid not null,
-  song_id uuid not null,
   created_at timestamptz not null default now(),
+  song_id uuid not null,
   constraint votes_pkey PRIMARY KEY (id),
-  constraint votes_version_id_fkey FOREIGN KEY (version_id) REFERENCES song_versions(id) ON DELETE CASCADE,
-  constraint votes_song_id_fkey FOREIGN KEY (song_id) REFERENCES songs(id) ON DELETE CASCADE
+  constraint votes_song_id_fkey FOREIGN KEY (song_id) REFERENCES songs(id) ON DELETE CASCADE,
+  constraint votes_version_id_fkey FOREIGN KEY (version_id) REFERENCES song_versions(id) ON DELETE CASCADE
 );
 
-CREATE INDEX if not exists votes_version_id_idx on votes USING btree (version_id);
 CREATE INDEX if not exists votes_song_id_idx on votes USING btree (song_id);
+CREATE INDEX if not exists votes_version_id_idx on votes USING btree (version_id);
 CREATE UNIQUE INDEX if not exists votes_version_id_name_idx on votes USING btree (version_id, name);
