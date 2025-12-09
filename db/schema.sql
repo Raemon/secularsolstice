@@ -6,11 +6,13 @@ create table if not exists comments (
   content text not null,
   created_by text not null,
   created_at timestamptz not null default now(),
+  privacy text not null default 'public'::text,
   constraint comments_pkey PRIMARY KEY (id),
   constraint comments_version_id_fkey FOREIGN KEY (version_id) REFERENCES song_versions(id) ON DELETE CASCADE
 );
 
 CREATE INDEX if not exists comments_created_at_idx on comments USING btree (created_at);
+CREATE INDEX if not exists comments_privacy_idx on comments USING btree (privacy);
 CREATE INDEX if not exists comments_version_id_idx on comments USING btree (version_id);
 
 create table if not exists programs (
@@ -84,11 +86,13 @@ create table if not exists votes (
   created_at timestamptz not null default now(),
   song_id uuid not null,
   category text not null default 'quality'::text,
+  privacy text not null default 'public'::text,
   constraint votes_pkey PRIMARY KEY (id),
   constraint votes_song_id_fkey FOREIGN KEY (song_id) REFERENCES songs(id) ON DELETE CASCADE,
   constraint votes_version_id_fkey FOREIGN KEY (version_id) REFERENCES song_versions(id) ON DELETE CASCADE
 );
 
+CREATE INDEX if not exists votes_privacy_idx on votes USING btree (privacy);
 CREATE INDEX if not exists votes_song_id_idx on votes USING btree (song_id);
 CREATE INDEX if not exists votes_version_id_idx on votes USING btree (version_id);
 CREATE UNIQUE INDEX if not exists votes_version_id_name_category_idx on votes USING btree (version_id, name, category);

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Program } from '../programs/types';
 import FeedbackElement, { gridCols } from './components/FeedbackElement';
 import FeedbackDetail from './components/FeedbackDetail';
+import PrivacySettings from './components/PrivacySettings';
 
 type VersionOption = {
   id: string;
@@ -26,6 +27,8 @@ type SimpleProgramProps = {
   initialProgramId?: string;
 };
 
+type PrivacyMode = 'private' | 'anonymous' | 'public';
+
 const ProgramFeedback = ({ initialProgramId }: SimpleProgramProps) => {
   const [programs, setPrograms] = useState<Program[]>([]);
   const [versions, setVersions] = useState<VersionOption[]>([]);
@@ -35,6 +38,7 @@ const ProgramFeedback = ({ initialProgramId }: SimpleProgramProps) => {
   const [selectedProgramId, setSelectedProgramId] = useState<string | null>(initialProgramId ?? null);
   const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
   const [versionCache, setVersionCache] = useState<Record<string, FullVersion>>({});
+  const [privacy, setPrivacy] = useState<PrivacyMode>('public');
 
   const loadPrograms = useCallback(async () => {
     setIsLoadingPrograms(true);
@@ -174,6 +178,7 @@ const ProgramFeedback = ({ initialProgramId }: SimpleProgramProps) => {
 
   return (
     <div className="p-4">
+      <PrivacySettings privacy={privacy} setPrivacy={setPrivacy} />
       <div className="flex gap-4">
         {selectedVersion && (
             <div className="flex-1 max-w-xl">
