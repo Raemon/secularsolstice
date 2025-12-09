@@ -54,7 +54,7 @@ const SongItem = ({song, selectedVersionId, onVersionClick, onCreateNewVersion}:
       <div className="group flex items-center w-2/3 justify-between px-2 py-1 text-lg font-medium border-b border-gray-200 font-georgia">
         <div className="flex flex-col">
           <span>{song.title.replace(/_/g, ' ')}</span>
-          <span className="text-xs text-gray-500">{tagsMinusSong.join(', ')}</span>
+          <span className="text-[10px] text-gray-400 font-mono">{tagsMinusSong.join(', ')}</span>
           </div>
         {canEdit && (
           <button
