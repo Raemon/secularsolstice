@@ -20,7 +20,7 @@ type FeedbackElementProps = {
   isSelected: boolean;
 };
 
-export const gridCols = '190px 210px 200px'
+export const gridCols = '190px 210px 120px 200px'
 
 const FeedbackElement = ({ version, index, onClick, isSelected }: FeedbackElementProps) => {
   const isSpeech = version?.tags?.includes('speech');
@@ -35,7 +35,7 @@ const FeedbackElement = ({ version, index, onClick, isSelected }: FeedbackElemen
         {version?.songTitle}
       </div>
       <VoteWidget versionId={version?.id} songId={version?.songId} category="quality" hideVotes/>
-      {/* <VoteWidget versionId={version?.id} songId={version?.songId} category="singability" hideVotes/> */}
+      <VoteWidget versionId={version?.id} songId={version?.songId} category="singability" hideVotes/>
       <div className="col-span-1">
         <InlineCommentBox versionId={version?.id} />
       </div>

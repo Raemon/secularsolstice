@@ -228,7 +228,7 @@ const ProgramFeedback = ({ initialProgramId }: SimpleProgramProps) => {
                   <div className="grid gap-4 text-sm px-2 py-1 border-b border-gray-700 text-gray-400 font-medium" style={{ gridTemplateColumns: gridCols }}>
                     <div>Song/Speech</div>
                     <div className="pl-1">Quality</div>
-                    {/* <div className="pl-2">Singability</div> */}
+                    <div className="pl-2">Singability</div>
                     <div className="pl-2">Comments</div>
                   </div>
                   <div className="flex flex-col">
