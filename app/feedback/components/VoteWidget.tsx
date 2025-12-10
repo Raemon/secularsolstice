@@ -1,12 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useUser } from '../../contexts/UserContext';
 import Tooltip from '@/app/components/Tooltip';
 
+// CRITICAL: This type must NEVER include 'name' field
+// Vote names are NEVER sent from the API to protect voter privacy
 type VoteRecord = {
   id: string;
-  name: string;
   weight: number;
   type: string;
   versionId: string;
@@ -38,30 +39,33 @@ export const voteOptions: Record<string, VoteOption[]> = {
 const VoteWidget = ({ versionId, songId, category, hideVotes = false }: {versionId: string; songId: string, category: 'quality' | 'singability', hideVotes?: boolean}) => {
   const { userName } = useUser();
   const [votes, setVotes] = useState<VoteRecord[]>([]);
+  const [currentUserVote, setCurrentUserVote] = useState<VoteRecord | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [voting, setVoting] = useState(false);
 
   const loadVotes = useCallback(async () => {
     if (hideVotes) return
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/votes?versionId=${versionId}&category=${category}`);
+      const trimmedName = userName.trim();
+      const userParam = trimmedName.length >= 3 ? `&userName=${encodeURIComponent(trimmedName)}` : '';
+      const response = await fetch(`/api/votes?versionId=${versionId}&category=${category}${userParam}`);
       if (!response.ok) {
         throw new Error('Failed to load votes');
       }
       const data = await response.json();
       const fetchedVotes = data.votes || [];
       setVotes(fetchedVotes);
+      setCurrentUserVote(data.currentUserVote || null);
     } catch (err) {
       console.error('Failed to load votes:', err);
       setError('Unable to load votes');
     } finally {
       setIsLoading(false);
     }
-  }, [versionId, category]);
+  }, [versionId, category, userName]);
 
   useEffect(() => {
     loadVotes();
@@ -76,12 +80,12 @@ const VoteWidget = ({ versionId, songId, category, hideVotes = false }: {version
 
     setError(null);
     const previousVotes = votes;
-    const existing = votes.find((vote) => vote.name === trimmedName);
+    const previousUserVote = currentUserVote;
 
     // Toggle off if clicking the same vote
-    if (existing && existing.weight === option.weight) {
-      const updatedVotes = votes.filter((vote) => vote.name !== trimmedName);
-      setVotes(updatedVotes);
+    if (currentUserVote && currentUserVote.weight === option.weight) {
+      // Remove user's vote from the count
+      setCurrentUserVote(null);
       setIsSaving(true);
 
       try {
@@ -94,11 +98,12 @@ const VoteWidget = ({ versionId, songId, category, hideVotes = false }: {version
         }
 
         const data = await response.json();
-        const savedVotes = data.votes || updatedVotes;
-        setVotes(savedVotes);
+        setVotes(data.votes || []);
+        setCurrentUserVote(data.currentUserVote || null);
       } catch (err) {
         console.error('Failed to delete vote:', err);
         setVotes(previousVotes);
+        setCurrentUserVote(previousUserVote);
         setError('Unable to delete vote');
       } finally {
         setIsSaving(false);
@@ -106,22 +111,18 @@ const VoteWidget = ({ versionId, songId, category, hideVotes = false }: {version
       return;
     }
 
+    // Optimistic update for current user's vote
     const optimisticVote: VoteRecord = {
-      id: existing?.id || `temp-${Date.now()}`,
-      name: trimmedName,
+      id: currentUserVote?.id || `temp-${Date.now()}`,
       weight: option.weight,
       type: option.label,
       versionId,
       songId,
-      createdAt: existing?.createdAt || new Date().toISOString(),
+      createdAt: currentUserVote?.createdAt || new Date().toISOString(),
       category,
     };
 
-    const updatedVotes = existing
-      ? votes.map((vote) => vote.name === trimmedName ? optimisticVote : vote)
-      : [...votes, optimisticVote];
-
-    setVotes(updatedVotes);
+    setCurrentUserVote(optimisticVote);
     setIsSaving(true);
 
     try {
@@ -143,31 +144,20 @@ const VoteWidget = ({ versionId, songId, category, hideVotes = false }: {version
       }
 
       const data = await response.json();
-      const savedVotes = data.votes || updatedVotes;
-      setVotes(savedVotes);
+      setVotes(data.votes || []);
+      setCurrentUserVote(data.currentUserVote || null);
     } catch (err) {
       console.error('Failed to save vote:', err);
       setVotes(previousVotes);
+      setCurrentUserVote(previousUserVote);
       setError('Unable to save vote');
     } finally {
       setIsSaving(false);
     }
   };
 
-  const currentWeight = useMemo(() => {
-    const trimmedName = userName.trim();
-    if (!trimmedName) {
-      return undefined;
-    }
-    const existing = votes.find((vote) => vote.name === trimmedName);
-    return existing?.weight;
-  }, [userName, votes]);
-
-  const voteDots = <VoteDots votes={votes} isLoading={isLoading} />;
-
   const options = voteOptions[category];
   
-
   return (
     <div className="flex items-center gap-2 text-[11px]">
       <div className="flex items-center gap-1 py-1 p-1">
@@ -176,9 +166,9 @@ const VoteWidget = ({ versionId, songId, category, hideVotes = false }: {version
               key={option.label}
               onClick={() => handleVote(option)}
               aria-label={option.label}
-              aria-pressed={currentWeight === option.weight}
+              aria-pressed={currentUserVote?.weight === option.weight}
               className={`px-[6px] py-[3px] rounded-md disabled:opacity-50 
-                ${currentWeight === option.weight && 'bg-gray-500'} 
+                ${currentUserVote?.weight === option.weight && 'bg-gray-500'} 
                 ${category === 'quality' && 'border border-gray-500'}`}
             >
               {option.label}
@@ -191,7 +181,7 @@ const VoteWidget = ({ versionId, songId, category, hideVotes = false }: {version
       </div>
 
       {!hideVotes && <div className="flex items-center gap-1">
-        {voteDots}
+        <VoteDots votes={votes} isLoading={isLoading} />
       </div>}
       {error && <span className="text-red-600 ml-2">{error}</span>}
     </div>
@@ -208,13 +198,12 @@ const VoteDots = ({votes, isLoading}: {votes: VoteRecord[]; isLoading: boolean})
   return (
     <>
       {votes.map((vote) => {
-        const size = Math.abs(vote.weight) === 3 ? 12 : 6;
+        const size = Math.abs(vote.weight) === 3 ? 6 : 3;
         const color = vote.weight > 0 ? 'var(--primary)' : vote.weight === 0 ? '#fff' : '#9ca3af';
+        const tooltip = `${vote.type} (${vote.weight > 0 ? '+' : ''}${vote.weight})`;
         return (
-          <Tooltip key={vote.id} content={vote.name}>
+          <Tooltip key={vote.id} content={tooltip}>
             <span
-              key={vote.id}
-              title={vote.name}
               className="inline-block rounded-full"
               style={{ width: `${size}px`, height: `${size}px`, backgroundColor: color }}
             />

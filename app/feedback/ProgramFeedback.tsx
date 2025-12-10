@@ -4,9 +4,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Program } from '../programs/types';
 import FeedbackElement, { gridCols } from './components/FeedbackElement';
 import FeedbackDetail from './components/FeedbackDetail';
-import PrivacySettings from './components/PrivacySettings';
 import UsernameInput from './components/UsernameInput';
+import ProgramTitle from './components/ProgramTitle';
 import Link from 'next/link';
+import { useUser } from '../contexts/UserContext';
 
 type VersionOption = {
   id: string;
@@ -25,13 +26,22 @@ type FullVersion = {
   content?: string | null;
 };
 
+type Comment = {
+  id: string;
+  version_id: string;
+  content: string;
+  created_by: string;
+  created_at: string;
+};
+
 type SimpleProgramProps = {
   initialProgramId?: string;
 };
 
 type PrivacyMode = 'private' | 'anonymous' | 'public';
 
-const ProgramFeedback = ({ initialProgramId }: SimpleProgramProps) => {
+export const ProgramFeedback = ({ initialProgramId }: SimpleProgramProps) => {
+  const { userName } = useUser();
   const [programs, setPrograms] = useState<Program[]>([]);
   const [versions, setVersions] = useState<VersionOption[]>([]);
   const [isLoadingPrograms, setIsLoadingPrograms] = useState(true);
@@ -40,7 +50,7 @@ const ProgramFeedback = ({ initialProgramId }: SimpleProgramProps) => {
   const [selectedProgramId, setSelectedProgramId] = useState<string | null>(initialProgramId ?? null);
   const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
   const [versionCache, setVersionCache] = useState<Record<string, FullVersion>>({});
-  const [privacy, setPrivacy] = useState<PrivacyMode>('public');
+  const [userComments, setUserComments] = useState<Record<string, Comment[]>>({});
 
   const loadPrograms = useCallback(async () => {
     setIsLoadingPrograms(true);
@@ -191,7 +201,7 @@ const ProgramFeedback = ({ initialProgramId }: SimpleProgramProps) => {
             </div>
           )}
         <div className="flex flex-col gap-1 w-full lg:max-w-4xl mx-auto">
-          <h2 className="text-4xl text-center my-12 font-semibold font-georgia">{selectedProgram?.title} Feedback</h2>
+          <ProgramTitle title={selectedProgram?.title || ''} suffix="Feedback" />
           <p className="text-center text-gray-400">
             All responses are public, and anonymous except to site admins.<br/>
             Choose a random name if you want to be anonymous to admins.<br/>
@@ -264,14 +274,11 @@ const ProgramFeedback = ({ initialProgramId }: SimpleProgramProps) => {
               );
             })}
           </div>
-          <p className="text-center text-gray-400">View Results <Link href={`/programs/${selectedProgram?.id}/results`} className="text-blue-500 hover:underline">here</Link>
-        </p>
-
+          <Link href={`/programs/${selectedProgram?.id}/results`} className="text-primary hover:underline block text-center my-24">
+            View Results
+          </Link>
         </div>
       </div>
     </div>
   );
 };
-
-export default ProgramFeedback;
-

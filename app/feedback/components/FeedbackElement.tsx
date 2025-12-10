@@ -24,6 +24,7 @@ export const gridCols = '190px 210px 120px 200px'
 
 const FeedbackElement = ({ version, index, onClick, isSelected }: FeedbackElementProps) => {
   const isSpeech = version?.tags?.includes('speech');
+  const isSong = version?.tags?.includes('song');
   const [selected, setSelected] = useState(false);
 
   return (
@@ -36,15 +37,12 @@ const FeedbackElement = ({ version, index, onClick, isSelected }: FeedbackElemen
       </div>
       <div className="flex flex-col gap-2 md:contents">
         <div className="flex items-center gap-2">
-          <span className="text-gray-400 md:hidden">Quality:</span>
           <VoteWidget versionId={version?.id} songId={version?.songId} category="quality" hideVotes/>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-gray-400 md:hidden">Singability:</span>
-          <VoteWidget versionId={version?.id} songId={version?.songId} category="singability" hideVotes/>
+          {isSong && <VoteWidget versionId={version?.id} songId={version?.songId} category="singability" hideVotes/>}
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-gray-400 md:hidden">Comments:</span>
           <InlineCommentBox versionId={version?.id} />
         </div>
       </div>

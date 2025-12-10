@@ -1,8 +1,8 @@
-import ProgramFeedback from './ProgramFeedback';
+import { ProgramFeedback } from "./ProgramFeedback";
 
-const SimpleProgramPage = () => {
+const FeedbackPage = () => {
   return <ProgramFeedback />;
 };
 
-export default SimpleProgramPage;
+export default FeedbackPage;
 

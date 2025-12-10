@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, EB_Garamond } from "next/font/google";
 import "./globals.css";
-import Header from "./Header";
+import ConditionalHeader from "./ConditionalHeader";
 import { UserProvider } from "./contexts/UserContext";
 
 const geistSans = Geist({
@@ -32,10 +32,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${ebGaramond.variable} antialiased bg-black/90 text-gray-100`}
+        className={`${geistSans.variable} ${geistMono.variable} ${ebGaramond.variable} antialiased bg-[#11101b] text-gray-100`}
       >
         <UserProvider>
-          <Header />
+          <ConditionalHeader />
           {children}
         </UserProvider>
       </body>

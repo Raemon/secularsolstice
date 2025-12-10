@@ -39,7 +39,8 @@ const InlineCommentBox = ({ versionId, onCommentPosted }: InlineCommentBoxProps)
     setIsExpanded(true);
   };
 
-  const submitComment = async () => {
+  const submitComment = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!newComment.trim() || !userName || isSubmitting) return;
 
     setIsSubmitting(true);
@@ -74,23 +75,11 @@ const InlineCommentBox = ({ versionId, onCommentPosted }: InlineCommentBoxProps)
     }
   };
 
-  const handleBlur = () => {
-    if (newComment.trim()) {
-      submitComment();
-    } else {
-      setIsExpanded(false);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await submitComment();
-  };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      submitComment();
+      submitComment(e);
     }
     if (e.key === 'Escape') {
       setNewComment('');
@@ -104,19 +93,24 @@ const InlineCommentBox = ({ versionId, onCommentPosted }: InlineCommentBoxProps)
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+    <form onSubmit={submitComment} className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
       <textarea
         ref={textareaRef}
         value={newComment}
         onChange={(e) => setNewComment(e.target.value)}
         onFocus={handleFocus}
-        onBlur={handleBlur}
+        onBlur={() => setIsExpanded(false)}
         onKeyDown={handleKeyDown}
-        placeholder="comments..."
+        placeholder="comment..."
         className="w-full bg-transparent px-2 py-1 text-xs border-top border-gray-600 outline-none resize-none transition-all rounded-sm placeholder:text-gray-600"
         rows={1}
         disabled={isSubmitting}
       />
+      {isExpanded && (
+        <button type="submit" disabled={isSubmitting} className="absolute bottom-0 right-0 text-xs px-2 py-1 text-white disabled:opacity-50">
+          {isSubmitting ? '...' : 'Post'}
+        </button>
+      )}
       {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
     </form>
   );
