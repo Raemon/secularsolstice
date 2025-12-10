@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getVotesSummary, upsertVote, deleteVote } from '@/lib/votesRepository';
 import { getVersionById } from '@/lib/songsRepository';
+import sql from '@/lib/db';
 
 const VALID_WEIGHTS = new Set([-3, -1, 0, 1, 3]);
 const VALID_TYPES = new Set(['Hate', 'Dislike', 'Eh', 'Like', 'Love', 'Easy', 'Med', 'Hard']);
@@ -13,8 +14,26 @@ export async function GET(request: Request) {
     const category = searchParams.get('category');
     const userId = searchParams.get('userId'); // Optional: for checking if user has voted
 
+    // Return all votes if no versionId provided
     if (!versionId) {
-      return NextResponse.json({ error: 'versionId is required' }, { status: 400 });
+      const result = await sql`
+        SELECT 
+          v.id, 
+          v.weight, 
+          v.type,
+          v.category,
+          v.version_id, 
+          v.created_at,
+          sv.label as version_label,
+          sv.song_id,
+          s.title as song_title
+        FROM votes v
+        JOIN song_versions sv ON v.version_id = sv.id
+        JOIN songs s ON sv.song_id = s.id
+        WHERE sv.archived = false AND s.archived = false
+        ORDER BY v.created_at DESC
+      `;
+      return NextResponse.json(result);
     }
 
     const summary = await getVotesSummary(versionId, category || undefined, userId || undefined);
