@@ -5,6 +5,7 @@ import { getProgramById } from '@/lib/programsRepository';
 import { CHORDMARK_STYLES } from '@/app/chordmark-converter/chordmarkStyles';
 import { TableOfContents } from './TableOfContents';
 import { ScrollHandler } from './ScrollHandler';
+import ScriptSongRenderer from './ScriptSongRenderer';
 
 type Program = {
   id: string;
@@ -248,8 +249,7 @@ const ProgramScript = async ({ programId }: ProgramScriptProps) => {
           if (entry.type === 'version') {
             const { version } = entry;
             const isTextOrSpeech = version.tags?.some((tag: string) => ['text', 'speech'].includes(tag));
-            const lyricsHtml = version.renderedContent?.htmlLyricsOnly;
-            const plainText = version.renderedContent?.plainText || version.content || '';
+            const content = version.content || '';
             
             return (
               <div 
@@ -264,13 +264,10 @@ const ProgramScript = async ({ programId }: ProgramScriptProps) => {
                   </Link>
                 </h3>
                 
-                {lyricsHtml ? (
-                  <div 
-                    className="styled-chordmark lyrics-wrap text-xs font-mono" 
-                    dangerouslySetInnerHTML={{ __html: lyricsHtml }} 
-                  />
-                ) : isTextOrSpeech && plainText ? (
-                  <div className="whitespace-pre-wrap">{plainText}</div>
+                {content ? (
+                  <ScriptSongRenderer content={content} />
+                ) : isTextOrSpeech ? (
+                  <div className="whitespace-pre-wrap">{content}</div>
                 ) : null}
               </div>
             );
