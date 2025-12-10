@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getProgramById } from '@/lib/programsRepository';
-import { listVotesForVersion } from '@/lib/votesRepository';
+import { listVotesForVersion, type PublicVoteRecord, type VoteRecord } from '@/lib/votesRepository';
 import sql from '@/lib/db';
 
 export async function GET(request: NextRequest, {params}: {params: Promise<{id: string}>}) {
@@ -42,7 +42,8 @@ export async function GET(request: NextRequest, {params}: {params: Promise<{id: 
     ];
 
     // Fetch votes for all element IDs
-    const votesData: Record<string, any[]> = {};
+    // listVotesForVersion already excludes user_id for privacy
+    const votesData: Record<string, PublicVoteRecord[]> = {};
     if (allElementIds.length > 0) {
       await Promise.all(
         allElementIds.map(async (versionId) => {
@@ -50,11 +51,9 @@ export async function GET(request: NextRequest, {params}: {params: Promise<{id: 
             listVotesForVersion(versionId, 'quality'),
             listVotesForVersion(versionId, 'singability')
           ]);
-          // Strip names from votes
-          const stripNames = (votes: any[]) => votes.map(({name, ...rest}) => rest);
           votesData[versionId] = [
-            ...stripNames(qualityVotes),
-            ...stripNames(singabilityVotes)
+            ...qualityVotes,
+            ...singabilityVotes
           ];
         })
       );

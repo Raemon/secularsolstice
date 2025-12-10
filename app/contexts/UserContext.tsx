@@ -75,10 +75,29 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const setUserName = async (name: string) => {
-    if (!user) return;
-
     setUserNameState(name);
     localStorage.setItem('userName', name);
+    
+    // If no user exists, create one
+    if (!user) {
+      try {
+        const trimmedName = name.trim();
+        const response = await fetch('/api/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: trimmedName || undefined }),
+        });
+
+        if (response.ok) {
+          const newUser = await response.json();
+          setUser(newUser);
+          localStorage.setItem('userId', newUser.id);
+        }
+      } catch (error) {
+        console.error('Error creating user:', error);
+      }
+      return;
+    }
     
     // Update user in database
     try {

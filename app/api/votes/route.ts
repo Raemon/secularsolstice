@@ -14,7 +14,7 @@ export async function GET(request: Request) {
     const category = searchParams.get('category');
     const userId = searchParams.get('userId'); // Optional: for checking if user has voted
 
-    // Return all votes if no versionId provided
+    // Return all votes if no versionId provided (user_id excluded for privacy)
     if (!versionId) {
       const result = await sql`
         SELECT 
@@ -47,7 +47,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { versionId, songId, userId, name, weight, type, category } = body;
+    const { versionId, songId, userId, weight, type, category } = body;
 
     if (!versionId) {
       return NextResponse.json({ error: 'versionId is required' }, { status: 400 });
@@ -55,10 +55,6 @@ export async function POST(request: Request) {
 
     if (!userId || typeof userId !== 'string') {
       return NextResponse.json({ error: 'userId is required' }, { status: 400 });
-    }
-
-    if (!name || typeof name !== 'string' || name.trim().length < 3) {
-      return NextResponse.json({ error: 'name is required and must be at least 3 characters' }, { status: 400 });
     }
 
     if (typeof weight !== 'number' || !VALID_WEIGHTS.has(weight)) {
@@ -86,7 +82,6 @@ export async function POST(request: Request) {
       versionId,
       songId: resolvedSongId,
       userId,
-      name: name.trim(),
       weight,
       type,
       category,

@@ -26,7 +26,7 @@ const InlineCommentBox = ({ versionId, existingComment, onCommentPosted }: Inlin
   const [isExpanded, setIsExpanded] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { userId, userName } = useUser();
+  const { userId, userName, canEdit } = useUser();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -51,7 +51,17 @@ const InlineCommentBox = ({ versionId, existingComment, onCommentPosted }: Inlin
 
   const submitComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newComment.trim() || !userName || !userId || isSubmitting) return;
+    if (!newComment.trim() || isSubmitting) return;
+    
+    if (!canEdit) {
+      setError('Set your name (3+ chars) to comment');
+      return <div>Set your name (3+ chars) to comment</div>
+    }
+    
+    if (!userId) {
+      setError('User not authenticated');
+      return <div>User not authenticated (email Ray at raemon777@gmail.com for help, meanwhile try on another device or incognito mode)</div>
+    }
 
     setIsSubmitting(true);
     setError(null);
@@ -107,10 +117,6 @@ const InlineCommentBox = ({ versionId, existingComment, onCommentPosted }: Inlin
       textareaRef.current?.blur();
     }
   };
-
-  if (!userName) {
-    return null;
-  }
 
   const displayText = existingComment ? existingComment.content : newComment;
 

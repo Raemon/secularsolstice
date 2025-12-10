@@ -6,8 +6,8 @@ import Tooltip from '@/app/components/Tooltip';
 import ProgramTitle from '@/app/feedback/components/ProgramTitle';
 import Link from 'next/link';
 
+// Public vote record - user_id is never sent from API for privacy
 type VoteRecord = {
-  // do not include name field
   id: string;
   weight: number;
   type: string;

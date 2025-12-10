@@ -4,8 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useUser } from '../../contexts/UserContext';
 import Tooltip from '@/app/components/Tooltip';
 
-// CRITICAL: This type must NEVER include 'name' field
-// Vote names are NEVER sent from the API to protect voter privacy
+// Public vote record - user_id is never sent from API for privacy
 type VoteRecord = {
   id: string;
   weight: number;
@@ -53,7 +52,7 @@ export type VoteWidgetProps = {
 };
 
 const VoteWidget: React.FC<VoteWidgetProps> = ({ versionId, songId, category, hideVotes = false, preloadedUserVote }) => {
-  const { userId, userName } = useUser();
+  const { userId, canEdit } = useUser();
   const [votes, setVotes] = useState<VoteRecord[]>([]);
   const [currentUserVote, setCurrentUserVote] = useState<VoteRecord | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -104,8 +103,7 @@ const VoteWidget: React.FC<VoteWidgetProps> = ({ versionId, songId, category, hi
   }, [preloadedUserVote, songId]);
 
   const handleVote = async (option: { weight: number; label: string; }) => {
-    const trimmedName = userName.trim();
-    if (trimmedName.length < 3) {
+    if (!canEdit) {
       setError('Set your name (3+ chars) to vote');
       return;
     }
@@ -170,7 +168,6 @@ const VoteWidget: React.FC<VoteWidgetProps> = ({ versionId, songId, category, hi
           versionId,
           songId,
           userId,
-          name: trimmedName,
           weight: option.weight,
           type: option.label,
           category,
