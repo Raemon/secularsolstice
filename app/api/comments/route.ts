@@ -7,8 +7,26 @@ export async function GET(request: NextRequest) {
     const songId = searchParams.get('songId');
     const songIds = searchParams.get('songIds');
 
+    // Return all comments if no query parameters provided
     if (!songId && !songIds) {
-      return NextResponse.json({ error: 'songId or songIds is required' }, { status: 400 });
+      const result = await sql`
+        SELECT 
+          c.id, 
+          c.version_id, 
+          c.content, 
+          c.created_by, 
+          c.created_at,
+          sv.label as version_label,
+          sv.song_id,
+          s.title as song_title
+        FROM comments c
+        JOIN song_versions sv ON c.version_id = sv.id
+        JOIN songs s ON sv.song_id = s.id
+        WHERE sv.archived = false AND s.archived = false
+        ORDER BY c.created_at DESC
+      `;
+
+      return NextResponse.json(result);
     }
 
     // Handle batch request with multiple songIds
