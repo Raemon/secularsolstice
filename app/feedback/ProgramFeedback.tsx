@@ -214,6 +214,7 @@ export const ProgramFeedback = ({ initialProgramId }: SimpleProgramProps) => {
             Choose a random name if you want to be anonymous to admins.<br/>
           </p>
           <div className="flex justify-center my-4">
+            <label htmlFor="username-input" className="text-sm text-gray-400 mr-2">Your name:</label>
             <UsernameInput />
           </div>
 

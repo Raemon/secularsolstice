@@ -3,9 +3,9 @@
 import Link from 'next/link';
 import { useUser } from './contexts/UserContext';
 import { usePathname } from 'next/navigation';
+import UsernameInput from './feedback/components/UsernameInput';
 
 const Header = () => {
-  const { userName, setUserName } = useUser();
   const pathname = usePathname();
   
   if (pathname?.includes('/print') || pathname?.match(/\/programs\/[^/]+\/slides/)) {
@@ -20,13 +20,7 @@ const Header = () => {
         <Link href="/songs" className="hover:underline text-sm">Songs</Link>
         <Link href="/programs" className="hover:underline text-sm">Programs</Link>
         <Link href="/changelog" className="hover:underline text-sm">Changelog</Link>
-        <input
-          type="text"
-          value={userName}
-          onChange={(e) => setUserName(e.target.value)}
-          placeholder="Your name"
-          className="px-2 py-1 w-32 bg-black text-sm rounded-sm"
-        />
+        <UsernameInput />
       </nav>
     </header>
   );
