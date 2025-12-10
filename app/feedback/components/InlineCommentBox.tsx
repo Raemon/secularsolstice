@@ -57,20 +57,29 @@ const InlineCommentBox = ({ versionId, existingComment, onCommentPosted }: Inlin
     setError(null);
 
     try {
+      const isEditing = !!existingComment;
       const response = await fetch('/api/comments', {
-        method: 'POST',
+        method: isEditing ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          versionId: versionId,
-          content: newComment.trim(),
-          userId: userId,
-          createdBy: userName,
-        }),
+        body: JSON.stringify(
+          isEditing
+            ? {
+                commentId: existingComment.id,
+                content: newComment.trim(),
+                userId: userId,
+              }
+            : {
+                versionId: versionId,
+                content: newComment.trim(),
+                userId: userId,
+                createdBy: userName,
+              }
+        ),
       });
 
-      if (!response.ok) throw new Error('Failed to create comment');
+      if (!response.ok) throw new Error(`Failed to ${isEditing ? 'update' : 'create'} comment`);
 
       const newCommentData = await response.json();
       if (onCommentPosted) {
@@ -79,8 +88,8 @@ const InlineCommentBox = ({ versionId, existingComment, onCommentPosted }: Inlin
       setNewComment('');
       setIsExpanded(false);
     } catch (err) {
-      console.error('Error creating comment:', err);
-      setError('Failed to post comment');
+      console.error('Error saving comment:', err);
+      setError('Failed to save comment');
     } finally {
       setIsSubmitting(false);
     }
@@ -121,7 +130,7 @@ const InlineCommentBox = ({ versionId, existingComment, onCommentPosted }: Inlin
       />
       {isExpanded && (
         <button type="button" onMouseDown={(e) => { e.preventDefault(); submitComment(e); }} disabled={isSubmitting} className="absolute bottom-0 right-0 text-xs px-2 py-1 text-white disabled:opacity-50">
-          {isSubmitting ? '...' : (!!existingComment ? 'Edit' : 'Save')}
+          {isSubmitting ? '...' : (!!existingComment ? 'Save Edit' : 'Save')}
         </button>
       )}
       {error && <p className="text-red-500 text-xs mt-1">{error}</p>}

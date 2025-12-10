@@ -95,3 +95,43 @@ export async function POST(request: NextRequest) {
   }
 }
 
+export async function PUT(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { commentId, content, userId } = body;
+
+    if (!commentId || !content) {
+      return NextResponse.json(
+        { error: 'commentId and content are required' },
+        { status: 400 }
+      );
+    }
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'userId is required' },
+        { status: 400 }
+      );
+    }
+
+    const result = await sql`
+      UPDATE comments
+      SET content = ${content}
+      WHERE id = ${commentId} AND user_id = ${userId}
+      RETURNING id, version_id, content, created_by, created_at
+    `;
+
+    if (result.length === 0) {
+      return NextResponse.json(
+        { error: 'Comment not found or unauthorized' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(result[0]);
+  } catch (error) {
+    console.error('Error updating comment:', error);
+    return NextResponse.json({ error: 'Failed to update comment' }, { status: 500 });
+  }
+}
+
