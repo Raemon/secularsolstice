@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Program } from '@/app/programs/types';
 import Tooltip from '@/app/components/Tooltip';
 import ProgramTitle from '@/app/feedback/components/ProgramTitle';
@@ -57,105 +57,27 @@ const FeedbackResults = ({ programId }: FeedbackResultsProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const loadProgram = useCallback(async () => {
-    try {
-      const response = await fetch(`/api/programs/${programId}`);
-      if (!response.ok) throw new Error('Failed to load program');
-      const data = await response.json();
-      setProgram(data.program);
-      
-      if (data.program.programIds && data.program.programIds.length > 0) {
-        const subProgramPromises = data.program.programIds.map((id: string) =>
-          fetch(`/api/programs/${id}`).then(r => r.json())
-        );
-        const subProgramsData = await Promise.all(subProgramPromises);
-        setSubPrograms(subProgramsData.map((d: any) => d.program));
-      }
-    } catch (err) {
-      console.error('Failed to load program:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load program');
-    }
-  }, [programId]);
-
-  const loadVersions = useCallback(async () => {
-    try {
-      const response = await fetch('/api/song-versions');
-      if (!response.ok) throw new Error('Failed to load versions');
-      const data = await response.json();
-      setVersions(data.versions || []);
-    } catch (err) {
-      console.error('Failed to load versions:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load versions');
-    }
-  }, []);
-
-  const loadVotes = useCallback(async (versionIds: string[]) => {
-    try {
-      const votesData: Record<string, VoteRecord[]> = {};
-      await Promise.all(
-        versionIds.map(async (versionId) => {
-          const [qualityRes, singabilityRes] = await Promise.all([
-            fetch(`/api/votes?versionId=${versionId}&category=quality`),
-            fetch(`/api/votes?versionId=${versionId}&category=singability`)
-          ]);
-          const qualityData = await qualityRes.json();
-          const singabilityData = await singabilityRes.json();
-          votesData[versionId] = [
-            ...(qualityData.votes || []),
-            ...(singabilityData.votes || [])
-          ];
-        })
-      );
-      setVotes(votesData);
-    } catch (err) {
-      console.error('Failed to load votes:', err);
-    }
-  }, []);
-
-  const loadComments = useCallback(async (songIds: string[]) => {
-    try {
-      if (songIds.length === 0) return;
-      
-      const response = await fetch(`/api/comments?songIds=${songIds.join(',')}`);
-      const data = await response.json();
-      
-      const commentsData: Record<string, Comment[]> = {};
-      if (Array.isArray(data)) {
-        data.forEach((comment) => {
-          if (!commentsData[comment.version_id]) {
-            commentsData[comment.version_id] = [];
-          }
-          commentsData[comment.version_id].push(comment);
-        });
-      }
-      setComments(commentsData);
-    } catch (err) {
-      console.error('Failed to load comments:', err);
-    }
-  }, []);
-
   useEffect(() => {
-    const load = async () => {
+    const loadAllData = async () => {
       setIsLoading(true);
-      await Promise.all([loadProgram(), loadVersions()]);
-      setIsLoading(false);
-    };
-    load();
-  }, [loadProgram, loadVersions]);
-
-  useEffect(() => {
-    if (program && versions.length > 0) {
-      const allElementIds = [
-        ...(program.elementIds || []),
-        ...subPrograms.flatMap(sp => sp.elementIds || [])
-      ];
-      if (allElementIds.length > 0) {
-        loadVotes(allElementIds);
-        const uniqueSongIds = [...new Set(allElementIds.map(id => versionMap[id]?.songId).filter(Boolean))];
-        loadComments(uniqueSongIds);
+      try {
+        const response = await fetch(`/api/programs/${programId}/results`);
+        if (!response.ok) throw new Error('Failed to load results');
+        const data = await response.json();
+        setProgram(data.program);
+        setSubPrograms(data.subPrograms || []);
+        setVersions(data.versions || []);
+        setVotes(data.votes || {});
+        setComments(data.comments || {});
+      } catch (err) {
+        console.error('Failed to load results:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load results');
+      } finally {
+        setIsLoading(false);
       }
-    }
-  }, [program, subPrograms, versions, loadVotes, loadComments]);
+    };
+    loadAllData();
+  }, [programId]);
 
   const versionMap = useMemo(() => {
     const map: Record<string, VersionOption> = {};
@@ -213,13 +135,7 @@ const FeedbackResults = ({ programId }: FeedbackResultsProps) => {
   }, [allElementIds, sortBy, votes, comments]);
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen p-4">
-        <div className="max-w-5xl mx-auto">
-          <p className="text-gray-400">Loading results...</p>
-        </div>
-      </div>
-    );
+    return <div>loading...</div>;
   }
 
   if (error) {
@@ -299,6 +215,7 @@ const FeedbackResults = ({ programId }: FeedbackResultsProps) => {
   };
 
   const gridColumns = '300px 1fr 50px 2fr';
+
 
   return (
     <div className="min-h-screen p-4">

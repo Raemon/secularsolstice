@@ -107,7 +107,7 @@ const InlineCommentBox = ({ versionId, onCommentPosted }: InlineCommentBoxProps)
         disabled={isSubmitting}
       />
       {isExpanded && (
-        <button type="submit" disabled={isSubmitting} className="absolute bottom-0 right-0 text-xs px-2 py-1 text-white disabled:opacity-50">
+        <button type="button" onMouseDown={(e) => { e.preventDefault(); submitComment(e); }} disabled={isSubmitting} className="absolute bottom-0 right-0 text-xs px-2 py-1 text-white disabled:opacity-50">
           {isSubmitting ? '...' : 'Post'}
         </button>
       )}
