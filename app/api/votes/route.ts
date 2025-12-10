@@ -3,7 +3,7 @@ import { getVotesSummary, upsertVote, deleteVote } from '@/lib/votesRepository';
 import { getVersionById } from '@/lib/songsRepository';
 import sql from '@/lib/db';
 
-const VALID_WEIGHTS = new Set([-3, -1, 0, 1, 3]);
+const VALID_WEIGHTS = new Set([-3, -1, 0, 1, 2, 3]);
 const VALID_TYPES = new Set(['Hate', 'Dislike', 'Eh', 'Like', 'Love', 'Easy', 'Med', 'Hard']);
 const VALID_CATEGORIES = new Set(['quality', 'singability']);
 

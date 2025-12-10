@@ -61,7 +61,7 @@ const FeedbackItem = ({ version, index, onClick, isSelected, existingComment, on
         <VoteWidget versionId={version?.id} songId={version?.songId} category="quality" hideVotes preloadedUserVote={qualityVote}/>
       </div>
       <div className="flex items-center gap-2">
-        {isSong && <VoteWidget versionId={version?.id} songId={version?.songId} category="singability" hideVotes preloadedUserVote={singabilityVote}/>}
+        {!isSpeech && <VoteWidget versionId={version?.id} songId={version?.songId} category="singability" hideVotes preloadedUserVote={singabilityVote}/>}
       </div>
       <InlineCommentBox versionId={version?.id} existingComment={existingComment} onCommentPosted={onCommentPosted} />
     </div>

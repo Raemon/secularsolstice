@@ -5,7 +5,6 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 type User = {
   id: string;
   username: string | null;
-  is_guest: boolean;
   created_at: string;
 };
 
