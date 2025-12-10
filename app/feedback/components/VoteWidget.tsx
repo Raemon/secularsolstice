@@ -30,9 +30,9 @@ export const voteOptions: Record<string, VoteOption[]> = {
     { weight: 3, label: 'Love' },
   ],
   "singability": [
-    { weight: 1, label: 'Easy', tooltip: 'Easy to sing' },
+    { weight: 3, label: 'Easy', tooltip: 'Easy to sing' },
     { weight: 2, label: 'Med', tooltip: 'Medium difficulty to sing' },
-    { weight: 3, label: 'Hard', tooltip: 'Hard to sing' },
+    { weight: 1, label: 'Hard', tooltip: 'Hard to sing' },
   ],
 };
 

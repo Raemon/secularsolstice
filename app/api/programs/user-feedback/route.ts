@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch user's comments for these versions
     const commentsResult = await sql`
-      SELECT id, version_id, content, created_at
+      SELECT id, version_id, content, created_by, created_at
       FROM comments
       WHERE version_id = ANY(${allVersionIds}) AND user_id = ${userId}
     `;
