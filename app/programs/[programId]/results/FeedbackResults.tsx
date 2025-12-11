@@ -35,7 +35,7 @@ type Comment = {
   version_label?: string;
 };
 
-export type SortOption = 'quality' | 'singability' | 'title' | 'program' | 'comments';
+export type SortOption = 'quality' | 'singability' | 'title' | 'program' | 'comments' | 'position';
 
 type FeedbackResultsProps = {
   programId: string;
@@ -110,6 +110,14 @@ const FeedbackResults = ({ programId }: FeedbackResultsProps) => {
     ];
   }, [program, subPrograms]);
 
+  const positionMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    allElementIds.forEach((id, index) => {
+      map[id] = index + 1;
+    });
+    return map;
+  }, [allElementIds]);
+
   const sortedElementIds = useMemo(() => {
     const ids = [...allElementIds];
     if (sortBy === 'quality') {
@@ -128,11 +136,13 @@ const FeedbackResults = ({ programId }: FeedbackResultsProps) => {
         const commentsB = comments[b]?.length || 0;
         return commentsB - commentsA;
       });
+    } else if (sortBy === 'position') {
+      ids.sort((a, b) => (positionMap[a] || 0) - (positionMap[b] || 0));
     } else if (sortBy === 'program') {
       // Keep original program order (no sorting needed)
     }
     return ids;
-  }, [allElementIds, sortBy, votes, comments]);
+  }, [allElementIds, sortBy, votes, comments, positionMap]);
 
   if (isLoading) {
     return <div>loading...</div>;
@@ -166,6 +176,7 @@ const FeedbackResults = ({ programId }: FeedbackResultsProps) => {
     const singabilityAvg = getSingabilityAvg(versionId);
     const isSpeech = version.tags?.includes('speech');
     const versionComments = comments[versionId] || [];
+    const position = positionMap[versionId];
 
     return (
       <div
@@ -173,6 +184,9 @@ const FeedbackResults = ({ programId }: FeedbackResultsProps) => {
         className="border-b border-gray-500 px-2 py-2"
       >
         <div className="grid items-center gap-4 text-sm" style={{ gridTemplateColumns: gridColumns }}>
+          <div className="text-gray-400">
+            {position}
+          </div>
           <div className={`font-georgia text-base ${isSpeech ? 'italic' : ''}`}>
             {version.songTitle}
           </div>
@@ -195,7 +209,7 @@ const FeedbackResults = ({ programId }: FeedbackResultsProps) => {
               })
             )}
           </div>
-          <div className="text-sm">
+          <div className="text-sm text-center">
             {singabilityAvg > 0 ? `${(singabilityAvg).toFixed(0)}/3` : <span className="text-gray-400 text-[11px]">
                 {!isSpeech && 'No votes'}
               </span>}
@@ -216,7 +230,7 @@ const FeedbackResults = ({ programId }: FeedbackResultsProps) => {
     );
   };
 
-  const gridColumns = '300px 1fr 50px 2fr';
+  const gridColumns = '25px 300px 1fr 50px 2fr';
 
 
   return (
@@ -227,6 +241,7 @@ const FeedbackResults = ({ programId }: FeedbackResultsProps) => {
         {allElementIds.length > 0 && (
           <div className="mb-8">
             <div className="grid items-center gap-4 text-sm px-2 py-1 border-b border-gray-700 text-gray-400 font-medium" style={{ gridTemplateColumns: gridColumns }}>
+              <SortButton sortOption="position" currentSort={sortBy} onSort={setSortBy} label="#" />
               <SortButton sortOption="title" currentSort={sortBy} onSort={setSortBy} label="Song/Speech" />
               <SortButton sortOption="quality" currentSort={sortBy} onSort={setSortBy} label="Rating" />
               <SortButton sortOption="singability" currentSort={sortBy} onSort={setSortBy} label="Singability" />
