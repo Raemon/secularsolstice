@@ -6,6 +6,7 @@ import FeedbackItem, { gridCols } from './components/FeedbackItem';
 import FeedbackDetail from './components/FeedbackDetail';
 import UsernameInput from './components/UsernameInput';
 import ProgramTitle from './components/ProgramTitle';
+import PerformerCheckbox from './components/PerformerCheckbox';
 import Link from 'next/link';
 import { useUser } from '../contexts/UserContext';
 
@@ -49,7 +50,7 @@ type SimpleProgramProps = {
 type PrivacyMode = 'private' | 'anonymous' | 'public';
 
 export const ProgramFeedback = ({ initialProgramId }: SimpleProgramProps) => {
-  const { userId, userName } = useUser();
+  const { userId, userName, user } = useUser();
   const [programs, setPrograms] = useState<Program[]>([]);
   const [versions, setVersions] = useState<VersionOption[]>([]);
   const [isLoadingPrograms, setIsLoadingPrograms] = useState(true);
@@ -238,6 +239,16 @@ export const ProgramFeedback = ({ initialProgramId }: SimpleProgramProps) => {
     }));
   };
 
+  if (!selectedProgramId) {
+    return (
+      <div className="min-h-screen p-4">
+        <div className="max-w-5xl mx-auto">
+          <p className="text-gray-400">No program selected.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-4">
       <div className="flex gap-4">
@@ -249,14 +260,18 @@ export const ProgramFeedback = ({ initialProgramId }: SimpleProgramProps) => {
           <p className="text-center text-gray-300 text-[13px]">
             Enter your name if you want admins to know who you are. You can edit your feedback later.
           </p>
-          <div className="flex justify-center items-center my-4">
+          <div className="flex justify-center items-center mt-4">
             <label htmlFor="username-input" className="text-sm text-gray-300 mr-2">
               Your name:
             </label>
             <UsernameInput />
           </div>
+          <div className="flex justify-center items-center flex-col gap-2 mb-4">
+            <PerformerCheckbox programId={selectedProgramId} /> 
+            {user?.performed_program_ids.includes(selectedProgramId) && <div className="text-gray-300 text-[13px]">(Please enter your name)</div>}
+          </div>
           {/* <div className="mb-4">
-            <select
+            <select 
               value={selectedProgramId || ''}
               onChange={(e) => handleSelectProgram(e.target.value)}
               className="bg-black text-white px-2 py-1 text-sm"

@@ -84,6 +84,7 @@ create table if not exists users (
   id uuid not null default gen_random_uuid(),
   username text,
   created_at timestamptz not null default now(),
+  performed_program_ids uuid[] not null default '{}'::uuid[],
   constraint users_pkey PRIMARY KEY (id)
 );
 
