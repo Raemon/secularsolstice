@@ -19,8 +19,14 @@ export async function GET(request: NextRequest, {params}: {params: Promise<{id: 
       subPrograms.push(...results.filter(p => p !== null));
     }
 
-    // Fetch all versions
-    const versionsResult = await sql`
+    // Get all element IDs from program and sub-programs
+    const allElementIds = [
+      ...(program.elementIds || []),
+      ...subPrograms.flatMap(sp => sp.elementIds || [])
+    ];
+
+    // Fetch only versions in the program (for metadata display)
+    const versionsResult = allElementIds.length > 0 ? await sql`
       SELECT 
         sv.id,
         sv.song_id as "songId",
@@ -30,49 +36,85 @@ export async function GET(request: NextRequest, {params}: {params: Promise<{id: 
         COALESCE(s.tags, ARRAY[]::text[]) as tags
       FROM song_versions sv
       JOIN songs s ON sv.song_id = s.id
-      WHERE sv.archived = false
+      WHERE sv.id = ANY(${allElementIds})
       ORDER BY s.title, sv.label
-    `;
+    ` : [];
     const versions = versionsResult as Array<{id: string; songId: string; label: string; songTitle: string; createdAt: string; tags: string[]}>;
 
-    // Get all element IDs from program and sub-programs
-    const allElementIds = [
-      ...(program.elementIds || []),
-      ...subPrograms.flatMap(sp => sp.elementIds || [])
-    ];
-
-    // Fetch votes for all element IDs
+    // Fetch votes for all element IDs in a single query
     // For each version in the program, find all versions with the same label and aggregate votes
-    // listVotesForVersion already excludes user_id for privacy
     const votesData: Record<string, PublicVoteRecord[]> = {};
-    if (allElementIds.length > 0) {
-      await Promise.all(
-        allElementIds.map(async (versionId) => {
-          const version = versions.find(v => v.id === versionId);
-          if (!version) {
-            votesData[versionId] = [];
-            return;
+    if (allElementIds.length > 0 && versions.length > 0) {
+      // Get all matching version IDs in a single query (for vote aggregation)
+      // We need ALL versions with the same song_id and label as any program version
+      const songIds = versions.map(v => v.songId);
+      const matchingVersionsResult = await sql`
+        SELECT sv.id, sv.song_id as "songId", sv.label
+        FROM song_versions sv
+        WHERE sv.archived = false
+          AND sv.song_id = ANY(${songIds})
+      `;
+      const matchingVersions = matchingVersionsResult as Array<{id: string; songId: string; label: string}>;
+
+      // Build a map of versionId -> all matching version IDs (same song + label)
+      const versionToMatchingIds: Record<string, string[]> = {};
+      for (const versionId of allElementIds) {
+        const version = versions.find(v => v.id === versionId);
+        if (!version) {
+          votesData[versionId] = [];
+          continue;
+        }
+        
+        // Find all versions with the same label (for the same song)
+        const matchingVersionIds = matchingVersions
+          .filter(v => v.songId === version.songId && v.label === version.label)
+          .map(v => v.id);
+        
+        versionToMatchingIds[versionId] = matchingVersionIds;
+      }
+
+      // Collect all unique version IDs we need to query
+      const allVersionIdsToQuery = [...new Set(Object.values(versionToMatchingIds).flat())];
+
+      // Fetch all votes in a single query
+      if (allVersionIdsToQuery.length > 0) {
+        const allVotesResult = await sql`
+          SELECT 
+            id,
+            weight,
+            type,
+            version_id as "versionId",
+            song_id as "songId",
+            created_at as "createdAt",
+            category
+          FROM votes
+          WHERE version_id = ANY(${allVersionIdsToQuery})
+          ORDER BY created_at ASC
+        `;
+        const allVotes = allVotesResult as PublicVoteRecord[];
+
+        // Group votes by version ID
+        const votesByVersionId: Record<string, PublicVoteRecord[]> = {};
+        for (const vote of allVotes) {
+          if (!votesByVersionId[vote.versionId]) {
+            votesByVersionId[vote.versionId] = [];
           }
+          votesByVersionId[vote.versionId].push(vote);
+        }
 
-          // Find all versions with the same label (for the same song)
-          const matchingVersionIds = versions
-            .filter(v => v.songId === version.songId && v.label === version.label)
-            .map(v => v.id);
-
-          // Fetch votes for all matching versions
-          const allVotesForLabel = await Promise.all(
-            matchingVersionIds.flatMap(async (matchingVersionId) => {
-              const [qualityVotes, singabilityVotes] = await Promise.all([
-                listVotesForVersion(matchingVersionId, 'quality'),
-                listVotesForVersion(matchingVersionId, 'singability')
-              ]);
-              return [...qualityVotes, ...singabilityVotes];
-            })
-          );
-
-          votesData[versionId] = allVotesForLabel.flat();
-        })
-      );
+        // Aggregate votes for each element
+        for (const versionId of allElementIds) {
+          const matchingIds = versionToMatchingIds[versionId] || [];
+          const aggregatedVotes: PublicVoteRecord[] = [];
+          
+          for (const matchingId of matchingIds) {
+            const votesForVersion = votesByVersionId[matchingId] || [];
+            aggregatedVotes.push(...votesForVersion);
+          }
+          
+          votesData[versionId] = aggregatedVotes;
+        }
+      }
     }
 
     // Fetch comments for all songs
