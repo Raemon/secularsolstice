@@ -85,7 +85,7 @@ export const upsertVote = async (params: { versionId: string; songId: string; us
     const rows = await sql`
       insert into votes (user_id, weight, type, version_id, song_id, category)
       values (${params.userId}, ${params.weight}, ${params.type}, ${params.versionId}, ${params.songId}, ${params.category})
-      on conflict (version_id, user_id, category) do update
+      on conflict (version_id, user_id, category) where user_id is not null do update
         set weight = excluded.weight,
             type = excluded.type,
             song_id = excluded.song_id,
