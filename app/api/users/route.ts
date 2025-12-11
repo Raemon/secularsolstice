@@ -44,7 +44,7 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json();
     const { userId, username } = body;
     
-    if (!userId || !username) {
+    if (!userId || username === undefined) {
       return NextResponse.json({ error: 'userId and username are required' }, { status: 400 });
     }
 

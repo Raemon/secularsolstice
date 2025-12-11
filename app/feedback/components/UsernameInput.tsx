@@ -14,7 +14,7 @@ const UsernameInput = () => {
         value={userName}
         onChange={(e) => setUserName(e.target.value)}
         placeholder="Enter your name"
-        className="px-2 py-1 bg-black text-sm w-[200px] border-none radius-sm"
+        className="px-2 py-1 bg-black text-sm w-[120px] border-none radius-sm"
       />
     // </Tooltip>
   );

@@ -252,13 +252,16 @@ export const ProgramFeedback = ({ initialProgramId }: SimpleProgramProps) => {
           )}
         <div className="flex flex-col gap-1 w-full lg:max-w-4xl mx-auto">
           <ProgramTitle title={selectedProgram?.title || ''} suffix="Feedback" />
-          <p className="text-center text-gray-400">
-            All responses are public, and anonymous except to site admins.<br/>
-            Choose a random name if you want to be anonymous to admins.<br/>
-            Responses are logged immediately. You can edit later.
+          <p className="text-center text-white mt-9 mb-2">
+            All responses are <span className="text-primary">public and updated immediately,</span> (including comments).
           </p>
-                    <div className="flex justify-center items-center my-4">
-            <label htmlFor="username-input" className="text-sm text-gray-400 mr-2">Your name:</label>
+          <p className="text-center text-gray-300 text-[13px]">
+            Enter your name if you want admins to know who you are. You can edit your feedback later.
+          </p>
+          <div className="flex justify-center items-center my-4">
+            <label htmlFor="username-input" className="text-sm text-gray-300 mr-2">
+              Your name:
+            </label>
             <UsernameInput />
           </div>
           {/* <div className="mb-4">
@@ -335,9 +338,20 @@ export const ProgramFeedback = ({ initialProgramId }: SimpleProgramProps) => {
               );
             })}
           </div>
-          <Link href={`/programs/${selectedProgram?.id}/results`} className="text-primary hover:underline block text-center my-24">
-            View Results
-          </Link>
+          <p className="text-center text-gray-200 mt-12">
+            Responses are public and updated immediately. (Including comments).
+          </p>
+          <p className="text-center text-gray-300 text-sm">
+            You can enter your name if you want admins to know who you are.
+          </p>
+          <div className="flex justify-center items-center my-4 text-sm text-gray-400 mb-12">
+            Current username: <UsernameInput />
+          </div>
+          <div className="flex justify-center items-center my-4 text-gray-400 mb-12">
+            <Link href={`/programs/${selectedProgram?.id}/results`} className="text-primary hover:border-white block text-center mb-24 border border-gray-700 px-4 py-2 rounded-md">
+              View Results
+            </Link>
+          </div>
         </div>
       </div>
     </div>
