@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
           c.id, 
           c.version_id, 
           c.content, 
-          c.created_by, 
+          c.user_id,
           c.created_at,
           sv.label as version_label,
           sv.song_id,
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
       }
 
       const result = await sql`
-        SELECT c.id, c.version_id, c.content, c.created_by, c.created_at, sv.label as version_label
+        SELECT c.id, c.version_id, c.content, c.user_id, c.created_at, sv.label as version_label
         FROM comments c
         JOIN song_versions sv ON c.version_id = sv.id
         WHERE sv.song_id = ANY(${songIdArray}) AND sv.archived = false
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
 
     // Handle single songId request
     const result = await sql`
-      SELECT c.id, c.version_id, c.content, c.created_by, c.created_at, sv.label as version_label
+      SELECT c.id, c.version_id, c.content, c.user_id, c.created_at, sv.label as version_label
       FROM comments c
       JOIN song_versions sv ON c.version_id = sv.id
       WHERE sv.song_id = ${songId} AND sv.archived = false
@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { versionId, content, userId, createdBy } = body;
+    const { versionId, content, userId } = body;
 
     if (!versionId || !content) {
       return NextResponse.json(
@@ -84,8 +84,8 @@ export async function POST(request: NextRequest) {
 
     const result = await sql`
       INSERT INTO comments (version_id, content, created_by, user_id)
-      VALUES (${versionId}, ${content}, ${createdBy || ''}, ${userId})
-      RETURNING id, version_id, content, created_by, created_at
+      VALUES (${versionId}, ${content}, '', ${userId})
+      RETURNING id, version_id, content, user_id, created_at
     `;
 
     return NextResponse.json(result[0]);
@@ -118,7 +118,7 @@ export async function PUT(request: NextRequest) {
       UPDATE comments
       SET content = ${content}
       WHERE id = ${commentId} AND user_id = ${userId}
-      RETURNING id, version_id, content, created_by, created_at
+      RETURNING id, version_id, content, user_id, created_at
     `;
 
     if (result.length === 0) {

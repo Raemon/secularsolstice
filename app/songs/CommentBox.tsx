@@ -9,7 +9,7 @@ interface CommentBoxProps {
     id: string;
     version_id: string;
     content: string;
-    created_by: string;
+    user_id: string | null;
     created_at: string;
   }) => void;
 }
@@ -18,11 +18,11 @@ const CommentBox = ({ currentVersionId, onCommentPosted }: CommentBoxProps) => {
   const [newComment, setNewComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { userName } = useUser();
+  const { userName, userId } = useUser();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newComment.trim() || !userName) return;
+    if (!newComment.trim() || !userName || !userId) return;
 
     setIsSubmitting(true);
     setError(null);
@@ -36,7 +36,7 @@ const CommentBox = ({ currentVersionId, onCommentPosted }: CommentBoxProps) => {
         body: JSON.stringify({
           versionId: currentVersionId,
           content: newComment.trim(),
-          createdBy: userName,
+          userId: userId,
         }),
       });
 

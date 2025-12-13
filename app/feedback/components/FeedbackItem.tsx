@@ -16,11 +16,11 @@ type VersionOption = {
   tags: string[];
 };
 
-type Comment = {
+type FeedbackComment = {
   id: string;
   version_id: string;
   content: string;
-  created_by: string;
+  user_id: string | null;
   created_at: string;
 };
 
@@ -37,21 +37,25 @@ type FeedbackItemProps = {
   index: number;
   onClick: () => void;
   isSelected: boolean;
-  existingComment?: Comment | null;
-  onCommentPosted?: (comment: Comment) => void;
+  existingComment?: FeedbackComment | null;
+  onCommentPosted?: (comment: FeedbackComment) => void;
   userVotes?: Vote[];
   content?: string;
+  showComments?: boolean;
+  onToggleComments?: () => void;
 };
 
 export const gridCols = '190px 210px 120px 1fr'
 
-const FeedbackItem = ({ version, index, onClick, isSelected, existingComment, onCommentPosted, userVotes, content }: FeedbackItemProps) => {
+const FeedbackItem = ({ version, index, onClick, isSelected, existingComment, onCommentPosted, userVotes, content, showComments, onToggleComments }: FeedbackItemProps) => {
   const isSpeech = version?.tags?.includes('speech');
   const isSong = version?.tags?.includes('song');
   const [selected, setSelected] = useState(false);
 
   const qualityVote = userVotes?.find(v => v.category === 'quality');
   const singabilityVote = userVotes?.find(v => v.category === 'singability');
+  const inlineExistingComment = existingComment as unknown as { id: string; version_id: string; content: string; user_id: string | null; created_at: string } | null | undefined;
+  const inlineOnCommentPosted = onCommentPosted as unknown as ((comment: { id: string; version_id: string; content: string; user_id: string | null; created_at: string }) => void) | undefined;
 
   return (
     <div className="border-b border-gray-500">
@@ -62,6 +66,10 @@ const FeedbackItem = ({ version, index, onClick, isSelected, existingComment, on
           <div className={`flex items-center py-1 ${isSelected ? 'text-primary' : ''} font-georgia text-base`} onClick={() => {setSelected(!selected); onClick();}}>
             <ChevronArrow isExpanded={selected} className={`${isSelected ? 'text-base' : 'text-xs opacity-35'} mr-4`} />
             <span className={`${isSpeech && 'italic'}`}>{version?.songTitle}</span>
+            <label className="ml-auto flex items-center gap-1 text-xs text-gray-500 cursor-pointer" onClick={(e) => e.stopPropagation()}>
+              <input type="checkbox" checked={!!showComments} onChange={onToggleComments} className="cursor-pointer" />
+              comments
+            </label>
           </div>
           <div className="flex items-center gap-2">
             <VoteWidget versionId={version?.id} songId={version?.songId} category="quality" hideVotes preloadedUserVote={qualityVote}/>
@@ -69,7 +77,7 @@ const FeedbackItem = ({ version, index, onClick, isSelected, existingComment, on
           <div className="flex items-center gap-2">
             {!isSpeech && <VoteWidget versionId={version?.id} songId={version?.songId} category="singability" hideVotes preloadedUserVote={singabilityVote}/>}
           </div>
-          <InlineCommentBox versionId={version?.id} existingComment={existingComment} onCommentPosted={onCommentPosted} />
+          {showComments ? <InlineCommentBox versionId={version?.id} existingComment={inlineExistingComment} onCommentPosted={inlineOnCommentPosted} /> : <div className="w-full" />}
         </div>
       {selected && (
           <div className="flex-1 max-w-xl mt-4 mb-8">

@@ -31,7 +31,7 @@ type Comment = {
   id: string;
   version_id: string;
   content: string;
-  created_by: string;
+  user_id: string | null;
   created_at: string;
 };
 
@@ -61,6 +61,7 @@ export const ProgramFeedback = ({ initialProgramId }: SimpleProgramProps) => {
   const [versionCache, setVersionCache] = useState<Record<string, FullVersion>>({});
   const [userComments, setUserComments] = useState<Record<string, Comment[]>>({});
   const [userVotes, setUserVotes] = useState<Record<string, Vote[]>>({});
+  const [showCommentsByVersionId, setShowCommentsByVersionId] = useState<Record<string, boolean>>({});
 
   const loadPrograms = useCallback(async () => {
     setIsLoadingPrograms(true);
@@ -304,6 +305,8 @@ export const ProgramFeedback = ({ initialProgramId }: SimpleProgramProps) => {
                       existingComment={existingComment}
                       onCommentPosted={handleCommentPosted(elementId)}
                       userVotes={votes}
+                      showComments={showCommentsByVersionId[elementId] !== false}
+                      onToggleComments={() => setShowCommentsByVersionId(prev => ({ ...prev, [elementId]: prev[elementId] === false }))}
                     />
                   );
                 })}
@@ -337,6 +340,8 @@ export const ProgramFeedback = ({ initialProgramId }: SimpleProgramProps) => {
                           existingComment={existingComment}
                           onCommentPosted={handleCommentPosted(elementId)}
                           userVotes={votes}
+                          showComments={showCommentsByVersionId[elementId] !== false}
+                          onToggleComments={() => setShowCommentsByVersionId(prev => ({ ...prev, [elementId]: prev[elementId] === false }))}
                         />
                       );
                     })}

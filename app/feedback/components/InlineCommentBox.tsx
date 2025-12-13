@@ -9,14 +9,14 @@ interface InlineCommentBoxProps {
     id: string;
     version_id: string;
     content: string;
-    created_by: string;
+    user_id: string | null;
     created_at: string;
   } | null;
   onCommentPosted?: (comment: {
     id: string;
     version_id: string;
     content: string;
-    created_by: string;
+    user_id: string | null;
     created_at: string;
   }) => void;
 }
@@ -84,7 +84,6 @@ const InlineCommentBox = ({ versionId, existingComment, onCommentPosted }: Inlin
                 versionId: versionId,
                 content: newComment.trim(),
                 userId: userId,
-                createdBy: userName,
               }
         ),
       });

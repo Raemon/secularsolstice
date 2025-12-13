@@ -7,7 +7,7 @@ interface Comment {
   id: string;
   version_id: string;
   content: string;
-  created_by: string;
+  user_id: string | null;
   created_at: string;
   version_label?: string;
 }
@@ -66,8 +66,7 @@ const Comments = ({ songId, currentVersionId }: { songId: string; currentVersion
             {/* Current version comments */}
             {currentVersionComments.map((comment) => (
               <div key={comment.id} className="border-l-2 border-blue-400 pl-3 py-1">
-                <div className="flex justify-between items-start mb-1">
-                  <span className="font-semibold text-sm">{comment.created_by}</span>
+                <div className="flex justify-end items-start mb-1">
                   <span className="text-xs text-gray-400">{formatDate(comment.created_at)}</span>
                 </div>
                 <p className="text-sm whitespace-pre-wrap">{comment.content}</p>
@@ -78,12 +77,11 @@ const Comments = ({ songId, currentVersionId }: { songId: string; currentVersion
             {otherVersionComments.map((comment) => (
               <div key={comment.id} className="border-l-2 border-gray-300 pl-3 py-1 opacity-50">
                 <div className="flex justify-between items-start mb-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-sm">{comment.created_by}</span>
-                    {comment.version_label && (
-                      <span className="text-xs text-gray-400">on {comment.version_label}</span>
-                    )}
-                  </div>
+                  {comment.version_label ? (
+                    <span className="text-xs text-gray-400">on {comment.version_label}</span>
+                  ) : (
+                    <span />
+                  )}
                   <span className="text-xs text-gray-400">{formatDate(comment.created_at)}</span>
                 </div>
                 <p className="text-sm whitespace-pre-wrap">{comment.content}</p>

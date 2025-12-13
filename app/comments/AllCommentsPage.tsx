@@ -6,7 +6,7 @@ interface Comment {
   id: string;
   version_id: string;
   content: string;
-  created_by: string;
+  user_id: string | null;
   created_at: string;
   version_label: string;
   song_id: string;
@@ -80,7 +80,6 @@ const AllCommentsPage = () => {
               <div className="text-xs text-gray-500">{formatDate(comment.created_at)}</div>
             </div>
             <div className="text-sm text-gray-300 mb-2">{comment.content}</div>
-            <div className="text-xs text-gray-500">by {comment.created_by}</div>
           </div>
         ))}
       </div>

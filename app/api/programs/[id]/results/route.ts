@@ -148,7 +148,7 @@ export async function GET(request: NextRequest, {params}: {params: Promise<{id: 
     const commentsData: Record<string, any[]> = {};
     if (uniqueSongIds.length > 0) {
       const commentsResult = await sql`
-        SELECT c.id, c.version_id, c.content, c.created_by, c.created_at, sv.label as version_label
+        SELECT c.id, c.version_id, c.content, c.user_id, c.created_at, sv.label as version_label
         FROM comments c
         JOIN song_versions sv ON c.version_id = sv.id
         WHERE sv.song_id = ANY(${uniqueSongIds}) AND sv.archived = false

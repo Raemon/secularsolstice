@@ -32,7 +32,7 @@ type Comment = {
   id: string;
   version_id: string;
   content: string;
-  created_by: string;
+  user_id: string | null;
   created_at: string;
   version_label?: string;
 };
