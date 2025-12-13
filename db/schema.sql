@@ -35,6 +35,13 @@ create table if not exists programs (
 CREATE INDEX if not exists programs_archived_idx on programs USING btree (archived);
 CREATE INDEX if not exists programs_title_idx on programs USING btree (title);
 
+create table if not exists schema_migrations (
+  filename text not null,
+  checksum text not null,
+  applied_at timestamptz not null default now(),
+  constraint schema_migrations_pkey PRIMARY KEY (filename)
+);
+
 create table if not exists song_versions (
   id uuid not null default gen_random_uuid(),
   song_id uuid not null,
@@ -85,6 +92,7 @@ create table if not exists users (
   username text,
   created_at timestamptz not null default now(),
   performed_program_ids uuid[] not null default '{}'::uuid[],
+  is_admin boolean not null default false,
   constraint users_pkey PRIMARY KEY (id)
 );
 

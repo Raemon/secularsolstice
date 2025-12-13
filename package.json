@@ -12,7 +12,8 @@
     "lint:types": "tsc --noEmit",
     "import:songs": "tsx scripts/importSongsToDb.ts",
     "migrate": "tsx scripts/runMigrations.ts",
-    "schema:snapshot": "tsx scripts/generateSchemaSnapshot.ts"
+    "schema:snapshot": "tsx scripts/generateSchemaSnapshot.ts",
+    "db:bootstrap": "tsx scripts/bootstrapDb.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",

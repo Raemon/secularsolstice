@@ -2,7 +2,6 @@ import path from 'path';
 import fs from 'fs/promises';
 import { existsSync } from 'fs';
 import dotenv from 'dotenv';
-import { generateSchemaSnapshot } from './generateSchemaSnapshot';
 import crypto from 'crypto';
 
 const loadEnvFiles = () => {
@@ -17,30 +16,13 @@ const loadEnvFiles = () => {
 
 const assertDatabaseUrl = () => {
   if (!process.env.DATABASE_URL) {
-    throw new Error('DATABASE_URL is not set. Cannot run migrations.');
+    throw new Error('DATABASE_URL is not set. Cannot bootstrap database.');
   }
 };
 
 const getSqlClient = async () => {
   const module = await import('../lib/db');
   return module.default;
-};
-
-const ensureMigrationsTable = async (sql: Awaited<ReturnType<typeof getSqlClient>>) => {
-  await sql`create table if not exists schema_migrations (
-    filename text primary key,
-    checksum text not null,
-    applied_at timestamptz not null default now()
-  );`;
-};
-
-const getAppliedMigrations = async (sql: Awaited<ReturnType<typeof getSqlClient>>) => {
-  const rows = await sql`select filename, checksum from schema_migrations order by filename;` as unknown as { filename: string, checksum: string }[];
-  const byFilename: Record<string, string> = {};
-  for (const row of rows) {
-    byFilename[row.filename] = row.checksum;
-  }
-  return byFilename;
 };
 
 const sha256 = (input: string) => {
@@ -177,55 +159,62 @@ const splitSqlStatements = (sqlText: string) => {
   return statements;
 };
 
-const runMigrations = async () => {
-  loadEnvFiles();
-  assertDatabaseUrl();
-  const sql = await getSqlClient();
-  await ensureMigrationsTable(sql);
-  const applied = await getAppliedMigrations(sql);
+const ensureMigrationsTable = async (sql: Awaited<ReturnType<typeof getSqlClient>>) => {
+  await sql`create table if not exists schema_migrations (
+    filename text primary key,
+    checksum text not null,
+    applied_at timestamptz not null default now()
+  );`;
+};
+
+const assertDatabaseLooksEmpty = async (sql: Awaited<ReturnType<typeof getSqlClient>>) => {
+  const rows = await sql`select table_name from information_schema.tables where table_schema = 'public' and table_type = 'BASE TABLE';` as unknown as { table_name: string }[];
+  const nonMigrationsTables = rows.map(r => r.table_name).filter(t => t !== 'schema_migrations');
+  if (nonMigrationsTables.length > 0) {
+    throw new Error(`Refusing to bootstrap: database already has tables: ${nonMigrationsTables.sort().join(', ')}`);
+  }
+};
+
+const runSqlFile = async (sql: Awaited<ReturnType<typeof getSqlClient>>, filePath: string) => {
+  const fileContents = (await fs.readFile(filePath, 'utf-8')).trim();
+  if (!fileContents) {
+    return;
+  }
+  const statements = splitSqlStatements(fileContents);
+  for (const statement of statements) {
+    await sql`${sql.unsafe(`${statement};`)}`;
+  }
+};
+
+const markAllMigrationsApplied = async (sql: Awaited<ReturnType<typeof getSqlClient>>) => {
   const migrationsDir = path.resolve(process.cwd(), 'db/migrations');
   const files = (await fs.readdir(migrationsDir))
     .filter((file) => file.endsWith('.sql'))
     .sort();
 
-  if (files.length === 0) {
-    console.log('No migrations to run.');
-    return;
-  }
-
   for (const file of files) {
     const filePath = path.join(migrationsDir, file);
     const fileContents = (await fs.readFile(filePath, 'utf-8')).trim();
     const checksum = sha256(fileContents);
-
-    if (applied[file]) {
-      if (applied[file] !== checksum) {
-        throw new Error(`Migration ${file} was already applied, but its contents have changed.`);
-      }
-      console.log(`Skipping already-applied migration ${file}`);
-      continue;
-    }
-
-    if (!fileContents) {
-      console.log(`Skipping empty migration ${file}`);
-      continue;
-    }
-
-    console.log(`Running migration ${file}...`);
-    const statements = splitSqlStatements(fileContents);
-    for (const statement of statements) {
-      await sql`${sql.unsafe(`${statement};`)}`;
-    }
-    await sql`insert into schema_migrations (filename, checksum) values (${file}, ${checksum});`;
-    console.log(`Finished migration ${file}`);
+    await sql`insert into schema_migrations (filename, checksum) values (${file}, ${checksum}) on conflict (filename) do nothing;`;
   }
-
-  console.log('All migrations complete.');
-  await generateSchemaSnapshot();
 };
 
-runMigrations().catch((error) => {
-  console.error('Migration failed:', error);
+const bootstrapDb = async () => {
+  loadEnvFiles();
+  assertDatabaseUrl();
+  const sql = await getSqlClient();
+  await ensureMigrationsTable(sql);
+  await assertDatabaseLooksEmpty(sql);
+
+  console.log('Bootstrapping schema from db/schema.sql...');
+  await runSqlFile(sql, path.resolve(process.cwd(), 'db/schema.sql'));
+  await markAllMigrationsApplied(sql);
+  console.log('Bootstrap complete.');
+};
+
+bootstrapDb().catch((error) => {
+  console.error('Bootstrap failed:', error);
   process.exit(1);
 });
 
