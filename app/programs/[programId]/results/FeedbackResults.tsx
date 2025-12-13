@@ -37,7 +37,7 @@ type Comment = {
   version_label?: string;
 };
 
-export type SortOption = 'quality' | 'singability' | 'title' | 'program' | 'comments' | 'position';
+export type SortOption = 'quality' | 'loves' | 'singability' | 'title' | 'program' | 'comments' | 'position';
 
 type FeedbackResultsProps = {
   programId: string;
@@ -106,6 +106,11 @@ const FeedbackResults = ({ programId }: FeedbackResultsProps) => {
     return qualityVotes.reduce((acc, v) => acc + v.weight, 0);
   };
 
+  const getLoveCount = (versionId: string) => {
+    const qualityVotes = getVotesByCategory(versionId, 'quality');
+    return qualityVotes.filter(v => v.type === 'Love').length;
+  };
+
   const getSingabilityAvg = (versionId: string) => {
     const singabilityVotes = getVotesByCategory(versionId, 'singability');
     if (singabilityVotes.length === 0) return 0;
@@ -143,6 +148,8 @@ const FeedbackResults = ({ programId }: FeedbackResultsProps) => {
     
     if (sortBy === 'quality') {
       ids.sort((a, b) => getQualityScore(b) - getQualityScore(a));
+    } else if (sortBy === 'loves') {
+      ids.sort((a, b) => getLoveCount(b) - getLoveCount(a));
     } else if (sortBy === 'singability') {
       ids.sort((a, b) => getSingabilityAvg(b) - getSingabilityAvg(a));
     } else if (sortBy === 'title') {
@@ -231,7 +238,7 @@ const FeedbackResults = ({ programId }: FeedbackResultsProps) => {
             )}
           </div>
           <div className="text-sm text-center">
-            {singabilityAvg > 0 ? `${(singabilityAvg).toFixed(0)}/3` : <span className="text-gray-400 text-[11px]">
+            {singabilityAvg > 0 ? `${(singabilityAvg).toFixed(1)}/3` : <span className="text-gray-400 text-[11px]">
                 {!isSpeech && 'No votes'}
               </span>}
           </div>
@@ -272,9 +279,13 @@ const FeedbackResults = ({ programId }: FeedbackResultsProps) => {
             <div className="grid items-center gap-4 text-sm px-2 py-1 border-b border-gray-700 text-gray-400 font-medium" style={{ gridTemplateColumns: gridColumns }}>
               <SortButton sortOption="position" currentSort={sortBy} onSort={setSortBy} label="#" />
               <SortButton sortOption="title" currentSort={sortBy} onSort={setSortBy} label="Song/Speech" />
-              <SortButton sortOption="quality" currentSort={sortBy} onSort={setSortBy} label="Rating" />
+              <div className="flex items-center gap-1">
+                <SortButton sortOption="quality" currentSort={sortBy} onSort={setSortBy} label="Rating" />
+                /
+                <SortButton sortOption="loves" currentSort={sortBy} onSort={setSortBy} label="Loves" />
+              </div>
               <SortButton sortOption="singability" currentSort={sortBy} onSort={setSortBy} label="Singability" />
-              <SortButton sortOption="comments" currentSort={sortBy} onSort={setSortBy} label="Comments" />
+              {showComments && <SortButton sortOption="comments" currentSort={sortBy} onSort={setSortBy} label="Comments" />}
             </div>
             {sortedElementIds.map(renderSongRow)}
           </div>

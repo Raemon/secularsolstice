@@ -320,7 +320,6 @@ export const ProgramFeedback = ({ initialProgramId }: SimpleProgramProps) => {
                     <div>Song/Speech</div>
                     <div className="pl-1">Quality</div>
                     <div className="pl-2">Singability</div>
-                    <div className="pl-2">Comments</div>
                   </div>
                   <div className="flex flex-col">
                     {subProgram.elementIds.map((elementId, index) => {

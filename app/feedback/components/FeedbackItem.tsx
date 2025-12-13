@@ -42,11 +42,12 @@ type FeedbackItemProps = {
   userVotes?: Vote[];
   content?: string;
   showComments?: boolean;
+  onToggleComments?: () => void;
 };
 
 export const gridCols = '190px 210px 120px 1fr'
 
-const FeedbackItem = ({ version, index, onClick, isSelected, existingComment, onCommentPosted, userVotes, content, showComments }: FeedbackItemProps) => {
+const FeedbackItem = ({ version, index, onClick, isSelected, existingComment, onCommentPosted, userVotes, content, showComments, onToggleComments }: FeedbackItemProps) => {
   const isSpeech = version?.tags?.includes('speech');
   const isSong = version?.tags?.includes('song');
   const [selected, setSelected] = useState(false);
@@ -65,6 +66,8 @@ const FeedbackItem = ({ version, index, onClick, isSelected, existingComment, on
           <div className={`flex items-center py-1 ${isSelected ? 'text-primary' : ''} font-georgia text-base`} onClick={() => {setSelected(!selected); onClick();}}>
             <ChevronArrow isExpanded={selected} className={`${isSelected ? 'text-base' : 'text-xs opacity-35'} mr-4`} />
             <span className={`${isSpeech && 'italic'}`}>{version?.songTitle}</span>
+            <label className="ml-auto flex items-center gap-1 text-xs text-gray-500 cursor-pointer" onClick={(e) => e.stopPropagation()}>
+            </label>
           </div>
           <div className="flex items-center gap-2">
             <VoteWidget versionId={version?.id} songId={version?.songId} category="quality" hideVotes preloadedUserVote={qualityVote}/>
