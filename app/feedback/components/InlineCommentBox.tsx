@@ -118,7 +118,7 @@ const InlineCommentBox = ({ versionId, existingComment, onCommentPosted }: Inlin
     }
   };
 
-  const displayText = existingComment ? existingComment.content : newComment;
+  const displayText = newComment || (existingComment ? existingComment.content : '');
 
   return (
     <form onSubmit={submitComment} className="w-full h-full" onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}>
@@ -127,7 +127,7 @@ const InlineCommentBox = ({ versionId, existingComment, onCommentPosted }: Inlin
         value={isExpanded ? newComment : displayText}
         onChange={(e) => setNewComment(e.target.value)}
         onFocus={handleFocus}
-        onBlur={() => { setNewComment(''); setIsExpanded(false); }}
+        onBlur={() => { setIsExpanded(false); }}
         onKeyDown={handleKeyDown}
         placeholder="comment..."
         className="w-full bg-transparent px-2 py-1 text-xs border-top border-gray-600 outline-none resize-none transition-all rounded-sm placeholder:text-gray-600"
