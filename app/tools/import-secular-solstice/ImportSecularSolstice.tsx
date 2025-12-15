@@ -89,7 +89,12 @@ const ImportSecularSolstice = () => {
       {liveItems.length > 0 && (
         <ul className="text-xs list-disc list-inside space-y-0.5">
           {liveItems.map((r, index) => (
-            <li key={`${r.title}-${r.label}-${r.status}-${index}`}>{r.type}: {r.title} / {r.label} - {r.status}</li>
+            <li key={`${r.title}-${r.label}-${r.status}-${index}`}>
+              {r.type}: {r.title} / {r.label} - {r.status}{' '}
+              {r.url && (
+                <a className="underline text-blue-600" href={r.url} target="_blank" rel="noreferrer">open</a>
+              )}
+            </li>
           ))}
         </ul>
       )}
@@ -98,13 +103,23 @@ const ImportSecularSolstice = () => {
           <div>Speech results ({result.speechResults?.length ?? 0})</div>
           <ul className="list-disc list-inside space-y-0.5">
             {result.speechResults?.map((r: any, index: number) => (
-              <li key={`${r.title}-${r.label}-${index}`}>{r.title} / {r.label} - {r.status}</li>
+              <li key={`${r.title}-${r.label}-${index}`}>
+                {r.title} / {r.label} - {r.status}{' '}
+                {r.url && (
+                  <a className="underline text-blue-600" href={r.url} target="_blank" rel="noreferrer">open</a>
+                )}
+              </li>
             ))}
           </ul>
           <div>Song results ({result.songResults?.length ?? 0})</div>
           <ul className="list-disc list-inside space-y-0.5">
             {result.songResults?.map((r: any, index: number) => (
-              <li key={`${r.title}-${r.label}-${index}`}>{r.title} / {r.label} - {r.status}</li>
+              <li key={`${r.title}-${r.label}-${index}`}>
+                {r.title} / {r.label} - {r.status}{' '}
+                {r.url && (
+                  <a className="underline" href={r.url} target="_blank" rel="noreferrer">open</a>
+                )}
+              </li>
             ))}
           </ul>
         </div>

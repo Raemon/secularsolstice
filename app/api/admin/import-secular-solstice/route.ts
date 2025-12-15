@@ -47,6 +47,23 @@ const readTextFile = async (filePath: string) => {
   return buffer.toString('utf-8').trim();
 };
 
+const runWithLimit = async <T>(items: T[], limit: number, worker: (item: T) => Promise<void>) => {
+  const executing: Promise<void>[] = [];
+  for (const item of items) {
+    const p = Promise.resolve().then(() => worker(item)).finally(() => {
+      const idx = executing.indexOf(p);
+      if (idx >= 0) {
+        executing.splice(idx, 1);
+      }
+    });
+    executing.push(p);
+    if (executing.length >= limit) {
+      await Promise.race(executing);
+    }
+  }
+  await Promise.all(executing);
+};
+
 const getFileCreatedAt = async (filePath: string) => {
   const stats = await fs.stat(filePath);
   return stats.mtime.toISOString();
@@ -57,15 +74,18 @@ const timestampsMatch = (existing: string, candidate: string) => new Date(existi
 const findExistingVersion = async (songTitle: string, labels: string[], createdAt: string) => {
   for (const label of labels) {
     const existing = await findVersionBySongTitleAndLabel(songTitle, label);
-    if (existing && existing.createdAt && timestampsMatch(existing.createdAt, createdAt)) {
-      return existing;
+    if (existing) {
+      const matches = existing.createdAt ? timestampsMatch(existing.createdAt, createdAt) : false;
+      return { existing, matches };
     }
   }
   return null;
 };
 
-const importSpeechFiles = async (dryRun: boolean, onResult?: (result: { title: string; label: string; status: string; error?: string }) => void) => {
-  const results: { title: string; label: string; status: string; error?: string }[] = [];
+const versionUrl = (versionId: string | null | undefined) => versionId ? `/songs/${versionId}` : undefined;
+
+const importSpeechFiles = async (dryRun: boolean, onResult?: (result: { title: string; label: string; status: string; url?: string; error?: string }) => void) => {
+  const results: { title: string; label: string; status: string; url?: string; error?: string }[] = [];
   let entries: Dirent[] = [];
 
   try {
@@ -75,18 +95,18 @@ const importSpeechFiles = async (dryRun: boolean, onResult?: (result: { title: s
     return results;
   }
 
-  for (const entry of entries) {
+  await runWithLimit(entries, 8, async (entry) => {
     if (!entry.isFile()) {
-      continue;
+      return;
     }
     const ext = path.extname(entry.name).toLowerCase();
     if (AUDIO_EXTENSION_SET.has(ext)) {
-      continue;
+      return;
     }
     const filePath = path.join(SPEECHES_DIR, entry.name);
     const content = await readTextFile(filePath);
     if (!content) {
-      continue;
+      return;
     }
 
     const title = normalizeTitle(path.basename(entry.name, ext || undefined));
@@ -101,19 +121,21 @@ const importSpeechFiles = async (dryRun: boolean, onResult?: (result: { title: s
     }
     const createdAt = await getFileCreatedAt(filePath);
     const existingVersion = await findExistingVersion(title, [label, sourceLabel], createdAt);
-    if (existingVersion) {
-      results.push({ title, label, status: 'exists' });
-      onResult?.({ title, label, status: 'exists' });
-      continue;
+    if (existingVersion?.matches) {
+      const url = versionUrl(existingVersion.existing?.id);
+      results.push({ title, label, status: 'exists', url });
+      onResult?.({ title, label, status: 'exists', url });
+      return;
     }
 
     try {
+      const existingUrl = existingVersion ? versionUrl(existingVersion.existing?.id) : undefined;
       if (dryRun) {
-        results.push({ title, label, status: 'would-create' });
-        onResult?.({ title, label, status: 'would-create' });
+        results.push({ title, label, status: 'would-create', url: existingUrl });
+        onResult?.({ title, label, status: 'would-create', url: existingUrl });
       } else {
         const previousVersionId = await getLatestVersionId(songId!);
-        await createVersionWithLineage({
+        const created = await createVersionWithLineage({
           songId: songId!,
           label,
           content,
@@ -121,14 +143,15 @@ const importSpeechFiles = async (dryRun: boolean, onResult?: (result: { title: s
           createdBy: IMPORT_USER,
           createdAt,
         });
-        results.push({ title, label, status: 'created' });
-        onResult?.({ title, label, status: 'created' });
+        const url = versionUrl(created.id);
+        results.push({ title, label, status: 'created', url });
+        onResult?.({ title, label, status: 'created', url });
       }
     } catch (error) {
       results.push({ title, label, status: 'failed', error: error instanceof Error ? error.message : 'unknown error' });
       onResult?.({ title, label, status: 'failed', error: error instanceof Error ? error.message : 'unknown error' });
     }
-  }
+  });
 
   return results;
 };
@@ -157,8 +180,8 @@ const collectTextFiles = async (dirPath: string) => {
   return files;
 };
 
-const importSongFiles = async (dryRun: boolean, onResult?: (result: { title: string; label: string; status: string; error?: string }) => void) => {
-  const results: { title: string; label: string; status: string; error?: string }[] = [];
+const importSongFiles = async (dryRun: boolean, onResult?: (result: { title: string; label: string; status: string; url?: string; error?: string }) => void) => {
+  const results: { title: string; label: string; status: string; url?: string; error?: string }[] = [];
   let songDirs: Dirent[] = [];
 
   try {
@@ -168,9 +191,9 @@ const importSongFiles = async (dryRun: boolean, onResult?: (result: { title: str
     return results;
   }
 
-  for (const dir of songDirs) {
+  await runWithLimit(songDirs, 4, async (dir) => {
     if (!dir.isDirectory()) {
-      continue;
+      return;
     }
 
     const songTitle = normalizeTitle(dir.name);
@@ -189,9 +212,10 @@ const importSongFiles = async (dryRun: boolean, onResult?: (result: { title: str
       const label = normalizeTitle(sourceLabel);
       const createdAt = await getFileCreatedAt(filePath);
       const existingVersion = await findExistingVersion(songTitle, [label, sourceLabel], createdAt);
-      if (existingVersion) {
-        results.push({ title: songTitle, label, status: 'exists' });
-        onResult?.({ title: songTitle, label, status: 'exists' });
+      if (existingVersion?.matches) {
+        const url = versionUrl(existingVersion.existing?.id);
+        results.push({ title: songTitle, label, status: 'exists', url });
+        onResult?.({ title: songTitle, label, status: 'exists', url });
         continue;
       }
 
@@ -201,12 +225,13 @@ const importSongFiles = async (dryRun: boolean, onResult?: (result: { title: str
       }
 
       try {
+        const existingUrl = existingVersion ? versionUrl(existingVersion.existing?.id) : undefined;
         if (dryRun) {
-          results.push({ title: songTitle, label, status: 'would-create' });
-          onResult?.({ title: songTitle, label, status: 'would-create' });
+          results.push({ title: songTitle, label, status: 'would-create', url: existingUrl });
+          onResult?.({ title: songTitle, label, status: 'would-create', url: existingUrl });
         } else {
           const previousVersionId = await getLatestVersionId(songId!);
-          await createVersionWithLineage({
+          const created = await createVersionWithLineage({
             songId: songId!,
             label,
             content,
@@ -214,15 +239,16 @@ const importSongFiles = async (dryRun: boolean, onResult?: (result: { title: str
             createdBy: IMPORT_USER,
             createdAt,
           });
-          results.push({ title: songTitle, label, status: 'created' });
-          onResult?.({ title: songTitle, label, status: 'created' });
+          const url = versionUrl(created.id);
+          results.push({ title: songTitle, label, status: 'created', url });
+          onResult?.({ title: songTitle, label, status: 'created', url });
         }
       } catch (error) {
         results.push({ title: songTitle, label, status: 'failed', error: error instanceof Error ? error.message : 'unknown error' });
         onResult?.({ title: songTitle, label, status: 'failed', error: error instanceof Error ? error.message : 'unknown error' });
       }
     }
-  }
+  });
 
   return results;
 };
