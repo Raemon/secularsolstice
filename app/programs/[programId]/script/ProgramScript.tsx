@@ -89,7 +89,8 @@ async function loadProgramScriptData(programId: string) {
         id: currentProgram.id,
         title: currentProgram.title,
         elementIds: currentProgram.elementIds,
-        programIds: currentProgram.programIds
+        programIds: currentProgram.programIds,
+        isSubprogram: currentProgram.isSubprogram ?? false,
       },
       programs,
       versions: {},
@@ -139,7 +140,7 @@ async function loadProgramScriptData(programId: string) {
       title: currentProgram.title,
       elementIds: currentProgram.elementIds,
       programIds: currentProgram.programIds,
-      isSubprogram: currentProgram.isSubprogram,
+      isSubprogram: currentProgram.isSubprogram ?? false,
     },
     programs,
     versions: versionsMap,
