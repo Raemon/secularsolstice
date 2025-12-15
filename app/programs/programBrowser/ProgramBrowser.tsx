@@ -340,6 +340,7 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
                 programs={programs}
                 selectedProgramId={selectedProgramId}
                 onSelect={handleProgramSelect}
+                onProgramCreated={(program) => setPrograms((prev) => prev.some((p) => p.id === program.id) ? prev : [...prev, program])}
               />
               <ProgramViews programId={selectedProgramId} />
             </div>
