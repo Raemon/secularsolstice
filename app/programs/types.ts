@@ -7,6 +7,7 @@ export type Program = {
   programIds: string[];
   createdAt: string;
   archived: boolean;
+  isSubprogram: boolean;
   videoUrl?: string | null;
   printProgramForeword?: string | null;
   printProgramEpitaph?: string | null;

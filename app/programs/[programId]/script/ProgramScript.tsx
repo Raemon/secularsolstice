@@ -12,6 +12,7 @@ type Program = {
   title: string;
   elementIds: string[];
   programIds: string[];
+  isSubprogram: boolean;
 };
 
 type SongVersion = {
@@ -42,10 +43,11 @@ async function loadProgramScriptData(programId: string) {
     title: string;
     element_ids: string[] | null;
     program_ids: string[] | null;
+    is_subprogram: boolean;
   };
   
   const allPrograms = await sql`
-    select id, title, element_ids, program_ids
+    select id, title, element_ids, program_ids, is_subprogram
     from programs
     where archived = false
   ` as ProgramRow[];
@@ -55,6 +57,7 @@ async function loadProgramScriptData(programId: string) {
     title: p.title,
     elementIds: p.element_ids ?? [],
     programIds: p.program_ids ?? [],
+    isSubprogram: p.is_subprogram,
   }));
   
   const programMap: Record<string, Program> = {};
@@ -86,7 +89,7 @@ async function loadProgramScriptData(programId: string) {
         id: currentProgram.id,
         title: currentProgram.title,
         elementIds: currentProgram.elementIds,
-        programIds: currentProgram.programIds,
+        programIds: currentProgram.programIds
       },
       programs,
       versions: {},
@@ -136,6 +139,7 @@ async function loadProgramScriptData(programId: string) {
       title: currentProgram.title,
       elementIds: currentProgram.elementIds,
       programIds: currentProgram.programIds,
+      isSubprogram: currentProgram.isSubprogram,
     },
     programs,
     versions: versionsMap,

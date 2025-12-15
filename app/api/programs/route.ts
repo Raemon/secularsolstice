@@ -22,10 +22,11 @@ export async function POST(request: Request) {
     const body = await request.json();
     const rawTitle = typeof body.title === 'string' ? body.title.trim() : '';
     const createdBy = body.createdBy ?? null;
+    const isSubprogram = body.isSubprogram === true;
     if (!rawTitle) {
       return NextResponse.json({ error: 'title is required' }, { status: 400 });
     }
-    const program = await createProgram(rawTitle, createdBy);
+    const program = await createProgram(rawTitle, createdBy, isSubprogram);
     return NextResponse.json({ program });
   } catch (error) {
     console.error('Failed to create program:', error);

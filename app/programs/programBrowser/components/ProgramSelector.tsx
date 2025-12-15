@@ -32,9 +32,10 @@ const handleCreateProgram = async (createdBy: string, onProgramCreated?: (progra
   }
 };
 
-const ProgramSelector = ({programs, selectedProgramId, onSelect, onProgramCreated}: {programs: Program[], selectedProgramId: string | null, onSelect: (id: string | null) => void, onProgramCreated?: (program: Program) => void}) => {
+const ProgramSelector = ({programs, selectedProgramId, onSelect, onProgramCreated}: {programs: Array<Program & { isSubprogram: boolean }>, selectedProgramId: string | null, onSelect: (id: string | null) => void, onProgramCreated?: (program: Program) => void}) => {
   const selectedProgram = programs.find(p => p.id === selectedProgramId);
-  const options = programs.map(p => ({value: p.id, label: p.title}));
+  const availablePrograms = programs.filter((p) => !p.isSubprogram || p.id === selectedProgramId);
+  const options = availablePrograms.map(p => ({value: p.id, label: p.title}));
   
   const { userName, canEdit } = useUser();
   if (userName && canEdit) {

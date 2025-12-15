@@ -251,6 +251,57 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
     }
   }, [programMap]);
 
+  const handleCreateSubprogram = useCallback(async () => {
+    if (!selectedProgramId || !userName) {
+      return;
+    }
+    const parentProgram = programMap[selectedProgramId];
+    if (!parentProgram) {
+      return;
+    }
+    const title = typeof window !== 'undefined' ? window.prompt('Subprogram title') : null;
+    const trimmedTitle = (title ?? '').trim();
+    if (!trimmedTitle) {
+      return;
+    }
+    try {
+      const createResponse = await fetch('/api/programs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: trimmedTitle, createdBy: userName, isSubprogram: true }),
+      });
+      const createData = await createResponse.json().catch(() => ({}));
+      if (!createResponse.ok) {
+        throw new Error(createData.error || 'Failed to create subprogram');
+      }
+      const newProgram: Program = createData.program;
+      setPrograms((prev) => prev.some((p) => p.id === newProgram.id) ? prev : [...prev, newProgram]);
+      const updatedProgramIds = parentProgram.programIds.includes(newProgram.id) ? parentProgram.programIds : [...parentProgram.programIds, newProgram.id];
+      const patchResponse = await fetch(`/api/programs/${parentProgram.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ elementIds: parentProgram.elementIds, programIds: updatedProgramIds }),
+      });
+      const patchData = await patchResponse.json().catch(() => ({}));
+      if (!patchResponse.ok) {
+        throw new Error(patchData.error || 'Failed to attach subprogram');
+      }
+      setPrograms((prev) => prev.map((p) => {
+        if (p.id === parentProgram.id) {
+          return patchData.program;
+        }
+        if (p.id === newProgram.id) {
+          return newProgram;
+        }
+        return p;
+      }));
+      setDataError(null);
+    } catch (err) {
+      console.error('Failed to create subprogram:', err);
+      setDataError(err instanceof Error ? err.message : 'Failed to create subprogram');
+    }
+  }, [programMap, selectedProgramId, userName]);
+
   const containsVersion = useCallback(
     (program: Program | null, targetVersionId: string, visited: Set<string>): boolean => {
       if (!program || visited.has(program.id)) {
@@ -342,7 +393,18 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
                 onSelect={handleProgramSelect}
                 onProgramCreated={(program) => setPrograms((prev) => prev.some((p) => p.id === program.id) ? prev : [...prev, program])}
               />
-              <ProgramViews programId={selectedProgramId} />
+              <div className="flex items-center gap-2">
+                {canEdit && userName && selectedProgramId && (
+                  <button
+                    type="button"
+                    onClick={handleCreateSubprogram}
+                    className="text-sm px-2 py-1 underline"
+                  >
+                    Create subprogram
+                  </button>
+                )}
+                <ProgramViews programId={selectedProgramId} />
+              </div>
             </div>
             <ProgramStructurePanel
               program={selectedProgram}

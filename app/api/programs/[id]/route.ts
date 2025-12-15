@@ -30,11 +30,12 @@ export async function PATCH(request: NextRequest, {params}: {params: Promise<{id
       return NextResponse.json({program});
     }
   
-    const updates: {title?: string; printProgramForeword?: string | null; printProgramEpitaph?: string | null; videoUrl?: string | null} = {};
+    const updates: {title?: string; printProgramForeword?: string | null; printProgramEpitaph?: string | null; videoUrl?: string | null; isSubprogram?: boolean} = {};
     if ('title' in body) updates.title = body.title;
     if ('printProgramForeword' in body) updates.printProgramForeword = body.printProgramForeword;
     if ('printProgramEpitaph' in body) updates.printProgramEpitaph = body.printProgramEpitaph;
     if ('videoUrl' in body) updates.videoUrl = body.videoUrl;
+    if ('isSubprogram' in body) updates.isSubprogram = body.isSubprogram === true;
     const program = await updateProgram(id, updates);
     return NextResponse.json({program});
   } catch (error) {

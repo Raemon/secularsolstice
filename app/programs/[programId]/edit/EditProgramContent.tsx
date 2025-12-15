@@ -16,6 +16,7 @@ const EditProgramContent = ({ programId }: EditProgramContentProps) => {
   const [foreword, setForeword] = useState('');
   const [epitaph, setEpitaph] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
+  const [isSubprogram, setIsSubprogram] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
@@ -33,6 +34,7 @@ const EditProgramContent = ({ programId }: EditProgramContentProps) => {
         setForeword(data.program.printProgramForeword || '');
         setEpitaph(data.program.printProgramEpitaph || '');
         setVideoUrl(data.program.videoUrl || '');
+        setIsSubprogram(data.program.isSubprogram);
         setError(null);
       } catch (err) {
         console.error('Failed to load program:', err);
@@ -57,6 +59,7 @@ const EditProgramContent = ({ programId }: EditProgramContentProps) => {
           printProgramForeword: foreword || null,
           printProgramEpitaph: epitaph || null,
           videoUrl: videoUrl || null,
+          isSubprogram,
         }),
       });
       if (!response.ok) {
@@ -64,6 +67,7 @@ const EditProgramContent = ({ programId }: EditProgramContentProps) => {
       }
       const data = await response.json();
       setProgram(data.program);
+      setIsSubprogram(data.program.isSubprogram);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err) {
@@ -128,6 +132,10 @@ const EditProgramContent = ({ programId }: EditProgramContentProps) => {
         <div>
           <label className="block text-sm mb-1">Print Program Epitaph (appears centered on page 4)</label>
           <textarea value={epitaph} onChange={(e) => setEpitaph(e.target.value)} rows={6} className="w-full px-2 py-1 border border-gray-300 bg-white text-black font-mono text-sm"/>
+        </div>
+        <div className="flex items-center gap-2 text-sm text-gray-200 cursor-pointer" onClick={() => setIsSubprogram(!isSubprogram)}>
+          <input type="checkbox" checked={isSubprogram} />
+          <span>Mark as subprogram (hidden from main dropdown)</span>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={handleSave} disabled={saving} className="px-4 py-2 bg-black text-white hover:bg-gray-800 disabled:opacity-50">{saving ? 'Saving...' : 'Save'}</button>

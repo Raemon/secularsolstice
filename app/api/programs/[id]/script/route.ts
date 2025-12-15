@@ -7,6 +7,7 @@ type ProgramRow = {
   title: string;
   element_ids: string[] | null;
   program_ids: string[] | null;
+  is_subprogram: boolean;
 };
 
 type VersionRow = {
@@ -30,7 +31,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
 
     // Get all programs in one query
     const allPrograms = await sql`
-      select id, title, element_ids, program_ids
+      select id, title, element_ids, program_ids, is_subprogram
       from programs
       where archived = false
     ` as ProgramRow[];
@@ -65,6 +66,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
           title: p.title,
           elementIds: p.element_ids ?? [],
           programIds: p.program_ids ?? [],
+        isSubprogram: p.is_subprogram,
         })),
         versions: {},
       });
@@ -115,6 +117,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
         title: p.title,
         elementIds: p.element_ids ?? [],
         programIds: p.program_ids ?? [],
+        isSubprogram: p.is_subprogram,
       })),
       versions: versionsMap,
     });

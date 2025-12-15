@@ -29,6 +29,7 @@ create table if not exists programs (
   video_url text,
   print_program_foreword text,
   print_program_epitaph text,
+  is_subprogram boolean not null default false,
   constraint programs_pkey PRIMARY KEY (id)
 );
 
