@@ -234,28 +234,9 @@ const ChordmarkEditor = ({ value, onChange, showSyntaxHelp = false, bpm, autosav
         />
 
       <ChordButtons startCollapsed />
-
-      <div className="flex gap-2">
-        <div className="flex flex-col flex-1">
+      <div className="flex w-full items-center justify-between">
           <h3 className="text-xs font-semibold mb-1 text-gray-400">Chordmark Input</h3>
-          <div className="flex flex-1 border relative" style={{ maxWidth: '800px' }}>
-            <div className="flex flex-col bg-gray-900 border-r border-gray-700">
-              {lineNumbers}
-            </div>
-            <textarea
-              ref={textareaRef}
-              value={value}
-              onChange={(e) => onChange(e.target.value)}
-              placeholder="Enter chordmark notation..."
-              className="flex-1 p-2 bg-black text-sm font-mono min-h-[300px] whitespace-pre flex-grow border-0 outline-none"
-              style={{ lineHeight: '16px', resize: 'none' }}
-            />
-          </div>
-        </div>
-
-        <div className="flex flex-col flex-1">
-        <div className="flex items-center justify-between mb-1">
-            <h3 className="text-sm font-semibold text-gray-400">Preview</h3>
+          <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-2">
             <div className="flex gap-1">
               <button
@@ -288,14 +269,33 @@ const ChordmarkEditor = ({ value, onChange, showSyntaxHelp = false, bpm, autosav
               >
                 Slides
               </button>
-            </div>
-            <TransposeControls value={transposeSteps} onChange={handleTransposeChange} />
+              </div>
+              <TransposeControls value={transposeSteps} onChange={handleTransposeChange} />
             </div>
           </div>
+        </div>
+
+      <div className="flex gap-2 max-w-full">
+        <div className="flex flex-col flex-1 w-1/2">
+          <div className="flex flex-1 border relative" style={{ maxWidth: '800px' }}>
+            <div className="flex flex-col bg-gray-900 border-r border-gray-700">
+              {lineNumbers}
+            </div>
+            <textarea
+              ref={textareaRef}
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              placeholder="Enter chordmark notation..."
+              className="flex-1 p-2 bg-black text-sm font-mono min-h-[300px] whitespace-pre flex-grow border-0 outline-none"
+              style={{ lineHeight: '16px', resize: 'none' }}
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-col flex-1 w-1/2">
           <div ref={previewRef} className="flex-1 p-2 border overflow-auto text-xs font-mono">
-            {previewMode === 'slides' ? (
-              <SlideDisplay slides={slides} />
-            ) : previewMode === 'side-by-side' ? (
+            {previewMode === 'slides' && <SlideDisplay slides={slides} />}
+            {previewMode === 'side-by-side' && (
               renderedOutputs.htmlChordsOnly || renderedOutputs.htmlLyricsOnly ? (
                 <div className="flex gap-4 h-full">
                   <div className="flex-0 min-w-0">
@@ -310,7 +310,8 @@ const ChordmarkEditor = ({ value, onChange, showSyntaxHelp = false, bpm, autosav
               ) : (
                 <div className="text-gray-400">Enter chordmark to see preview</div>
               )
-            ) : (
+            )}
+            {previewMode === 'full' && (
               <div className="styled-chordmark">
                 {previewContent ? (
                   <div dangerouslySetInnerHTML={{ __html: previewContent }} />

@@ -143,7 +143,7 @@ const CreateVersionForm = ({form, onFormChange, onSubmit, onCancel, isSubmitting
           disabled={isSubmitting}
           className="text-xs px-2 py-1 bg-blue-600 text-white disabled:opacity-50"
         >
-          {isSubmitting ? 'Submitting...' : 'Submit Version'}
+          {isSubmitting ? 'Saving...' : 'Save Version'}
         </button>
         <button
           type="button"
