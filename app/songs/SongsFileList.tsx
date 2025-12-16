@@ -29,6 +29,7 @@ const SongsFileList = ({ initialVersionId }: SongsFileListProps = {}) => {
   const [creatingVersionForSong, setCreatingVersionForSong] = useState<Song | null>(null);
   const [sortOption, setSortOption] = useState<'alphabetical' | 'recently-updated'>('recently-updated');
   const [isListCollapsed, setIsListCollapsed] = useState(false);
+  const hasAppliedInitialVersionRef = useRef(false);
   const fetchSongs = useCallback(async () => {
     console.log('fetchSongs called');
     try {
@@ -159,10 +160,17 @@ const SongsFileList = ({ initialVersionId }: SongsFileListProps = {}) => {
   );
 
   useEffect(() => {
+    hasAppliedInitialVersionRef.current = false;
+  }, [initialVersionId]);
+
+  useEffect(() => {
     if (!initialVersionId) {
       return;
     }
     if (!songs.length) {
+      return;
+    }
+    if (hasAppliedInitialVersionRef.current) {
       return;
     }
     if (selectedVersion?.id === initialVersionId) {
@@ -179,6 +187,7 @@ const SongsFileList = ({ initialVersionId }: SongsFileListProps = {}) => {
       return;
     }
     handleSongVersionClick(targetVersion, { skipUrlUpdate: true });
+    hasAppliedInitialVersionRef.current = true;
   }, [handleSongVersionClick, initialVersionId, selectedVersion?.id, songs]);
 
   const handleCreateNewVersionForSong = (song: Song) => {
