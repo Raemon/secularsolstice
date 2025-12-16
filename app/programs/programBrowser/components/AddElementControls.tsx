@@ -74,33 +74,6 @@ const AddElementControls = ({ programId, versions, onAddElement, onSongCreated, 
 
   return (
     <div className="flex items-center gap-2">
-      <div ref={containerRef} className="mt-2 flex flex-col gap-1">
-        <input
-          value={searchTerm}
-          onChange={(event) => setSearchTerm(event.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Add song..."
-          className="text-sm px-2 py-1"
-        />
-        {searchTerm && filteredVersions.length > 0 && (
-          <div className="flex flex-col border border-gray-300">
-            {filteredVersions.map((version, index) => (
-              <button
-                type="button"
-                key={version.id}
-                onClick={() => {
-                  void onAddElement(programId, version.id);
-                  setSearchTerm('');
-                }}
-                className={`flex justify-between items-center text-left text-sm px-2 py-1 hover:bg-black/80 ${index === selectedIndex ? 'bg-blue-100' : ''}`}
-              >
-                <span><span className="font-semibold">{version.songTitle}</span> <span className="text-gray-400">{version.label}</span></span>
-                <span className="text-gray-400 ml-2">{formatRelativeTimestamp(version.createdAt)}</span>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
       <CreateSongButton
         versionLabel={topLevelProgramTitle ? `${camelCase(topLevelProgramTitle)}.cho` : undefined}
         onSongCreated={async (data?: { song?: SongRecord; version?: SongVersionRecord }) => {
@@ -134,6 +107,39 @@ const AddElementControls = ({ programId, versions, onAddElement, onSongCreated, 
           + Subprogram
         </button>
       )}
+      <div ref={containerRef} className="flex flex-col gap-1 relative">
+        <div className="relative flex items-center">
+          <svg className="absolute left-1 w-3.5 h-3.5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Search"
+            className="text-sm pl-6 pr-2 py-1 outline-none border-none bg-transparent"
+            autoFocus
+          />
+        </div>
+        {searchTerm && filteredVersions.length > 0 && (
+          <div className="flex flex-col border border-gray-300 absolute top-full left-0 w-[400px] bg-black z-10">
+            {filteredVersions.map((version, index) => (
+              <button
+                type="button"
+                key={version.id}
+                onClick={() => {
+                  void onAddElement(programId, version.id);
+                  setSearchTerm('');
+                }}
+                className={`flex justify-between items-center text-left text-sm px-2 py-1 hover:bg-white/20 ${index === selectedIndex ? 'bg-blue-100' : ''}`}
+              >
+                <span><span className="font-semibold">{version.songTitle}</span> <span className="text-gray-400">{version.label}</span></span>
+                <span className="text-gray-400 ml-2">{formatRelativeTimestamp(version.createdAt)}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
