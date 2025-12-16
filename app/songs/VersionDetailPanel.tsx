@@ -4,8 +4,7 @@ import VersionContent from './VersionContent';
 import VersionMetadata from './VersionMetadata';
 import CreateVersionForm from './CreateVersionForm';
 import VersionHeader from './VersionHeader';
-import SongTags from './SongTags';
-import SongTitle from './SongTitle';
+import SongInfoHeader from './SongInfoHeader';
 import GithubIOLink from './GithubIOLink';
 import ChangelogPage from '../changelog/ChangelogPage';
 import Comments from './Comments';
@@ -90,19 +89,13 @@ const VersionDetailPanel = ({songTitle, version, previousVersions = [], isCreati
 
   return (
     <div className="border-l border-gray-200 pl-4 w-full lg:p-20 relative max-w-4xl mx-auto">
-      <h2 className="font-georgia -ml-8 text-2xl mb-2 flex items-center gap-3">
-        <button
-          onClick={() => !isCreatingVersion && onClose()}
-          className="text-gray-400 hover:text-gray-400 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-gray-400"
-          disabled={isCreatingVersion}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-          </svg>
-        </button>
-        <SongTitle songId={songId} title={songTitle} onTitleChange={onTitleChange} />
-      </h2>
-      <SongTags songId={songId} initialTags={initialTags} />
+      <SongInfoHeader
+        songId={songId}
+        title={songTitle}
+        tags={initialTags}
+        onClose={onClose}
+        disableClose={isCreatingVersion}
+      />
 
       <div className="mt-4 pt-4 flex gap-4">
         <a

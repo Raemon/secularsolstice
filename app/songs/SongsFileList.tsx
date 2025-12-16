@@ -6,6 +6,7 @@ import SearchInput from './SearchInput';
 import SongItem from './SongItem';
 import VersionDetailPanel from './VersionDetailPanel';
 import CreateVersionForm from './CreateVersionForm';
+import SongInfoHeader from './SongInfoHeader';
 import type { Song, SongVersion } from './types';
 import { useUser } from '../contexts/UserContext';
 import useVersionPanelManager from '../hooks/useVersionPanelManager';
@@ -30,6 +31,7 @@ const SongsFileList = ({ initialVersionId }: SongsFileListProps = {}) => {
   const [sortOption, setSortOption] = useState<'alphabetical' | 'recently-updated'>('recently-updated');
   const [isListCollapsed, setIsListCollapsed] = useState(false);
   const hasAppliedInitialVersionRef = useRef(false);
+  const [selectedSongOnly, setSelectedSongOnly] = useState<Song | null>(null);
   const fetchSongs = useCallback(async () => {
     console.log('fetchSongs called');
     try {
@@ -210,6 +212,15 @@ const SongsFileList = ({ initialVersionId }: SongsFileListProps = {}) => {
     }
   };
 
+  const handleSongClick = (song: Song) => {
+    setSelectedSongOnly(song);
+    clearSelection();
+  };
+
+  const handleCloseSongPanel = () => {
+    setSelectedSongOnly(null);
+  };
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
@@ -217,12 +228,14 @@ const SongsFileList = ({ initialVersionId }: SongsFileListProps = {}) => {
           handleCancelNewVersionForSong();
         } else if (selectedVersion) {
           handleClosePanel();
+        } else if (selectedSongOnly) {
+          handleCloseSongPanel();
         }
       }
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [creatingVersionForSong, selectedVersion, handleClosePanel, handleCancelNewVersionForSong]);
+  }, [creatingVersionForSong, selectedVersion, selectedSongOnly, handleClosePanel, handleCancelNewVersionForSong]);
 
   if (loading) {
     return (
@@ -324,7 +337,9 @@ const SongsFileList = ({ initialVersionId }: SongsFileListProps = {}) => {
                 key={song.id}
                 song={song}
                 selectedVersionId={selectedVersion?.id}
-                onVersionClick={handleSongVersionClick}
+                selectedSongId={selectedSongOnly?.id}
+                onSongClick={handleSongClick}
+                onVersionClick={(version) => { setSelectedSongOnly(null); handleSongVersionClick(version); }}
                 onCreateNewVersion={handleCreateNewVersionForSong}
               />
             ))}
@@ -356,6 +371,21 @@ const SongsFileList = ({ initialVersionId }: SongsFileListProps = {}) => {
                 onSubmitVersion={handleSubmitVersion}
                 onArchiveVersion={handleArchiveVersion}
               />
+            </div>
+          );
+        })()}
+        {selectedSongOnly && !selectedVersion && (() => {
+          return (
+            <div className="flex-1">
+              <div className="border-l border-gray-200 pl-4 w-full lg:p-20 relative max-w-4xl mx-auto">
+                <SongInfoHeader
+                  songId={selectedSongOnly.id}
+                  title={selectedSongOnly.title}
+                  tags={selectedSongOnly.tags}
+                  onClose={handleCloseSongPanel}
+                  onArchive={fetchSongs}
+                />
+              </div>
             </div>
           );
         })()}

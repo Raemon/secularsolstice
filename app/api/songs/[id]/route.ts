@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSongWithVersions, updateSongTags, updateSongTitle } from '@/lib/songsRepository';
+import { getSongWithVersions, updateSongTags, updateSongTitle, archiveSong } from '@/lib/songsRepository';
 
 export async function GET(_: Request, context: { params: Promise<{ id: string }> }) {
   try {
@@ -25,7 +25,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
   try {
     const params = await context.params;
     const body = await request.json();
-    const { tags, title } = body;
+    const { tags, title, archived } = body;
     
     if (title !== undefined) {
       if (typeof title !== 'string' || !title.trim()) {
@@ -40,6 +40,14 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
         return NextResponse.json({ error: 'tags must be an array' }, { status: 400 });
       }
       const updatedSong = await updateSongTags(params.id, tags);
+      return NextResponse.json({ song: updatedSong });
+    }
+    
+    if (archived !== undefined) {
+      if (typeof archived !== 'boolean') {
+        return NextResponse.json({ error: 'archived must be a boolean' }, { status: 400 });
+      }
+      const updatedSong = await archiveSong(params.id, archived);
       return NextResponse.json({ song: updatedSong });
     }
     

@@ -33,9 +33,11 @@ const VersionRow = ({version, isSelected, onClick}: {
   );
 };
 
-const SongItem = ({song, selectedVersionId, onVersionClick, onCreateNewVersion}: {
+const SongItem = ({song, selectedVersionId, selectedSongId, onSongClick, onVersionClick, onCreateNewVersion}: {
   song: Song;
   selectedVersionId?: string;
+  selectedSongId?: string;
+  onSongClick: (song: Song) => void;
   onVersionClick: (version: SongVersion) => void;
   onCreateNewVersion: (song: Song) => void;
 }) => {
@@ -49,11 +51,15 @@ const SongItem = ({song, selectedVersionId, onVersionClick, onCreateNewVersion}:
     versions.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0]
   );
 
+  const isSongSelected = selectedSongId === song.id && !selectedVersionId;
+
   return (
     <div className="flex">
       <div className="group flex items-center w-2/3 justify-between px-2 py-1 text-lg font-medium border-b border-gray-500 font-georgia">
-        <div className="flex flex-col">
-          <span>{song.title.replace(/_/g, ' ')}</span>
+        <div className="flex flex-col cursor-pointer" onClick={() => onSongClick(song)}>
+          <span className={isSongSelected ? 'text-primary' : 'hover:text-gray-300'}>
+            {song.title}
+          </span>
           <span className="text-[10px] text-gray-400 font-mono">{tagsMinusSong.join(', ')}</span>
           </div>
         {canEdit && (

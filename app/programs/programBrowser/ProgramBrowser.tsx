@@ -80,7 +80,56 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
   useEffect(() => {
     loadVersionOptions();
   }, [loadVersionOptions]);
+
+  const collectProgramHierarchy = useCallback((programId: string | null, visited: Set<string> = new Set()): Set<string> => {
+    if (!programId || visited.has(programId)) return visited;
+    const program = programs.find((p) => p.id === programId);
+    if (!program) return visited;
+    visited.add(programId);
+    program.programIds.forEach((subId) => collectProgramHierarchy(subId, visited));
+    return visited;
+  }, [programs]);
+
+  const replaceVersionInProgramHierarchy = useCallback(async (oldVersionId: string, newVersionId: string) => {
+    const hierarchyIds = collectProgramHierarchy(selectedProgramId);
+    const programsToUpdate = programs.filter((p) => hierarchyIds.has(p.id) && p.elementIds.includes(oldVersionId));
+    const updatePromises = programsToUpdate.map(async (program) => {
+      const nextElementIds = program.elementIds.map((id) => id === oldVersionId ? newVersionId : id);
+      try {
+        const response = await fetch(`/api/programs/${program.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ elementIds: nextElementIds, programIds: program.programIds }),
+        });
+        if (!response.ok) {
+          console.error(`Failed to update program ${program.id}`);
+          return null;
+        }
+        const data = await response.json();
+        return data.program as Program;
+      } catch (err) {
+        console.error(`Failed to update program ${program.id}:`, err);
+        return null;
+      }
+    });
+    const updatedPrograms = await Promise.all(updatePromises);
+    const successfulUpdates = updatedPrograms.filter((p): p is Program => p !== null);
+    if (successfulUpdates.length > 0) {
+      setPrograms((prev) => prev.map((p) => {
+        const updated = successfulUpdates.find((u) => u.id === p.id);
+        return updated ?? p;
+      }));
+    }
+  }, [programs, selectedProgramId, collectProgramHierarchy]);
   
+  const handleVersionCreated = useCallback(async (newVersion: SongVersion) => {
+    const oldVersionId = newVersion.previousVersionId;
+    if (oldVersionId) {
+      await replaceVersionInProgramHierarchy(oldVersionId, newVersion.id);
+    }
+    await loadVersionOptions();
+  }, [replaceVersionInProgramHierarchy, loadVersionOptions]);
+
   const {
     selectedVersion,
     previousVersions,
@@ -104,7 +153,7 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
     userName,
     getBasePath,
     resolveSongContext,
-    onVersionCreated: loadVersionOptions,
+    onVersionCreated: handleVersionCreated,
     onVersionArchived: loadVersionOptions,
   });
 

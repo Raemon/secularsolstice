@@ -625,6 +625,20 @@ export const updateSongTitle = async (songId: string, title: string): Promise<So
   return typedRows[0];
 };
 
+export const archiveSong = async (songId: string, archived: boolean): Promise<SongRecord> => {
+  const rows = await sql`
+    update songs
+    set archived = ${archived}
+    where id = ${songId}
+    returning id, title, created_by as "createdBy", created_at as "createdAt", archived, tags
+  `;
+  const typedRows = rows as SongRowResult[];
+  if (typedRows.length === 0) {
+    throw new Error(`Song ${songId} not found`);
+  }
+  return typedRows[0];
+};
+
 export type ChangelogVersionRecord = {
   id: string;
   songId: string;

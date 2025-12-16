@@ -3,18 +3,18 @@
 import { useState, useRef, useEffect } from 'react';
 import { useUser } from '../contexts/UserContext';
 
-const SongTitle = ({songId, title, onTitleChange}: {songId?: string; title: string; onTitleChange?: (newTitle: string) => void}) => {
+const SongTitle = ({songId, title}: {songId?: string; title: string}) => {
   const { canEdit } = useUser();
   const [isEditing, setIsEditing] = useState(false);
+  const [displayTitle, setDisplayTitle] = useState(title);
   const [editedTitle, setEditedTitle] = useState(title);
   const [isUpdating, setIsUpdating] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!isEditing) {
-      setEditedTitle(title);
-    }
-  }, [title, isEditing]);
+    setEditedTitle(title);
+    setDisplayTitle(title);
+  }, [title]);
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -27,15 +27,15 @@ const SongTitle = ({songId, title, onTitleChange}: {songId?: string; title: stri
     const trimmedTitle = editedTitle.trim();
     if (!trimmedTitle || !songId) {
       setIsEditing(false);
-      setEditedTitle(title);
+      setEditedTitle(displayTitle);
       return;
     }
-    if (trimmedTitle === title) {
+    if (trimmedTitle === displayTitle) {
       setIsEditing(false);
       return;
     }
-    const previousTitle = title;
-    onTitleChange?.(trimmedTitle);
+    const previousTitle = displayTitle;
+    setDisplayTitle(trimmedTitle);
     setIsEditing(false);
     setIsUpdating(true);
     try {
@@ -49,7 +49,7 @@ const SongTitle = ({songId, title, onTitleChange}: {songId?: string; title: stri
       }
     } catch (err) {
       console.error('Error updating title:', err);
-      onTitleChange?.(previousTitle);
+      setDisplayTitle(previousTitle);
       setEditedTitle(previousTitle);
     } finally {
       setIsUpdating(false);
@@ -62,11 +62,9 @@ const SongTitle = ({songId, title, onTitleChange}: {songId?: string; title: stri
       handleSave();
     } else if (e.key === 'Escape') {
       setIsEditing(false);
-      setEditedTitle(title);
+      setEditedTitle(displayTitle);
     }
   };
-
-  const displayTitle = title.replace(/_/g, ' ');
 
   if (isEditing) {
     return (
@@ -89,7 +87,7 @@ const SongTitle = ({songId, title, onTitleChange}: {songId?: string; title: stri
       {displayTitle}
       {songId && (
         <button
-          onClick={() => setIsEditing(true)}
+          onClick={() => { setEditedTitle(displayTitle); setIsEditing(true); }}
           disabled={!canEdit}
           className={`text-gray-400 hover:text-gray-600 ${!canEdit ? 'opacity-50 cursor-not-allowed' : ''}`}
           title={canEdit ? 'Edit title' : 'Set username to edit'}
