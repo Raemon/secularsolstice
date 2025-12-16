@@ -8,9 +8,10 @@ type UseCreateSongOptions = {
   onSongCreated?: (data?: { song?: SongRecord; version?: SongVersionRecord }) => Promise<void> | void;
   onError?: (error: string) => void;
   defaultTags?: string[];
+  versionLabel?: string;
 };
 
-const useCreateSong = ({ createdBy, onSongCreated, onError, defaultTags }: UseCreateSongOptions) => {
+const useCreateSong = ({ createdBy, onSongCreated, onError, defaultTags, versionLabel }: UseCreateSongOptions) => {
   const [isCreatingSong, setIsCreatingSong] = useState(false);
   const [newSongTitle, setNewSongTitle] = useState('');
   const [isSubmittingSong, setIsSubmittingSong] = useState(false);
@@ -31,7 +32,7 @@ const useCreateSong = ({ createdBy, onSongCreated, onError, defaultTags }: UseCr
       const response = await fetch('/api/songs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: newSongTitle.trim(), createdBy, tags: defaultTags }),
+        body: JSON.stringify({ title: newSongTitle.trim(), createdBy, tags: defaultTags, versionLabel }),
       });
 
       if (!response.ok) {
@@ -57,7 +58,7 @@ const useCreateSong = ({ createdBy, onSongCreated, onError, defaultTags }: UseCr
     } finally {
       setIsSubmittingSong(false);
     }
-  }, [newSongTitle, createdBy, onSongCreated, onError, defaultTags, setIsCreatingSong, setNewSongTitle, setError, setIsSubmittingSong]);
+  }, [newSongTitle, createdBy, onSongCreated, onError, defaultTags, versionLabel, setIsCreatingSong, setNewSongTitle, setError, setIsSubmittingSong]);
 
   const resetError = useCallback(() => setError(null), []);
 

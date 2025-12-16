@@ -24,6 +24,7 @@ export type ProgramStructureNodeProps = {
   canEdit: boolean;
   onSongCreated?: (data?: { song?: SongRecord; version?: SongVersionRecord }) => Promise<void> | void;
   onCreateSubprogram?: (programId: string) => void | Promise<void>;
+  topLevelProgramTitle?: string;
 };
 
 const ProgramStructureNode = ({
@@ -42,6 +43,7 @@ const ProgramStructureNode = ({
   canEdit,
   onSongCreated,
   onCreateSubprogram,
+  topLevelProgramTitle,
 }: ProgramStructureNodeProps): ReactElement => {
   const nextTrail = new Set(trail);
   nextTrail.add(current.id);
@@ -61,6 +63,7 @@ const ProgramStructureNode = ({
         onAddElement={onAddElement}
         onSongCreated={onSongCreated}
         onCreateSubprogram={onCreateSubprogram}
+        topLevelProgramTitle={topLevelProgramTitle}
       />
       <div className="mt-2 flex flex-col">
         <DragAndDropList
@@ -127,6 +130,7 @@ const ProgramStructureNode = ({
                 canEdit={canEdit}
                 onSongCreated={onSongCreated}
                 onCreateSubprogram={onCreateSubprogram}
+                topLevelProgramTitle={topLevelProgramTitle}
               />
             );
           })}

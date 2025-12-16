@@ -65,6 +65,7 @@ const ProgramStructurePanel = ({
         canEdit={canEdit}
         onSongCreated={onSongCreated}
         onCreateSubprogram={onCreateSubprogram}
+        topLevelProgramTitle={program.title}
       />
     </div>
   );

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo, type KeyboardEvent } from 'react';
+import camelCase from 'lodash/camelCase';
 import type { VersionOption } from '../../types';
 import { formatRelativeTimestamp } from '@/lib/dateUtils';
 import CreateSongButton from '../../../components/CreateSongButton';
@@ -12,9 +13,10 @@ export type AddElementControlsProps = {
   onAddElement: (programId: string, versionId: string) => void | Promise<void>;
   onSongCreated?: (data?: { song?: SongRecord; version?: SongVersionRecord }) => Promise<void> | void;
   onCreateSubprogram?: (programId: string) => void | Promise<void>;
+  topLevelProgramTitle?: string;
 };
 
-const AddElementControls = ({ programId, versions, onAddElement, onSongCreated, onCreateSubprogram }: AddElementControlsProps) => {
+const AddElementControls = ({ programId, versions, onAddElement, onSongCreated, onCreateSubprogram, topLevelProgramTitle }: AddElementControlsProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIndex, setSelectedIndex] = useState<number>(-1);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -100,11 +102,20 @@ const AddElementControls = ({ programId, versions, onAddElement, onSongCreated, 
         )}
       </div>
       <CreateSongButton
-        onSongCreated={onSongCreated}
+        versionLabel={topLevelProgramTitle ? `${camelCase(topLevelProgramTitle)}.cho` : undefined}
+        onSongCreated={async (data?: { song?: SongRecord; version?: SongVersionRecord }) => {
+          if (data?.version?.id) {
+            await onAddElement(programId, data.version.id);
+          }
+          if (onSongCreated) {
+            await onSongCreated(data);
+          }
+        }}
       />
       <CreateSongButton
         defaultTags={['speech']}
         buttonText="+ Speech"
+        versionLabel={topLevelProgramTitle ? `${camelCase(topLevelProgramTitle)}.md` : undefined}
         onSongCreated={async (data?: { song?: SongRecord; version?: SongVersionRecord }) => {
           if (data?.version?.id) {
             await onAddElement(programId, data.version.id);

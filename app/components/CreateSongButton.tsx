@@ -10,9 +10,10 @@ export type CreateSongButtonProps = {
   onError?: (error: string) => void;
   defaultTags?: string[];
   buttonText?: string;
+  versionLabel?: string;
 };
 
-const CreateSongButton = ({ onSongCreated, onError, defaultTags, buttonText = '+ Song' }: CreateSongButtonProps) => {
+const CreateSongButton = ({ onSongCreated, onError, defaultTags, buttonText = '+ Song', versionLabel }: CreateSongButtonProps) => {
   const { canEdit, userName } = useUser();
   const {
     isCreatingSong,
@@ -23,7 +24,7 @@ const CreateSongButton = ({ onSongCreated, onError, defaultTags, buttonText = '+
     error: createSongError,
     handleCreateSong,
     resetError,
-  } = useCreateSong({createdBy: userName, onSongCreated, onError, defaultTags});
+  } = useCreateSong({createdBy: userName, onSongCreated, onError, defaultTags, versionLabel});
 
   if (!canEdit) return <Tooltip content="Enter your name (top-right of screen) to create a song"><button className="text-xs px-2 py-1 border border-gray-500 rounded-sm text-white whitespace-nowrap opacity-50" disabled={true}>{buttonText}</button></Tooltip>;
 
