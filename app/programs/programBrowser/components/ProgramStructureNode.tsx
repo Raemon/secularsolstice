@@ -57,14 +57,16 @@ const ProgramStructureNode = ({
           </Link>
         )}
       </div>
-      <AddElementControls
-        programId={current.id}
-        versions={versions}
-        onAddElement={onAddElement}
-        onSongCreated={onSongCreated}
-        onCreateSubprogram={onCreateSubprogram}
-        topLevelProgramTitle={topLevelProgramTitle}
-      />
+      <div className="my-2">
+        <AddElementControls
+          programId={current.id}
+          versions={versions}
+          onAddElement={onAddElement}
+          onSongCreated={onSongCreated}
+          onCreateSubprogram={onCreateSubprogram}
+          topLevelProgramTitle={topLevelProgramTitle}
+        />
+      </div>
       <div className="mt-2 flex flex-col">
         <DragAndDropList
           items={current.elementIds}

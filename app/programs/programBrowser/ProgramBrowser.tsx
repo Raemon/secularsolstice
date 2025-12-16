@@ -443,9 +443,9 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
                 onProgramCreated={(program) => setPrograms((prev) => prev.some((p) => p.id === program.id) ? prev : [...prev, program])}
               />
             </div>
-            <div className="flex items-center gap-2">
-                <ProgramViews programId={selectedProgramId} />
-              </div>
+            <div className="mt-4 ml-1 mb-8">
+              <ProgramViews programId={selectedProgramId} />
+            </div>
             <ProgramStructurePanel
               program={selectedProgram}
               programMap={programMap}

@@ -102,7 +102,7 @@ const AddElementControls = ({ programId, versions, onAddElement, onSongCreated, 
         <button
           type="button"
           onClick={() => { void onCreateSubprogram(programId); }}
-          className="text-xs px-2 py-1 border border-gray-500 rounded-sm text-white whitespace-nowrap"
+          className="text-xs px-2 py-1 border border-gray-500 rounded-md text-white whitespace-nowrap"
         >
           + Subprogram
         </button>
