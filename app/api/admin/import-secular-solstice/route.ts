@@ -16,8 +16,8 @@ const normalizeTitle = (name: string) => name.replace(/_/g, ' ').trim();
 
 const isProbablyText = (buffer: Buffer) => !buffer.includes(0);
 
-const getSongByTitle = async (title: string) => {
-  const rows = await sql`select id, tags from songs where title = ${title} and archived = false limit 1`;
+const getSongByTitle = async (title: string, includeArchived = false) => {
+  const rows = await sql`select id, tags from songs where title = ${title} ${includeArchived ? sql`` : sql`and archived = false`} limit 1`;
   return rows.length > 0 ? rows[0] as { id: string; tags: string[] | null } : null;
 };
 
@@ -26,8 +26,18 @@ const ensureSong = async (title: string, tags: string[]) => {
   if (existing) {
     return existing.id;
   }
-  const created = await createSong(title, IMPORT_USER, tags);
-  return created.id;
+  try {
+    const created = await createSong(title, IMPORT_USER, tags);
+    return created.id;
+  } catch (error) {
+    if ((error as any)?.code === '23505') {
+      const duplicate = await getSongByTitle(title, true);
+      if (duplicate) {
+        return duplicate.id;
+      }
+    }
+    throw error;
+  }
 };
 
 const getLatestVersionId = async (songId: string) => {

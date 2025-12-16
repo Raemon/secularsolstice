@@ -6,6 +6,7 @@ import CreateVersionForm from './CreateVersionForm';
 import VersionHeader from './VersionHeader';
 import SongTags from './SongTags';
 import SongTitle from './SongTitle';
+import GithubIOLink from './GithubIOLink';
 import ChangelogPage from '../changelog/ChangelogPage';
 import Comments from './Comments';
 import type { SongVersion } from './types';
@@ -54,7 +55,7 @@ const VersionActionButtons = ({isCreatingVersion, version, isSubmitting, isArchi
   );
 };
 
-const VersionDetailPanel = ({songTitle, version, isCreatingVersion, newVersionForm, isSubmitting, isArchiving, error, isLoadingVersion = false, songId, tags: initialTags = [], onClose, onCreateVersionClick, onCancelCreateVersion, onFormChange, onSubmitVersion, onArchiveVersion, onTitleChange}: {
+const VersionDetailPanel = ({songTitle, version, previousVersions = [], isCreatingVersion, newVersionForm, isSubmitting, isArchiving, error, isLoadingVersion = false, songId, tags: initialTags = [], onClose, onCreateVersionClick, onCancelCreateVersion, onFormChange, onSubmitVersion, onArchiveVersion, onTitleChange}: {
   songTitle: string;
   version: SongVersion & { songId?: string; nextVersionId?: string | null; originalVersionId?: string | null };
   previousVersions: SongVersion[];
@@ -120,6 +121,7 @@ const VersionDetailPanel = ({songTitle, version, isCreatingVersion, newVersionFo
         >
           Slides View
         </a>
+        <GithubIOLink songTitle={songTitle} tags={initialTags} version={version} previousVersions={previousVersions} />
       </div>
       <div className="mb-2 flex items-center justify-between sticky top-[-80px]">
         <VersionHeader version={version} />

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useUser } from '../../contexts/UserContext';
+import { detectFileType } from '@/lib/lyricsExtractor';
 
 const ImportSecularSolstice = () => {
   const { canEdit } = useUser();
@@ -10,6 +11,26 @@ const ImportSecularSolstice = () => {
   const [result, setResult] = useState<any>(null);
   const [progress, setProgress] = useState('');
   const [liveItems, setLiveItems] = useState<any[]>([]);
+  const [isRenderingLilypond, setIsRenderingLilypond] = useState(false);
+  const [lilypondStatus, setLilypondStatus] = useState('');
+  const [lilypondResults, setLilypondResults] = useState<any[]>([]);
+
+  const runWithLimit = async <T,>(items: T[], limit: number, worker: (item: T) => Promise<void>) => {
+    const executing: Promise<void>[] = [];
+    for (const item of items) {
+      const p = Promise.resolve().then(() => worker(item)).finally(() => {
+        const idx = executing.indexOf(p);
+        if (idx >= 0) {
+          executing.splice(idx, 1);
+        }
+      });
+      executing.push(p);
+      if (executing.length >= limit) {
+        await Promise.race(executing);
+      }
+    }
+    await Promise.all(executing);
+  };
 
   const runImport = async (dryRun: boolean) => {
     setIsRunning(true);
@@ -76,6 +97,71 @@ const ImportSecularSolstice = () => {
     }
   };
 
+  const renderMissingLilypond = async () => {
+    setIsRenderingLilypond(true);
+    setLilypondStatus('Loading songs...');
+    setLilypondResults([]);
+    try {
+      const songsResponse = await fetch('/api/songs');
+      if (!songsResponse.ok) {
+        setLilypondStatus('Failed to load songs');
+        return;
+      }
+      const songsData = await songsResponse.json();
+      const songs = songsData.songs || [];
+      const candidates: { version: any; songTitle: string }[] = [];
+      for (const song of songs) {
+        const songTitle = song.title || '';
+        const versions = song.versions || [];
+        for (const version of versions) {
+          const fileType = detectFileType(version.label || '', version.content || '');
+          const hasRendered = Boolean(version.renderedContent && version.renderedContent.lilypond);
+          if (fileType === 'lilypond' && version.content && !hasRendered) {
+            candidates.push({ version, songTitle });
+          }
+        }
+      }
+      if (candidates.length === 0) {
+        setLilypondStatus('No missing lilypond renders found');
+        return;
+      }
+      let completed = 0;
+      await runWithLimit(candidates, 3, async ({ version, songTitle }) => {
+        setLilypondStatus(`Rendering ${songTitle} / ${version.label} (${completed + 1}/${candidates.length})`);
+        try {
+          const formData = new FormData();
+          formData.append('content', version.content);
+          const renderResponse = await fetch('/api/lilypond-to-svg', {
+            method: 'POST',
+            body: formData,
+          });
+          if (!renderResponse.ok) {
+            const errorText = await renderResponse.text();
+            throw new Error(errorText || 'Failed to render lilypond');
+          }
+          const renderData = await renderResponse.json();
+          const svgs = renderData.svgs || [];
+          const renderedContent = { ...(version.renderedContent || {}), lilypond: JSON.stringify(svgs) };
+          await fetch(`/api/songs/versions/${version.id}/rendered-content`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ renderedContent }),
+          });
+          completed += 1;
+          setLilypondResults((prev) => [...prev, { songTitle, label: version.label, status: 'rendered', pages: svgs.length }]);
+        } catch (error) {
+          completed += 1;
+          setLilypondResults((prev) => [...prev, { songTitle, label: version.label, status: 'failed', error: error instanceof Error ? error.message : 'Unknown error' }]);
+        }
+      });
+      setLilypondStatus(`Finished rendering ${completed}/${candidates.length} versions`);
+    } catch (error) {
+      setLilypondStatus(error instanceof Error ? error.message : 'Failed to render lilypond');
+    } finally {
+      setIsRenderingLilypond(false);
+    }
+  };
+
   return (
     <div className="p-4 space-y-2">
       <div className="flex gap-2">
@@ -93,8 +179,16 @@ const ImportSecularSolstice = () => {
         >
           {isRunning ? 'Working...' : 'Import for real'}
         </button>
+        <button
+          onClick={renderMissingLilypond}
+          disabled={!canEdit || isRunning || isRenderingLilypond}
+          className="text-xs px-2 py-1 bg-blue-600 text-white disabled:opacity-50"
+        >
+          {isRenderingLilypond ? 'Rendering...' : 'Render missing lilypond'}
+        </button>
       </div>
       {progress && <div className="text-xs">{progress}</div>}
+      {lilypondStatus && <div className="text-xs">{lilypondStatus}</div>}
       {liveItems.length > 0 && (
         <ul className="text-xs list-disc list-inside space-y-0.5">
           {liveItems.map((r, index) => (
@@ -132,6 +226,16 @@ const ImportSecularSolstice = () => {
             ))}
           </ul>
         </div>
+      )}
+      {lilypondResults.length > 0 && (
+        <ul className="text-xs list-disc list-inside space-y-0.5">
+          {lilypondResults.map((item, index) => (
+            <li key={`${item.songTitle}-${item.label}-${item.status}-${index}`}>
+              lilypond: {item.songTitle} / {item.label} - {item.status}{item.pages ? ` (${item.pages} pages)` : ''}{' '}
+              {item.error && <span>{item.error}</span>}
+            </li>
+          ))}
+        </ul>
       )}
       {status && <pre className="text-xs whitespace-pre-wrap">{status}</pre>}
     </div>
