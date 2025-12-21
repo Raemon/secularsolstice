@@ -9,10 +9,14 @@
 
 :root {
   --primary: rgb(255, 226, 64);
+  --secondary: rgb(182, 82, 24);
 }
 
 .text-primary {
   color: var(--primary) !important;
+}
+.text-secondary {
+  color: var(--secondary) !important;
 }
 
 .bg-primary {

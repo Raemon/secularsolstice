@@ -224,7 +224,7 @@ const FeedbackResults = ({ programId }: FeedbackResultsProps) => {
             ) : (
               qualityVotes.sort((a, b) => b.weight - a.weight).map((vote) => {
                 const size = Math.abs(vote.weight) === 3 ? 12 : 6;
-                const color = vote.weight > 0 ? 'var(--primary)' : vote.weight === 0 ? '#fff' : '#9ca3af';
+                const color = vote.weight > 0 ? 'var(--primary)' : vote.weight === 0 ? '#fff' : 'var(--secondary)';
                 const tooltip = `${vote.type} (${vote.weight > 0 ? '+' : ''}${vote.weight})`;
                 return (
                     <span
