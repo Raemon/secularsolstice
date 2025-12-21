@@ -110,7 +110,7 @@ const ChordmarkPlayer = ({
         ) : (
           <span className="text-gray-500">BPM: {bpm}</span>
         )}
-        <div className="flex items-center gap-1">
+        <div className="items-center gap-1 hidden lg:flex">
           <span className="text-gray-500">Start line:</span>
           <select
             value={String(startLine)}

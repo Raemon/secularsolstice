@@ -81,14 +81,14 @@ const VersionDetailPanel = ({songTitle, version, previousVersions = [], isCreati
 
   if (isLoadingVersion) {
     return (
-      <div className="border-l border-gray-200 pl-4 w-full lg:p-20 relative flex items-center justify-center text-gray-400">
+      <div className="xl:border-l xl:border-gray-200 pl-4 w-full lg:p-20 relative flex items-center justify-center text-gray-400">
         Loading version...
       </div>
     );
   }
 
   return (
-    <div className="border-l border-gray-200 pl-4 w-full lg:p-20 relative max-w-4xl mx-auto">
+    <div className="xl:border-l xl:border-gray-200 md:pl-4 w-full lg:p-20 relative xl:max-w-4xl mx-auto">
       <SongInfoHeader
         songId={songId}
         title={songTitle}
@@ -96,8 +96,8 @@ const VersionDetailPanel = ({songTitle, version, previousVersions = [], isCreati
         onClose={onClose}
         disableClose={isCreatingVersion}
       />
-      <div className="flex items-end justify-end gap-4 sticky top-[-80px] my-4 border-b border-gray-500 pb-2">
-        <div className="mr-auto">
+      <div className="flex items-end flex-wrap justify-end gap-4 sticky top-[-80px] my-4 border-b border-gray-500 pb-2">
+        <div className="lg:mr-auto w-full lg:w-auto">
           <VersionHeader version={version} />
         </div>
         <a
@@ -165,7 +165,7 @@ const VersionDetailPanel = ({songTitle, version, previousVersions = [], isCreati
             <Comments songId={songId} currentVersionId={version.id} />
           )}
           {songId && (
-            <div className="mt-4 pt-4 border-t border-gray-200">
+            <div className="mt-4 pt-4 border-t border-gray-200 min-w-0 max-w-full overflow-hidden">
               <h3 className="text-xs text-gray-400 mb-2">History</h3>
               <ChangelogPage songId={songId} filename={version.label} compact />
             </div>

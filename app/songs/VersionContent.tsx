@@ -30,7 +30,7 @@ const VersionContent = ({version, print}: {
   }
 
   return (
-    <div className="space-y-2 max-w-4xl">
+    <div className="space-y-2 lg:max-w-4xl">
       {hasAudio && (
         isAudioFile ? (
           <audio controls src={version.audioUrl || undefined} className="w-full">
@@ -49,7 +49,7 @@ const VersionContent = ({version, print}: {
         <ChordmarkRenderer content={version.content || ''} initialBpm={version.bpm || 90} initialTranspose={version.transpose ?? 0} print={print} renderedContent={version.renderedContent} />
       )}
       {hasContent && isTxtFile && (
-        <pre className="text-content text-xs overflow-x-auto max-w-full">{version.content}</pre>
+        <div className="text-content text-xs overflow-x-auto max-w-full">{version.content}</div>
       )}
       {hasContent && isMarkdownFile && (
         <MarkdownRenderer content={version.content || ''} />
