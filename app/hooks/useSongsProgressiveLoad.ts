@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Song } from '../songs/types';
 
-const INITIAL_BATCH_SIZE = 20;
+const INITIAL_BATCH_SIZE = 16;
 
 type UseSongsProgressiveLoadResult = {
   songs: Song[];
