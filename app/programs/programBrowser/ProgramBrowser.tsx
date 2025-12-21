@@ -434,7 +434,7 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
     <div className="p-4">
       <div className="flex flex-col gap-4">
         <div className="flex gap-4 justify-center">
-          <div>
+          <div className={selectedVersion ? 'hidden xl:block' : ''}>
             <div className="flex items-center justify-between">
               <ProgramSelector
                 programs={programs}
@@ -474,8 +474,8 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
                 isSubmitting={isSubmitting}
                 isArchiving={isArchiving}
                 error={panelError}
+                tags={versionMap[selectedVersion.id]?.tags || []}
                 songId={selectedVersion.songId}
-                tags={[]}
                 onClose={handleClosePanel}
                 onTogglePreviousVersions={togglePreviousVersions}
                 onVersionClick={(version: SongVersion) => handleVersionClick(version.id)}

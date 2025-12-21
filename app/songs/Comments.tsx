@@ -66,7 +66,7 @@ const Comments = ({ songId, currentVersionId }: { songId: string; currentVersion
             {/* Current version comments */}
             {currentVersionComments.map((comment) => (
               <div key={comment.id} className="border-l-2 border-blue-400 pl-3 py-1">
-                <div className="flex justify-end items-start mb-1">
+                <div className="flex justify-start items-start mb-1">
                   <span className="text-xs text-gray-400">{formatDate(comment.created_at)}</span>
                 </div>
                 <p className="text-sm whitespace-pre-wrap">{comment.content}</p>
