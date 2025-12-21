@@ -34,9 +34,9 @@ const ProgramElementItem = ({id, version, allVersions, onRemove, onChangeVersion
 
   return (
     <div className={`text-sm px-2 py-1 flex items-center gap-1 hover:bg-black cursor-pointer group min-w-0 ${selectedVersionId === id && 'text-primary'}`} onClick={() => onClick?.(id)}>
-      <span className={`font-georgia text-base flex-1 min-w-0 truncate hover:text-blue-400 ${isSpeech ? 'italic' : ''} max-w-[175px] lg:max-w-full`}>{version?.songTitle}</span>
+      <span className={`font-georgia text-base flex-1 min-w-0 truncate hover:text-blue-400 ${isSpeech ? 'italic' : ''} w-[130px] sm:max-w-full`}>{version?.songTitle}</span>
       <div className={`text-gray-400 flex items-center gap-1 shrink-0 text-xs ${!isLatestVersion && 'opacity-50'}`}>
-        <span className={`${selectedVersionId === id ? 'text-primary' : 'text-gray-300'} truncate max-w-[50px] lg:max-w-[100px]`}>{version?.label ?? id}</span>
+        <span className={`${selectedVersionId === id ? 'text-primary' : 'text-gray-300'} truncate w-[50px] sm:max-w-[100px]`}>{version?.label ?? id}</span>
         <span className="text-gray-400">{formatRelativeTimestamp(version?.createdAt ?? '')}</span>
         <ChevronDropdown
           value={id}

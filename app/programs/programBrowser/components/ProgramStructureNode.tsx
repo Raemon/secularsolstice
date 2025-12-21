@@ -49,7 +49,7 @@ const ProgramStructureNode = ({
   nextTrail.add(current.id);
 
   return (
-    <div className={`px-2 ${depth > 0 ? 'ml-1' : ''}`}>
+    <div className={`px-0 sm:px-2 ${depth > 0 ? 'ml-1' : ''}`}>
       <div className="flex items-center justify-between gap-2">
         {depth > 0 && (
           <Link href={`/programs/${current.id}`} className="text-xl font-georgia hover:underline">
