@@ -275,8 +275,8 @@ const ChordmarkEditor = ({ value, onChange, showSyntaxHelp = false, bpm, autosav
           </div>
         </div>
 
-      <div className="flex gap-2 max-w-full max-w-[calc(100vw-16px)] overflow-x-scroll">
-        <div className="flex flex-col flex-1 w-[90vw] sm:w-[calc(50vw-8px)]">
+      <div className="flex gap-2 max-w-[calc(100vw-16px)] overflow-x-scroll">
+        <div className="w-[300px] flex-none grow-1 shrink-0 sm:w-[calc(50vw-8px)]">
           <div className="flex flex-1 border relative" style={{ maxWidth: '800px' }}>
             <div className="flex flex-col bg-gray-900 border-r border-gray-700">
               {lineNumbers}
@@ -292,7 +292,7 @@ const ChordmarkEditor = ({ value, onChange, showSyntaxHelp = false, bpm, autosav
           </div>
         </div>
 
-        <div className="flex flex-col flex-1 sm:w-[calc(50%-8px)]">
+        <div className="w-[300px] flex-none shrink-0 sm:w-[calc(50%-8px)]">
           <div ref={previewRef} className="flex-1 p-2 border overflow-auto text-xs font-mono">
             {previewMode === 'slides' && <SlideDisplay slides={slides} />}
             {previewMode === 'side-by-side' && (
