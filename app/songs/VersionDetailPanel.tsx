@@ -81,14 +81,14 @@ const VersionDetailPanel = ({songTitle, version, previousVersions = [], isCreati
 
   if (isLoadingVersion) {
     return (
-      <div className="xl:border-l xl:border-gray-200 pl-4 w-full lg:p-20 relative flex items-center justify-center text-gray-400">
+      <div className="pl-4 w-full lg:p-20 relative flex items-center justify-center text-gray-400">
         Loading version...
       </div>
     );
   }
 
   return (
-    <div className="xl:border-l xl:border-gray-200 md:pl-4 w-full lg:p-20 relative xl:max-w-4xl mx-auto">
+    <div className="md:pl-4 w-full lg:p-20 relative xl:max-w-4xl mx-auto">
       <SongInfoHeader
         songId={songId}
         title={songTitle}

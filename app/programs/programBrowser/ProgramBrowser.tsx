@@ -447,8 +447,8 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
   return (
     <div className="px-2 py-1 sm:p-4">
       <div className="flex flex-col gap-4">
-        <div className="flex gap-4 justify-center overflow-x-scroll w-full">
-          <div className={`overflow-x-scroll sm:overflow-x-visible ${selectedVersion ? 'hidden xl:block' : ''} w-full`}>
+        <div className="flex gap-4 justify-center overflow-x-scroll w-full sm:w-auto sm:overflow-x-visible">
+          <div className={`overflow-x-scroll sm:overflow-x-visible ${selectedVersion ? 'hidden xl:block' : ''} w-auto`}>
             <div className="flex items-center justify-between">
               <ProgramSelector
                 programs={programs}
