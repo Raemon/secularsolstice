@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import VersionDetailPanel from '../../songs/VersionDetailPanel';
 import { useUser } from '../../contexts/UserContext';
 import type { Program, VersionOption } from '../types';
@@ -16,6 +17,7 @@ type ProgramBrowserProps = {
 };
 
 const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserProps) => {
+  const pathname = usePathname();
   const { userName, canEdit } = useUser();
   const [programs, setPrograms] = useState<Program[]>([]);
   const [versions, setVersions] = useState<VersionOption[]>([]);
@@ -396,6 +398,18 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
     programs,
     selectedProgramId,
   ]);
+
+  useEffect(() => {
+    // Clear version selection when navigating back to program list or program detail (without version)
+    // Pathname patterns:
+    // - /programs -> no version
+    // - /programs/[programId] -> no version
+    // - /programs/[programId]/[versionId] -> has version
+    const segments = pathname.split('/').filter(Boolean);
+    if (segments[0] === 'programs' && segments.length <= 2) {
+      clearSelection();
+    }
+  }, [pathname, clearSelection]);
 
   if (loading) {
     return (
