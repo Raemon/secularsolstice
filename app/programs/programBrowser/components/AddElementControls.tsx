@@ -73,7 +73,7 @@ const AddElementControls = ({ programId, versions, onAddElement, onSongCreated, 
   };
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       <CreateSongButton
         versionLabel={topLevelProgramTitle ? `${camelCase(topLevelProgramTitle)}.cho` : undefined}
         onSongCreated={async (data?: { song?: SongRecord; version?: SongVersionRecord }) => {
@@ -122,7 +122,7 @@ const AddElementControls = ({ programId, versions, onAddElement, onSongCreated, 
           />
         </div>
         {searchTerm && filteredVersions.length > 0 && (
-          <div className="flex flex-col border border-gray-300 absolute top-full left-0 w-[400px] bg-black z-10">
+          <div className="flex flex-col border border-gray-300 absolute top-full left-0 w-[calc(100vw-2rem)] sm:w-[400px] max-w-[400px] bg-black z-10">
             {filteredVersions.map((version, index) => (
               <button
                 type="button"

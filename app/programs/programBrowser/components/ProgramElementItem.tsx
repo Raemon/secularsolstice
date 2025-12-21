@@ -33,13 +33,11 @@ const ProgramElementItem = ({id, version, allVersions, onRemove, onChangeVersion
   const isSpeech = version?.tags?.includes('speech');
 
   return (
-    <div className={`text-sm px-2 py-1 flex items-center gap-2 hover:bg-black cursor-pointer group ${selectedVersionId === id && 'text-primary'}`} onClick={() => onClick?.(id)}>
-      <span className={`font-georgia text-base w-[250px] truncate hover:text-blue-400 ${isSpeech ? 'italic' : ''}`}>{version?.songTitle}</span>
-      <div className="flex items-center gap-1">
-        <div className={`text-gray-400 w-[150px] truncate flex items-center justify-between gap-1 ${!isLatestVersion && 'opacity-50'}`}>
-          <span className={`${selectedVersionId === id ? 'text-primary' : 'text-gray-300'} w-[180px] truncate`}>{version?.label ?? id}</span>
-          <span className="text-gray-400 text-xs">{formatRelativeTimestamp(version?.createdAt ?? '')}</span>
-        </div>
+    <div className={`text-sm px-2 py-1 flex items-center gap-1 hover:bg-black cursor-pointer group min-w-0 ${selectedVersionId === id && 'text-primary'}`} onClick={() => onClick?.(id)}>
+      <span className={`font-georgia text-base flex-1 min-w-0 truncate hover:text-blue-400 ${isSpeech ? 'italic' : ''} max-w-[175px] lg:max-w-full`}>{version?.songTitle}</span>
+      <div className={`text-gray-400 flex items-center gap-1 shrink-0 text-xs ${!isLatestVersion && 'opacity-50'}`}>
+        <span className={`${selectedVersionId === id ? 'text-primary' : 'text-gray-300'} truncate max-w-[50px] lg:max-w-[100px]`}>{version?.label ?? id}</span>
+        <span className="text-gray-400">{formatRelativeTimestamp(version?.createdAt ?? '')}</span>
         <ChevronDropdown
           value={id}
           options={dropdownOptions}
@@ -63,7 +61,7 @@ const ProgramElementItem = ({id, version, allVersions, onRemove, onChangeVersion
         />
       </div>
       {canEdit && (
-        <button type="button" onClick={(e) => { e.stopPropagation(); onRemove(id); }} draggable={false} className="text-xs px-2 py-0.5 ml-auto text-red-600 hover:text-red-800 opacity-0 group-hover:opacity-100">X</button>
+        <button type="button" onClick={(e) => { e.stopPropagation(); onRemove(id); }} draggable={false} className="text-xs px-2 py-0.5 text-red-600 hover:text-red-800 opacity-0 group-hover:opacity-100">X</button>
       )}
     </div>
   );

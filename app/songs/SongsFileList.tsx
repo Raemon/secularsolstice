@@ -299,7 +299,7 @@ const SongsFileList = ({ initialVersionId }: SongsFileListProps = {}) => {
           </div>
         ) : (
           <div className={`flex-1 w-full max-w-[650px] ${isCreatingVersion ? 'opacity-50 pointer-events-none' : ''} ${selectedVersion ? 'hidden xl:block' : ''}`}>
-            <div className="flex gap-2 items-center mb-3">
+            <div className="flex gap-2 items-center mb-4">
               <SearchInput
                 ref={searchInputRef}
                 searchTerm={searchTerm}
@@ -332,12 +332,12 @@ const SongsFileList = ({ initialVersionId }: SongsFileListProps = {}) => {
                 onError={setListError}
               />
               <DownloadAllSongsButton />
-              <button
+              {selectedVersion && <button
                 onClick={() => setIsListCollapsed(true)}
                 className="text-xl px-2 py-1 text-gray-400 whitespace-nowrap"
               >
                 «
-              </button>
+              </button>}
             </div>
             
             {filteredSongs.map((song) => (

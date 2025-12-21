@@ -21,7 +21,7 @@ const VersionRow = ({version, isSelected, onClick}: {
   return (
     <div 
       onClick={onClick}
-      className={`flex items-center gap-3 px-2 py-1 cursor-pointer ${isSelected ? 'text-primary' : 'hover:bg-black/50'}`}
+      className={`flex items-center gap-3 px-2 py-[2px] cursor-pointer ${isSelected ? 'text-primary' : 'hover:bg-black/50'}`}
     >
       <span className={`flex-1 font-mono min-w-0 w-[100px] truncate ${isSelected ? 'font-medium' : ''}`} style={{fontSize: '12px'}}>
         <span className={`${isSelected ? 'text-primary' : 'text-gray-300'}`}>{version.label}</span>
@@ -72,7 +72,7 @@ const SongItem = ({song, selectedVersionId, selectedSongId, onSongClick, onVersi
           </button>
         )}
       </div>
-      <div className="border-b border-gray-500 w-1/3">
+      <div className="border-b py-1 border-gray-500 w-1/3 flex flex-col justify-center">
         {mostRecentVersions.length === 0 ? (
           <p className="px-2 py-1 text-xs text-gray-500">No versions stored yet.</p>
         ) : (

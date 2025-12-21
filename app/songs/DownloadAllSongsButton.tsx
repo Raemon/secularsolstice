@@ -3,6 +3,7 @@
 import JSZip from 'jszip';
 import { useCallback, useState } from 'react';
 import type { Song } from './types';
+import Tooltip from '../components/Tooltip';
 
 const sanitizeFileName = (name: string) => {
   const cleaned = name.replace(/[<>:"/\\|?*\x00-\x1F]/g, '_').trim();
@@ -82,22 +83,24 @@ const DownloadAllSongsButton = ({ className = '' }: DownloadAllSongsButtonProps)
   }, []);
 
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
-      <button
-        onClick={handleDownloadAllSongs}
-        disabled={downloading}
-        className={`text-xs px-2 py-1 border border-gray-600 rounded whitespace-nowrap ${
-          downloading ? 'opacity-50 cursor-not-allowed' : 'text-gray-200 hover:bg-gray-800'
-        }`}
-      >
-        {downloading ? 'Preparing…' : 'Download all'}
-      </button>
-      {downloadError && (
-        <div className="text-xs text-red-400">
-          {downloadError}
-        </div>
-      )}
-    </div>
+    <Tooltip content={"Download all songs"} placement="bottom">  
+      <div className={`flex items-center gap-2 ${className}`}>
+        <button
+          onClick={handleDownloadAllSongs}
+          disabled={downloading}
+          className={`text-xs px-2 py-1 border border-gray-600 rounded whitespace-nowrap ${
+            downloading ? 'opacity-50 cursor-not-allowed' : 'text-gray-200 hover:bg-gray-800'
+          }`}
+        >
+          {downloading ? 'Preparing…' : 'Download'}
+        </button>
+        {downloadError && (
+          <div className="text-xs text-red-400">
+            {downloadError}
+          </div>
+        )}
+      </div>
+    </Tooltip>
   );
 };
 
