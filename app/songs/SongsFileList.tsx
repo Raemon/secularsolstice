@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import SearchInput from './SearchInput';
 import SongItem from './SongItem';
 import VersionDetailPanel from './VersionDetailPanel';
+import VersionContent from './VersionContent';
 import CreateVersionForm from './CreateVersionForm';
 import SongInfoHeader from './SongInfoHeader';
 import type { Song, SongVersion } from './types';
@@ -14,6 +15,7 @@ import useVersionPanelManager from '../hooks/useVersionPanelManager';
 import useSongsProgressiveLoad from '../hooks/useSongsProgressiveLoad';
 import CreateSongButton from '../components/CreateSongButton';
 import DownloadAllSongsButton from './DownloadAllSongsButton';
+import VersionHeader from './VersionHeader';
 
 const getLatestVersion = (versions: SongVersion[]) => maxBy(versions, (version) => new Date(version.createdAt).getTime());
 
@@ -358,7 +360,7 @@ const SongsFileList = ({ initialVersionId }: SongsFileListProps = {}) => {
         })()}
         {selectedSongOnly && !selectedVersion && (() => {
           return (
-            <div className="flex-1">
+            <div className="flex-1 h-[calc(100vh-80px)] overflow-y-auto">
               <div className="pl-4 w-full lg:p-20 relative max-w-4xl mx-auto">
                 <SongInfoHeader
                   songId={selectedSongOnly.id}
@@ -367,6 +369,14 @@ const SongsFileList = ({ initialVersionId }: SongsFileListProps = {}) => {
                   onClose={handleCloseSongPanel}
                   onArchive={fetchSongs}
                 />
+              {selectedSongOnly.versions.map(version => (
+                <div key={version.id} className="mb-8 flex flex-col gap-2">
+                  <VersionHeader version={version} />
+                  <div className="border-b border-gray-500 pb-3">
+                    <VersionContent version={version} />
+                  </div>
+                </div>
+              ))}
               </div>
             </div>
           );
