@@ -25,6 +25,7 @@ export type SongVersion = {
   transpose: number | null;
   archived: boolean;
   createdAt: string;
+  dbCreatedAt: string;
   createdBy: string | null;
   slideCredits: string | null;
   programCredits: string | null;
@@ -41,11 +42,12 @@ export type Song = {
   tags: string[];
 };
 
-export const createFallbackSongVersion = (partial: Pick<SongVersion, 'id' | 'songId' | 'label' | 'createdAt'> & Partial<Pick<SongVersion, 'nextVersionId'>>): SongVersion => ({
+export const createFallbackSongVersion = (partial: Pick<SongVersion, 'id' | 'songId' | 'label' | 'createdAt'> & Partial<Pick<SongVersion, 'nextVersionId' | 'dbCreatedAt'>>): SongVersion => ({
   id: partial.id,
   songId: partial.songId,
   label: partial.label,
   createdAt: partial.createdAt,
+  dbCreatedAt: partial.dbCreatedAt ?? partial.createdAt,
   content: '',
   audioUrl: '',
   slidesMovieUrl: null,

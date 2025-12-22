@@ -199,7 +199,7 @@ export const importSongDirectory = async (
         if (file.isText) {
           const content = file.buffer.toString('utf-8');
           const created = await createVersionWithLineage({
-            songId: songId!, label, content, previousVersionId, createdBy: IMPORT_USER, createdAt,
+            songId: songId!, label, content, previousVersionId, createdBy: IMPORT_USER, createdAt, dbCreatedAt: new Date(),
           });
           const url = versionUrl(created.id);
           const result = { title: songTitle, label, status: 'created', url };
@@ -208,7 +208,7 @@ export const importSongDirectory = async (
         } else {
           const blobUrl = await uploadToBlob(file.buffer, songId!, sourceLabel);
           const created = await createVersionWithLineage({
-            songId: songId!, label, content: null, blobUrl, previousVersionId, createdBy: IMPORT_USER, createdAt,
+            songId: songId!, label, content: null, blobUrl, previousVersionId, createdBy: IMPORT_USER, createdAt, dbCreatedAt: new Date(),
           });
           const url = versionUrl(created.id);
           const result = { title: songTitle, label, status: 'created-binary', url };
@@ -297,7 +297,7 @@ const importTextFile = async (
     } else {
       const previousVersionId = await getLatestVersionId(songId!);
       const created = await createVersionWithLineage({
-        songId: songId!, label, content, previousVersionId, createdBy: IMPORT_USER, createdAt,
+        songId: songId!, label, content, previousVersionId, createdBy: IMPORT_USER, createdAt, dbCreatedAt: new Date(),
       });
       const url = versionUrl(created.id);
       const result = { title, label, status: 'created', url };
@@ -337,6 +337,7 @@ const findOrCreateEmptyVersion = async (title: string, dryRun: boolean): Promise
     content: `# ${title}\n\n(Placeholder - content not yet imported)`,
     previousVersionId: null,
     createdBy: IMPORT_USER,
+    dbCreatedAt: new Date(),
   });
   return created.id;
 };
