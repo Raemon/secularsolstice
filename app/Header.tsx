@@ -28,7 +28,7 @@ const Header = () => {
   return (
     <header className={headerClasses}>
       <h1 className={`font-georgia text-2xl text-nowrap mr-auto lg:mr-0 ${isScriptPage ? 'text-black' : ''}`}><Link href="/">Secular Solstice</Link></h1>
-      <nav className="flex gap-3 lg:gap-6 items-center w-full lg:w-auto justify-between lg:ml-auto lg:justify-start order-2 lg:order-1 lg:pr-8">
+      <nav className="flex gap-3 lg:gap-6 items-center w-full lg:w-auto justify-between lg:ml-auto lg:justify-start order-2 lg:order-1 px-1 lg:pr-8 mt-3 sm:mt-0">
         <Link href="/songs" className={`hover:underline text-sm ${isSongsPage ? activeTextClass : inactiveTextClass}`}>Songs/Speeches</Link>
         <Link href="/programs" className={`hover:underline text-sm ${isProgramsPage ? activeTextClass : inactiveTextClass}`}>Programs</Link>
         <Link href="/feedback" className={`hover:underline text-sm ${isFeedbackPage ? activeTextClass : inactiveTextClass}`}>Feedback</Link>

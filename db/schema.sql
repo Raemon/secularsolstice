@@ -96,6 +96,7 @@ create table if not exists users (
   performed_program_ids uuid[] not null default '{}'::uuid[],
   is_admin boolean not null default false,
   ever_set_username boolean not null default false,
+  password_hash text,
   constraint users_pkey PRIMARY KEY (id)
 );
 

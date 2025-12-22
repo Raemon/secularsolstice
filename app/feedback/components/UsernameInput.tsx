@@ -1,31 +1,39 @@
 'use client';
 
+import { useState } from 'react';
 import Tooltip from '@/app/components/Tooltip';
 import { useUser } from '../../contexts/UserContext';
+import SignInModal from './SignInModal';
 
 const UsernameInput = ({lightMode = false}: {lightMode?: boolean}) => {
-  const { userName, setUserName, user } = useUser();
-  console.log(user);
-  const containerClasses = lightMode
-    ? "flex items-center border border-gray-300 rounded-md pl-2 sm:py-1 mb-2 sm:mb-0"
-    : "flex items-center border border-gray-700 rounded-md pl-2 sm:py-1 mb-2 sm:mb-0";
-  const inputClasses = lightMode
-    ? "px- py-1 bg-white text-black w-[75px] sm:w-auto text-sm border-none radius-sm focus:outline-none"
-    : "px- py-1 bg-black w-[75px] sm:w-auto text-sm border-none radius-sm focus:outline-none";
+  const { userName, user, setUserFromAuth, logout } = useUser();
+  const [showModal, setShowModal] = useState(false);
+  const [modalMode, setModalMode] = useState<'login' | 'register'>('login');
+  const isGuest = !user || !user?.ever_set_username;
+  const outlineColor = lightMode ? 'outline-gray-300' : 'outline-gray-700';
+  const textColor = lightMode ? (isGuest ? 'text-gray-500' : 'text-gray-700') : 'text-gray-400';
+  const openModal = (mode: 'login' | 'register') => { setModalMode(mode); setShowModal(true); };
   return (
-    <Tooltip content={"Edit your username"} placement="bottom">  
-      <div className={containerClasses}>
-        <span className="mr-2 saturate-0" aria-label="user" role="img">👤</span>
-        <input
-            id="username-input"
-            type="text"
-            value={userName}
-            onChange={(e) => setUserName(e.target.value)}
-            placeholder="Enter your name"
-            className={inputClasses}
-          />
+    <div className="flex items-center gap-2">
+      <div className={`flex items-center gap-2 px-2 outline outline-1 ${outlineColor} rounded-md p-1`}>
+        {userName && <span className={`text-xs ${textColor}`}>{userName}</span>}
       </div>
-    </Tooltip>
+      {isGuest ? (
+        <>
+          <button onClick={() => openModal('login')} className="text-xs text-primary hover:bg-primary/25 whitespace-nowrap border border-primary rounded-md px-2 py-1">Sign In</button>
+          <button onClick={() => openModal('register')} className="text-xs text-green-500 hover:bg-green-500/25 whitespace-nowrap border border-green-500 rounded-md px-2 py-1">Create Account</button>
+        </>
+      ) : (
+        <Tooltip content="Logout" placement="bottom"><button onClick={logout} className="text-xs text-gray-200 hover:text-gray-300" title="Logout">⏻</button></Tooltip>
+      )}
+      <SignInModal
+        visible={showModal}
+        onClose={() => setShowModal(false)}
+        onSuccess={setUserFromAuth}
+        currentUserId={user?.id || null}
+        initialMode={modalMode}
+      />
+    </div>
   );
 };
 

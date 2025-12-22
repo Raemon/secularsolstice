@@ -1,21 +1,16 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-
-type User = {
-  id: string;
-  username: string | null;
-  created_at: string;
-  performed_program_ids: string[];
-  is_admin: boolean;
-  ever_set_username: boolean;
-};
+import { usePathname } from 'next/navigation';
+import { User } from '@/app/user/types';
+import { generateUsername } from '@/lib/usernameGenerator';
 
 type UserContextType = {
   user: User | null;
   userId: string | null;
   userName: string;
-  setUserName: (name: string) => void;
+  setUserFromAuth: (user: User) => void;
+  logout: () => void;
   canVoteAndComment: boolean;
   canEdit: boolean;
   isAdmin: boolean;
@@ -25,146 +20,97 @@ type UserContextType = {
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-const generateRandomName = (): string => {
-  const adjectives = ['Happy', 'Cool', 'Bright', 'Swift', 'Bold', 'Calm', 'Kind', 'Wise', 'Brave', 'Gentle'];
-  const nouns = ['Star', 'Wave', 'Cloud', 'River', 'Mountain', 'Forest', 'Ocean', 'Valley', 'Meadow', 'Creek'];
-  const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)];
-  const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
-  const randomNumber = Math.floor(Math.random() * 1000);
-  return `${randomAdjective}${randomNoun}${randomNumber}`;
-};
-
 export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [userName, setUserNameState] = useState('');
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
+  const pathname = usePathname();
 
+  // Initial user fetch - runs once on mount
   useEffect(() => {
-    const initializeUser = async () => {
+    const fetchExistingUser = async () => {
       try {
-        // Check for existing userId in localStorage
-        let userId = localStorage.getItem('userId');
-        
+        const userId = localStorage.getItem('userId');
         if (userId) {
-          // Try to fetch existing user
           const response = await fetch(`/api/users?userId=${userId}`);
           if (response.ok) {
             const userData = await response.json();
             setUser(userData);
             setUserNameState(userData.username || '');
-            setLoading(false);
-            return;
+          } else {
+            localStorage.removeItem('userId');
           }
-          // If user not found, clear invalid userId
-          localStorage.removeItem('userId');
         }
+      } catch (error) {
+        console.error('Error fetching user:', error);
+      } finally {
+        setLoading(false);
+        setInitialized(true);
+      }
+    };
+    fetchExistingUser();
+  }, []);
 
-        // Check if there's an existing username in localStorage (from old system)
+  // Auto-create guest user on /feedback page if no user exists
+  useEffect(() => {
+    if (!initialized || user || loading) return;
+    const isFeedbackPage = pathname?.startsWith('/feedback');
+    if (!isFeedbackPage) return;
+
+    const createGuestUser = async () => {
+      try {
         const existingUsername = localStorage.getItem('userName');
-
-        // Create a new guest user with existing username if available, or generate a random name
-        let usernameToUse = existingUsername || generateRandomName();
+        let usernameToUse = existingUsername || generateUsername();
         let response = await fetch('/api/users', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username: usernameToUse }),
         });
-
-        // If username already exists, generate a new one and retry
         if (response.status === 409) {
-          usernameToUse = generateRandomName();
+          usernameToUse = generateUsername();
           response = await fetch('/api/users', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username: usernameToUse }),
           });
         }
-
         if (response.ok) {
           const newUser = await response.json();
           setUser(newUser);
           localStorage.setItem('userId', newUser.id);
           setUserNameState(newUser.username || '');
-          // Update localStorage with the username (whether existing or generated)
           if (newUser.username) {
             localStorage.setItem('userName', newUser.username);
           }
         }
       } catch (error) {
-        console.error('Error initializing user:', error);
-      } finally {
-        setLoading(false);
+        console.error('Error creating guest user:', error);
       }
     };
-
-    initializeUser();
-  }, []);
-
-  const setUserName = async (name: string) => {
-    setUserNameState(name);
-    localStorage.setItem('userName', name);
-    
-    // If no user exists, create one
-    if (!user) {
-      try {
-        const trimmedName = name.trim();
-        let response = await fetch('/api/users', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: trimmedName || undefined }),
-        });
-
-        // If username already exists and user provided a name, generate a new one
-        if (response.status === 409 && trimmedName) {
-          response = await fetch('/api/users', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({}),
-          });
-        }
-
-        if (response.ok) {
-          const newUser = await response.json();
-          setUser(newUser);
-          localStorage.setItem('userId', newUser.id);
-          // Update the displayed username to match what was actually created
-          if (newUser.username) {
-            setUserNameState(newUser.username);
-            localStorage.setItem('userName', newUser.username);
-          }
-        }
-      } catch (error) {
-        console.error('Error creating user:', error);
-      }
-      return;
-    }
-    
-    // Update user in database
-    try {
-      const response = await fetch('/api/users', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id, username: name }),
-      });
-
-      if (response.ok) {
-        const updatedUser = await response.json();
-        setUser(updatedUser);
-      } else if (response.status === 409) {
-        // Username already exists, revert the local state
-        setUserNameState(user.username || '');
-        console.error('Username already exists');
-      }
-    } catch (error) {
-      console.error('Error updating username:', error);
-      // Revert the local state on error
-      setUserNameState(user.username || '');
-    }
-  };
+    createGuestUser();
+  }, [initialized, user, loading, pathname]);
 
   const canVoteAndComment = !!user;
   const canEdit = user?.ever_set_username ?? false;
   const isAdmin = user?.is_admin ?? false;
+
+  const setUserFromAuth = (newUser: User) => {
+    setUser(newUser);
+    setUserNameState(newUser.username || '');
+    localStorage.setItem('userId', newUser.id);
+    if (newUser.username) {
+      localStorage.setItem('userName', newUser.username);
+    }
+  };
+
+  const logout = () => {
+    localStorage.removeItem('userId');
+    localStorage.removeItem('userName');
+    setUser(null);
+    setUserNameState('');
+    window.location.reload();
+  };
 
   const togglePerformedProgram = async (programId: string) => {
     if (!user) return;
@@ -191,7 +137,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <UserContext.Provider value={{ user, userId: user?.id || null, userName, setUserName, canVoteAndComment, canEdit, isAdmin, loading, togglePerformedProgram }}>
+    <UserContext.Provider value={{ user, userId: user?.id || null, userName, setUserFromAuth, logout, canVoteAndComment, canEdit, isAdmin, loading, togglePerformedProgram }}>
       {children}
     </UserContext.Provider>
   );
