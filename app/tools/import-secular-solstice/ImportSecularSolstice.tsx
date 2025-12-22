@@ -6,9 +6,10 @@ import { detectFileType } from '@/lib/lyricsExtractor';
 import { runWithLimit } from '@/lib/asyncUtils';
 
 type ImportResult = { title: string; label: string; status: string; url?: string; error?: string };
-type ProgramImportResult = { title: string; status: string; url?: string; error?: string; elementCount?: number; missingElements?: string[] };
-type LiveItem = { type: 'song' | 'speech' | 'program'; title: string; label?: string; status: string; url?: string; elementCount?: number; missingElements?: string[] };
-type ImportResults = { speechResults: ImportResult[]; songResults: ImportResult[]; programResults: ProgramImportResult[] };
+type ProgramImportResult = { title: string; status: string; url?: string; error?: string; elementCount?: number; missingElements?: string[]; createdPlaceholders?: string[] };
+type ResyncResult = { title: string; status: string; url?: string; error?: string; addedElements?: number; createdPlaceholders?: string[] };
+type LiveItem = { type: 'song' | 'speech' | 'activity' | 'program' | 'resync'; title: string; label?: string; status: string; url?: string; elementCount?: number; missingElements?: string[]; addedElements?: number; createdPlaceholders?: string[] };
+type ImportResults = { speechResults: ImportResult[]; songResults: ImportResult[]; activityResults: ImportResult[]; programResults: ProgramImportResult[]; resyncResults: ResyncResult[] };
 
 const ImportSecularSolstice = () => {
   const { userId, isAdmin, loading: userLoading } = useUser();
@@ -54,10 +55,10 @@ const ImportSecularSolstice = () => {
           try {
             const parsed = JSON.parse(line);
             if (parsed.type === 'summary') {
-              setResult({ speechResults: parsed.speechResults, songResults: parsed.songResults, programResults: parsed.programResults });
+              setResult({ speechResults: parsed.speechResults, songResults: parsed.songResults, activityResults: parsed.activityResults, programResults: parsed.programResults, resyncResults: parsed.resyncResults });
               const durationMs = performance.now() - startedAt;
               setProgress(`${dryRun ? 'Dry run' : 'Import'} done in ${Math.round(durationMs)}ms`);
-            } else if (parsed.type === 'speech' || parsed.type === 'song' || parsed.type === 'program') {
+            } else if (parsed.type === 'speech' || parsed.type === 'song' || parsed.type === 'activity' || parsed.type === 'program' || parsed.type === 'resync') {
               count += 1;
               setLiveItems((prev) => [...prev, parsed]);
               setProgress(`Received ${count} items...`);
@@ -73,7 +74,7 @@ const ImportSecularSolstice = () => {
         try {
           const parsed = JSON.parse(pending);
           if (parsed.type === 'summary') {
-            setResult({ speechResults: parsed.speechResults, songResults: parsed.songResults, programResults: parsed.programResults });
+            setResult({ speechResults: parsed.speechResults, songResults: parsed.songResults, activityResults: parsed.activityResults, programResults: parsed.programResults, resyncResults: parsed.resyncResults });
           }
         } catch (_err) {
           setStatus('Failed to parse trailing stream data');
@@ -190,8 +191,9 @@ const ImportSecularSolstice = () => {
         <ul className="text-xs list-disc list-inside space-y-0.5">
           {liveItems.filter(r => r.status !== 'exists').map((r, index) => (
             <li key={`${r.title}-${r.label || ''}-${r.status}-${index}`}>
-              {r.type}: {r.title}{r.label ? ` / ${r.label}` : ''} - {r.status}{r.elementCount ? ` (${r.elementCount} elements)` : ''}{' '}
+              {r.type}: {r.title}{r.label ? ` / ${r.label}` : ''} - {r.status}{r.elementCount ? ` (${r.elementCount} elements)` : ''}{r.addedElements ? ` (+${r.addedElements} elements)` : ''}{' '}
               {r.missingElements && r.missingElements.length > 0 && <span className="text-yellow-500">[missing: {r.missingElements.join(', ')}]</span>}
+              {r.createdPlaceholders && r.createdPlaceholders.length > 0 && <span className="text-orange-400">[placeholders: {r.createdPlaceholders.join(', ')}]</span>}
               {r.url && (
                 <a className="underline text-blue-600" href={r.url} target="_blank" rel="noreferrer">open</a>
               )}
@@ -223,6 +225,17 @@ const ImportSecularSolstice = () => {
               ))}
             </ul>
           </>)}
+          {(result.activityResults?.filter(r => r.status !== 'exists').length ?? 0) > 0 && (<>
+            <div>Activities to import ({result.activityResults?.filter(r => r.status !== 'exists').length})</div>
+            <ul className="list-disc list-inside space-y-0.5">
+              {result.activityResults?.filter(r => r.status !== 'exists').map((r, index) => (
+                <li key={`${r.title}-${r.label}-${index}`}>
+                  {r.title} / {r.label} - {r.status}{' '}
+                  {r.url && (<a className="underline" href={r.url} target="_blank" rel="noreferrer">open</a>)}
+                </li>
+              ))}
+            </ul>
+          </>)}
           {(result.programResults?.filter(r => r.status !== 'exists').length ?? 0) > 0 && (<>
             <div>Programs to import ({result.programResults?.filter(r => r.status !== 'exists').length})</div>
             <ul className="list-disc list-inside space-y-0.5">
@@ -230,6 +243,19 @@ const ImportSecularSolstice = () => {
                 <li key={`${r.title}-${index}`}>
                   {r.title} - {r.status}{r.elementCount ? ` (${r.elementCount} elements)` : ''}{' '}
                   {r.missingElements && r.missingElements.length > 0 && <span className="text-yellow-500">[missing: {r.missingElements.join(', ')}]</span>}
+                  {r.createdPlaceholders && r.createdPlaceholders.length > 0 && <span className="text-orange-400">[placeholders: {r.createdPlaceholders.join(', ')}]</span>}
+                  {r.url && (<a className="underline text-blue-600" href={r.url} target="_blank" rel="noreferrer">open</a>)}
+                </li>
+              ))}
+            </ul>
+          </>)}
+          {(result.resyncResults?.length ?? 0) > 0 && (<>
+            <div>Programs resynced ({result.resyncResults?.length})</div>
+            <ul className="list-disc list-inside space-y-0.5">
+              {result.resyncResults?.map((r, index) => (
+                <li key={`resync-${r.title}-${index}`}>
+                  {r.title} - {r.status}{r.addedElements ? ` (+${r.addedElements} elements)` : ''}{' '}
+                  {r.createdPlaceholders && r.createdPlaceholders.length > 0 && <span className="text-orange-400">[placeholders: {r.createdPlaceholders.join(', ')}]</span>}
                   {r.url && (<a className="underline text-blue-600" href={r.url} target="_blank" rel="noreferrer">open</a>)}
                 </li>
               ))}
@@ -237,7 +263,9 @@ const ImportSecularSolstice = () => {
           </>)}
           {(result.speechResults?.filter(r => r.status !== 'exists').length ?? 0) === 0 &&
            (result.songResults?.filter(r => r.status !== 'exists').length ?? 0) === 0 &&
-           (result.programResults?.filter(r => r.status !== 'exists').length ?? 0) === 0 && (
+           (result.activityResults?.filter(r => r.status !== 'exists').length ?? 0) === 0 &&
+           (result.programResults?.filter(r => r.status !== 'exists').length ?? 0) === 0 &&
+           (result.resyncResults?.length ?? 0) === 0 && (
             <div>Nothing to import - all items already exist</div>
           )}
         </div>

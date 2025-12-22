@@ -225,9 +225,11 @@ export const importSongDirectory = async (
   return results;
 };
 
-export const importSpeechFile = async (
+// Generic text file import for speeches, activities, etc.
+const importTextFile = async (
   filePath: string,
   fileName: string,
+  tag: string,
   dryRun: boolean,
   onResult?: (result: ImportResult) => void
 ): Promise<ImportResult | null> => {
@@ -238,7 +240,7 @@ export const importSpeechFile = async (
   try {
     buffer = await fs.readFile(filePath);
   } catch (err) {
-    console.warn(`Failed to read speech file ${filePath}:`, err);
+    console.warn(`Failed to read ${tag} file ${filePath}:`, err);
     return null;
   }
 
@@ -255,7 +257,7 @@ export const importSpeechFile = async (
     const existingSong = await getSongByTitle(title);
     songId = existingSong ? existingSong.id : null;
   } else {
-    songId = await ensureSong(title, ['speech']);
+    songId = await ensureSong(title, [tag]);
   }
 
   const createdAt = await getFileCreatedAt(filePath);
@@ -309,9 +311,122 @@ export const importSpeechFile = async (
   }
 };
 
-export type ProgramImportResult = { title: string; status: string; url?: string; error?: string; elementCount?: number; missingElements?: string[] };
+export const importSpeechFile = (filePath: string, fileName: string, dryRun: boolean, onResult?: (result: ImportResult) => void) =>
+  importTextFile(filePath, fileName, 'speech', dryRun, onResult);
+
+export const importActivityFile = (filePath: string, fileName: string, dryRun: boolean, onResult?: (result: ImportResult) => void) =>
+  importTextFile(filePath, fileName, 'activity', dryRun, onResult);
+
+export type ProgramImportResult = { title: string; status: string; url?: string; error?: string; elementCount?: number; missingElements?: string[]; createdPlaceholders?: string[] };
 
 type ParsedProgramItem = { type: 'song' | 'section'; name: string };
+
+// Find or create a song with an empty version for a given title
+const findOrCreateEmptyVersion = async (title: string, dryRun: boolean): Promise<string | null> => {
+  // First try to find existing
+  const existing = await getLatestVersionBySongTitle(title);
+  if (existing) return existing.id;
+
+  if (dryRun) return null;
+
+  // Create song with empty version
+  const songId = await ensureSong(title, ['placeholder']);
+  const created = await createVersionWithLineage({
+    songId,
+    label: 'placeholder',
+    content: `# ${title}\n\n(Placeholder - content not yet imported)`,
+    previousVersionId: null,
+    createdBy: IMPORT_USER,
+  });
+  return created.id;
+};
+
+type ResolvedProgramItems = {
+  elementIds: string[];
+  programIds: string[];
+  missingElements: string[];
+  createdPlaceholders: string[];
+};
+
+// Shared logic for resolving parsed program items into element/program IDs
+// reuseSubprograms: if true, look for existing subprograms before creating new ones (used by resync)
+const resolveProgramItems = async (
+  items: ParsedProgramItem[],
+  dryRun: boolean,
+  reuseSubprograms: boolean
+): Promise<ResolvedProgramItems> => {
+  const elementIds: string[] = [];
+  const programIds: string[] = [];
+  const missingElements: string[] = [];
+  const createdPlaceholders: string[] = [];
+  let currentSectionItems: string[] = [];
+  let currentSectionName: string | null = null;
+
+  const flushSection = async () => {
+    if (currentSectionName && currentSectionItems.length > 0) {
+      if (reuseSubprograms) {
+        // Check for existing subprogram first
+        const existingSubProgram = await getProgramByTitle(currentSectionName);
+        if (existingSubProgram) {
+          if (!dryRun) {
+            await updateProgramElementIds(existingSubProgram.id, currentSectionItems, []);
+          }
+          programIds.push(existingSubProgram.id);
+        } else if (!dryRun) {
+          const subProgram = await createProgram(currentSectionName, IMPORT_USER, true);
+          await updateProgramElementIds(subProgram.id, currentSectionItems, []);
+          programIds.push(subProgram.id);
+        } else {
+          // dryRun + no existing subprogram: push placeholder for consistent counts
+          programIds.push(`subprogram:${currentSectionName}`);
+        }
+      } else {
+        // Create new subprogram (or placeholder in dryRun)
+        if (!dryRun) {
+          const subProgram = await createProgram(currentSectionName, IMPORT_USER, true);
+          await updateProgramElementIds(subProgram.id, currentSectionItems, []);
+          programIds.push(subProgram.id);
+        } else {
+          programIds.push(`subprogram:${currentSectionName}`);
+        }
+      }
+      currentSectionItems = [];
+    }
+    currentSectionName = null;
+  };
+
+  for (const item of items) {
+    if (item.type === 'section') {
+      await flushSection();
+      currentSectionName = item.name;
+    } else {
+      const version = await getLatestVersionBySongTitle(item.name);
+      if (version) {
+        if (currentSectionName) {
+          currentSectionItems.push(version.id);
+        } else {
+          elementIds.push(version.id);
+        }
+      } else {
+        // Create placeholder for missing item
+        const placeholderId = await findOrCreateEmptyVersion(item.name, dryRun);
+        if (placeholderId) {
+          if (currentSectionName) {
+            currentSectionItems.push(placeholderId);
+          } else {
+            elementIds.push(placeholderId);
+          }
+          createdPlaceholders.push(item.name);
+        } else {
+          missingElements.push(item.name);
+        }
+      }
+    }
+  }
+  await flushSection();
+
+  return { elementIds, programIds, missingElements, createdPlaceholders };
+};
 
 const parseProgramFile = (content: string): { title: string | null; items: ParsedProgramItem[] } => {
   const lines = content.split('\n');
@@ -373,46 +488,7 @@ export const importProgramFile = async (
     return result;
   }
 
-  // Resolve song references to version IDs
-  const elementIds: string[] = [];
-  const programIds: string[] = [];
-  const missingElements: string[] = [];
-  let currentSectionItems: string[] = [];
-  let currentSectionName: string | null = null;
-
-  const flushSection = async () => {
-    if (currentSectionName && currentSectionItems.length > 0) {
-      // Create subprogram for section
-      if (!dryRun) {
-        const subProgram = await createProgram(currentSectionName, IMPORT_USER, true);
-        await updateProgramElementIds(subProgram.id, currentSectionItems, []);
-        programIds.push(subProgram.id);
-      } else {
-        programIds.push(`subprogram:${currentSectionName}`);
-      }
-      currentSectionItems = [];
-    }
-    currentSectionName = null;
-  };
-
-  for (const item of parsed.items) {
-    if (item.type === 'section') {
-      await flushSection();
-      currentSectionName = item.name;
-    } else {
-      const version = await getLatestVersionBySongTitle(item.name);
-      if (version) {
-        if (currentSectionName) {
-          currentSectionItems.push(version.id);
-        } else {
-          elementIds.push(version.id);
-        }
-      } else {
-        missingElements.push(item.name);
-      }
-    }
-  }
-  await flushSection();
+  const { elementIds, programIds, missingElements, createdPlaceholders } = await resolveProgramItems(parsed.items, dryRun, false);
 
   try {
     if (dryRun) {
@@ -421,6 +497,7 @@ export const importProgramFile = async (
         status: 'would-create',
         elementCount: elementIds.length + programIds.length,
         missingElements: missingElements.length > 0 ? missingElements : undefined,
+        createdPlaceholders: createdPlaceholders.length > 0 ? createdPlaceholders : undefined,
       };
       onResult?.(result);
       return result;
@@ -435,6 +512,7 @@ export const importProgramFile = async (
       url,
       elementCount: elementIds.length + programIds.length,
       missingElements: missingElements.length > 0 ? missingElements : undefined,
+      createdPlaceholders: createdPlaceholders.length > 0 ? createdPlaceholders : undefined,
     };
     onResult?.(result);
     return result;
@@ -445,17 +523,108 @@ export const importProgramFile = async (
   }
 };
 
+export type ProgramResyncResult = { title: string; status: string; url?: string; error?: string; addedElements?: number; createdPlaceholders?: string[] };
+
+// Resync existing programs from .list files to pick up newly-imported songs.
+// WARNING: This replaces the program's element list with the one from the .list file,
+// overwriting any manual changes made through the app UI.
+export const resyncProgramsFromFiles = async (
+  programsDirs: string[],
+  dryRun: boolean,
+  onResult?: (result: ProgramResyncResult) => void
+): Promise<ProgramResyncResult[]> => {
+  const results: ProgramResyncResult[] = [];
+
+  for (const programsDir of programsDirs) {
+    let entries;
+    try {
+      entries = await fs.readdir(programsDir, { withFileTypes: true });
+    } catch (err) {
+      console.warn(`Failed to read programs directory ${programsDir}:`, err);
+      continue;
+    }
+
+    for (const entry of entries.filter(e => e.isFile())) {
+      const ext = path.extname(entry.name).toLowerCase();
+      if (ext !== '.list' && ext !== '.lst') continue;
+
+      let buffer;
+      try {
+        buffer = await fs.readFile(path.join(programsDir, entry.name));
+      } catch (err) {
+        continue;
+      }
+
+      const content = buffer.toString('utf-8').trim();
+      if (!content) continue;
+
+      const parsed = parseProgramFile(content);
+      const programTitle = parsed.title || normalizeTitle(path.basename(entry.name, ext));
+
+      // Check if program exists
+      const existingProgram = await getProgramByTitle(programTitle);
+      if (!existingProgram) continue; // Only resync existing programs
+
+      // Rebuild the full element list from the .list file using shared helper
+      // reuseSubprograms=true so we update existing subprograms rather than creating new ones
+      const { elementIds, programIds, createdPlaceholders } = await resolveProgramItems(parsed.items, dryRun, true);
+
+      // Check if anything changed
+      const oldElementCount = existingProgram.elementIds.length + existingProgram.programIds.length;
+      const newElementCount = elementIds.length + programIds.length;
+      const addedElements = newElementCount - oldElementCount;
+
+      if (addedElements === 0 && createdPlaceholders.length === 0) {
+        continue; // Nothing to update
+      }
+
+      try {
+        if (dryRun) {
+          const result: ProgramResyncResult = {
+            title: programTitle,
+            status: 'would-resync',
+            url: `/programs/${existingProgram.id}`,
+            addedElements,
+            createdPlaceholders: createdPlaceholders.length > 0 ? createdPlaceholders : undefined,
+          };
+          results.push(result);
+          onResult?.(result);
+        } else {
+          await updateProgramElementIds(existingProgram.id, elementIds, programIds);
+          const result: ProgramResyncResult = {
+            title: programTitle,
+            status: 'resynced',
+            url: `/programs/${existingProgram.id}`,
+            addedElements,
+            createdPlaceholders: createdPlaceholders.length > 0 ? createdPlaceholders : undefined,
+          };
+          results.push(result);
+          onResult?.(result);
+        }
+      } catch (error) {
+        const result: ProgramResyncResult = { title: programTitle, status: 'failed', error: error instanceof Error ? error.message : 'unknown error' };
+        results.push(result);
+        onResult?.(result);
+      }
+    }
+  }
+
+  return results;
+};
+
 export const importFromDirectories = async (
   config: {
     songsDirs: { path: string; tags: string[] }[];
     speechesDirs: string[];
+    activitiesDirs?: string[];
     programsDirs?: string[];
   },
   dryRun: boolean,
-  onResult?: (type: 'song' | 'speech' | 'program', result: ImportResult | ProgramImportResult) => void
-): Promise<{ songResults: ImportResult[]; speechResults: ImportResult[]; programResults: ProgramImportResult[] }> => {
+  onResult?: (type: 'song' | 'speech' | 'activity' | 'program' | 'resync', result: ImportResult | ProgramImportResult | ProgramResyncResult) => void
+): Promise<{ songResults: ImportResult[]; speechResults: ImportResult[]; programResults: ProgramImportResult[]; activityResults: ImportResult[]; resyncResults: ProgramResyncResult[] }> => {
   const songResults: ImportResult[] = [];
   const speechResults: ImportResult[] = [];
+  const activityResults: ImportResult[] = [];
   const programResults: ProgramImportResult[] = [];
 
   // Import speeches
@@ -476,6 +645,27 @@ export const importFromDirectories = async (
         (r) => onResult?.('speech', r)
       );
       if (result) speechResults.push(result);
+    });
+  }
+
+  // Import activities
+  for (const activitiesDir of config.activitiesDirs ?? []) {
+    let entries;
+    try {
+      entries = await fs.readdir(activitiesDir, { withFileTypes: true });
+    } catch (err) {
+      console.warn(`Failed to read activities directory ${activitiesDir}:`, err);
+      continue;
+    }
+
+    await runWithLimit(entries.filter(e => e.isFile()), 8, async (entry) => {
+      const result = await importActivityFile(
+        path.join(activitiesDir, entry.name),
+        entry.name,
+        dryRun,
+        (r) => onResult?.('activity', r)
+      );
+      if (result) activityResults.push(result);
     });
   }
 
@@ -523,5 +713,12 @@ export const importFromDirectories = async (
     }
   }
 
-  return { songResults, speechResults, programResults };
+  // Resync existing programs to pick up newly-available items
+  const resyncResults = await resyncProgramsFromFiles(
+    config.programsDirs ?? [],
+    dryRun,
+    (r) => onResult?.('resync', r)
+  );
+
+  return { songResults, speechResults, activityResults, programResults, resyncResults };
 };

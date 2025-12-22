@@ -14,23 +14,25 @@ const run = async () => {
       { path: path.join(SECULAR_ROOT, 'songs'), tags: ['song', 'secular-solstice'] },
     ],
     speechesDirs: [path.join(SECULAR_ROOT, 'speeches')],
+    activitiesDirs: [path.join(SECULAR_ROOT, 'activities')],
     programsDirs: [path.join(SECULAR_ROOT, 'lists')],
   };
 
   console.log('Starting import...');
   console.log('Songs directories:', config.songsDirs.map(d => d.path));
   console.log('Speeches directories:', config.speechesDirs);
+  console.log('Activities directories:', config.activitiesDirs);
   console.log('Programs directories:', config.programsDirs);
 
-  const { songResults, speechResults, programResults } = await importFromDirectories(
+  const { songResults, speechResults, activityResults, programResults, resyncResults } = await importFromDirectories(
     config,
     false, // not a dry run
     (type, result) => {
-      const statusIcon = result.status === 'created' || result.status === 'created-binary' ? '✓'
+      const statusIcon = result.status === 'created' || result.status === 'created-binary' || result.status === 'resynced' ? '✓'
         : result.status === 'exists' ? '='
         : result.status === 'failed' ? '✗'
         : '?';
-      if (type === 'program') {
+      if (type === 'program' || type === 'resync') {
         const pr = result as ProgramImportResult;
         const extra = pr.missingElements?.length ? ` (missing: ${pr.missingElements.join(', ')})` : '';
         console.log(`  ${statusIcon} [${type}] ${pr.title} - ${pr.status}${pr.elementCount ? ` (${pr.elementCount} elements)` : ''}${extra}${pr.error ? ` (${pr.error})` : ''}`);
@@ -49,10 +51,17 @@ const run = async () => {
   console.log(`  Created: ${speechResults.filter(r => r.status === 'created').length}`);
   console.log(`  Existed: ${speechResults.filter(r => r.status === 'exists').length}`);
   console.log(`  Failed: ${speechResults.filter(r => r.status === 'failed').length}`);
+  console.log(`Activities: ${activityResults.length} files processed`);
+  console.log(`  Created: ${activityResults.filter(r => r.status === 'created').length}`);
+  console.log(`  Existed: ${activityResults.filter(r => r.status === 'exists').length}`);
+  console.log(`  Failed: ${activityResults.filter(r => r.status === 'failed').length}`);
   console.log(`Programs: ${programResults.length} files processed`);
   console.log(`  Created: ${programResults.filter(r => r.status === 'created').length}`);
   console.log(`  Existed: ${programResults.filter(r => r.status === 'exists').length}`);
   console.log(`  Failed: ${programResults.filter(r => r.status === 'failed').length}`);
+  console.log(`Resynced: ${resyncResults.length} programs`);
+  console.log(`  Resynced: ${resyncResults.filter(r => r.status === 'resynced').length}`);
+  console.log(`  Failed: ${resyncResults.filter(r => r.status === 'failed').length}`);
 };
 
 run().catch((error) => {
