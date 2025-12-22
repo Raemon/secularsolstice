@@ -271,7 +271,7 @@ const SongsFileList = ({ initialVersionId }: SongsFileListProps = {}) => {
             </div>
           </div>
         ) : (
-          <div className={`flex-1 w-full max-w-[650px] ${isCreatingVersion ? 'opacity-50 pointer-events-none' : ''} ${selectedVersion ? 'hidden xl:block' : ''}`}>
+          <div className={`flex-1 w-full max-w-[650px] ${isCreatingVersion ? 'opacity-50 pointer-events-none' : ''} ${(selectedVersion ||selectedSongOnly) ? 'hidden xl:block' : ''}`}>
             <div className="flex gap-2 items-center mb-4">
               <SearchInput
                 ref={searchInputRef}
@@ -359,7 +359,7 @@ const SongsFileList = ({ initialVersionId }: SongsFileListProps = {}) => {
         {selectedSongOnly && !selectedVersion && (() => {
           return (
             <div className="flex-1">
-              <div className="border-l border-gray-200 pl-4 w-full lg:p-20 relative max-w-4xl mx-auto">
+              <div className="pl-4 w-full lg:p-20 relative max-w-4xl mx-auto">
                 <SongInfoHeader
                   songId={selectedSongOnly.id}
                   title={selectedSongOnly.title}
