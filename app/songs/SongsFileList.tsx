@@ -53,8 +53,8 @@ const SongsFileList = ({ initialVersionId }: SongsFileListProps = {}) => {
       return true;
     }
     return song.versions.some(version =>
-      version.label.toLowerCase().includes(searchLower) ||
-      (version.content && version.content.toLowerCase().includes(searchLower))
+      version.label.toLowerCase().includes(searchLower) 
+      // || (version.content && version.content.toLowerCase().includes(searchLower))
     );
   }).sort((a, b) => {
     if (sortOption === 'alphabetical') {
