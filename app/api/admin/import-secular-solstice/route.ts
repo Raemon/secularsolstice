@@ -3,7 +3,6 @@ import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/adminAuth';
 import { importFromDirectories } from '@/lib/importUtils';
 
-const SECULAR_ROOT = path.join(process.cwd(), 'SecularSolstice.github.io-master');
 const SONGS_DIR = path.join(process.cwd(), 'songs');
 
 export async function POST(request: Request) {
@@ -15,13 +14,10 @@ export async function POST(request: Request) {
     const stream = url.searchParams.get('stream') === 'true';
 
     const config = {
-      songsDirs: [
-        { path: SONGS_DIR, tags: ['song'] },
-        { path: path.join(SECULAR_ROOT, 'songs'), tags: ['song', 'secular-solstice'] },
-      ],
-      speechesDirs: [path.join(SECULAR_ROOT, 'speeches')],
-      activitiesDirs: [path.join(SECULAR_ROOT, 'activities')],
-      programsDirs: [path.join(SECULAR_ROOT, 'lists')],
+      songsDirs: [{ path: SONGS_DIR, tags: ['song'] }],
+      speechesDirs: [],
+      activitiesDirs: [],
+      programsDirs: [],
     };
 
     if (stream) {

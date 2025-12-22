@@ -5,24 +5,17 @@ import { importFromDirectories, ProgramImportResult } from '../lib/importUtils';
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 const SONGS_DIR = path.join(process.cwd(), 'songs');
-const SECULAR_ROOT = path.join(process.cwd(), 'SecularSolstice.github.io-master');
 
 const run = async () => {
   const config = {
-    songsDirs: [
-      { path: SONGS_DIR, tags: ['song'] },
-      { path: path.join(SECULAR_ROOT, 'songs'), tags: ['song', 'secular-solstice'] },
-    ],
-    speechesDirs: [path.join(SECULAR_ROOT, 'speeches')],
-    activitiesDirs: [path.join(SECULAR_ROOT, 'activities')],
-    programsDirs: [path.join(SECULAR_ROOT, 'lists')],
+    songsDirs: [{ path: SONGS_DIR, tags: ['song'] }],
+    speechesDirs: [],
+    activitiesDirs: [],
+    programsDirs: [],
   };
 
   console.log('Starting import...');
-  console.log('Songs directories:', config.songsDirs.map(d => d.path));
-  console.log('Speeches directories:', config.speechesDirs);
-  console.log('Activities directories:', config.activitiesDirs);
-  console.log('Programs directories:', config.programsDirs);
+  console.log('Songs directory:', SONGS_DIR);
 
   const { songResults, speechResults, activityResults, programResults, resyncResults } = await importFromDirectories(
     config,
