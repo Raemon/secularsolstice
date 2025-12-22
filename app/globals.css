@@ -67,7 +67,8 @@ body {
 
 .markdown-content {
   line-height: 1.5;
-  font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', 'Consolas', 'Courier New', monospace;
+  font-family: var(--font-eb-garamond), 'Georgia', serif;
+  font-size: 16px;
 }
 
 .markdown-content h1,
@@ -90,8 +91,8 @@ body {
 .markdown-content h6 { font-size: 0.95em; }
 
 .markdown-content p {
-  margin-top: 0.5em;
-  margin-bottom: 0.5em;
+  margin-top: 0.75em;
+  margin-bottom: 0.75em;
 }
 
 .markdown-content ul,
