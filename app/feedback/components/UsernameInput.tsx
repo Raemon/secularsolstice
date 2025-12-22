@@ -15,9 +15,9 @@ const UsernameInput = ({lightMode = false}: {lightMode?: boolean}) => {
   const openModal = (mode: 'login' | 'register') => { setModalMode(mode); setShowModal(true); };
   return (
     <div className="flex items-center gap-2">
-      <div className={`flex items-center gap-2 px-2 outline outline-1 ${outlineColor} rounded-md p-1`}>
-        {userName && <span className={`text-xs ${textColor}`}>{userName}</span>}
-      </div>
+      {userName && <div className={`flex items-center gap-2 px-2 outline outline-1 ${outlineColor} rounded-md p-1`}>
+        <span className={`text-xs ${textColor}`}>{userName}</span>
+      </div>}
       {isGuest ? (
         <>
           <button onClick={() => openModal('login')} className="text-xs text-primary hover:bg-primary/25 whitespace-nowrap border border-primary rounded-md px-2 py-1">Sign In</button>
