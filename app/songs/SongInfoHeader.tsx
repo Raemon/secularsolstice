@@ -35,10 +35,10 @@ const SongInfoHeader = ({songId, title, tags = [], onClose, disableClose = false
   };
   return (
     <>
-      <h2 className="font-georgia -ml-8 text-4xl mb-2 flex items-center gap-3 text-balance">
+      <h2 className="font-georgia sm:-ml-8 text-4xl my-8 sm:mt-0 flex items-center gap-3 text-balance">
         <button
           onClick={() => !disableClose && onClose()}
-          className="text-gray-400 hover:text-gray-400 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-gray-400"
+          className="hidden sm:block text-gray-400 hover:text-gray-400 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-gray-400"
           disabled={disableClose}
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">

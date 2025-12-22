@@ -89,7 +89,7 @@ const SongTitle = ({songId, title}: {songId?: string; title: string}) => {
         <button
           onClick={() => { setEditedTitle(displayTitle); setIsEditing(true); }}
           disabled={!canEdit}
-          className={`text-gray-400 hover:text-gray-600 ${!canEdit ? 'opacity-50 cursor-not-allowed' : ''}`}
+          className={`text-gray-400 py-4 hover:text-gray-600 ${!canEdit ? 'opacity-50 cursor-not-allowed' : ''}`}
           title={canEdit ? 'Edit title' : 'Set username to edit'}
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
