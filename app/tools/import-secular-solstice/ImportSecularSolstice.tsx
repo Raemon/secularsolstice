@@ -3,34 +3,23 @@
 import { useState } from 'react';
 import { useUser } from '../../contexts/UserContext';
 import { detectFileType } from '@/lib/lyricsExtractor';
+import { runWithLimit } from '@/lib/asyncUtils';
+
+type ImportResult = { title: string; label: string; status: string; url?: string; error?: string };
+type ProgramImportResult = { title: string; status: string; url?: string; error?: string; elementCount?: number; missingElements?: string[] };
+type LiveItem = { type: 'song' | 'speech' | 'program'; title: string; label?: string; status: string; url?: string; elementCount?: number; missingElements?: string[] };
+type ImportResults = { speechResults: ImportResult[]; songResults: ImportResult[]; programResults: ProgramImportResult[] };
 
 const ImportSecularSolstice = () => {
   const { userId, isAdmin, loading: userLoading } = useUser();
   const [isRunning, setIsRunning] = useState(false);
   const [status, setStatus] = useState('');
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<ImportResults | null>(null);
   const [progress, setProgress] = useState('');
-  const [liveItems, setLiveItems] = useState<any[]>([]);
+  const [liveItems, setLiveItems] = useState<LiveItem[]>([]);
   const [isRenderingLilypond, setIsRenderingLilypond] = useState(false);
   const [lilypondStatus, setLilypondStatus] = useState('');
   const [lilypondResults, setLilypondResults] = useState<any[]>([]);
-
-  const runWithLimit = async <T,>(items: T[], limit: number, worker: (item: T) => Promise<void>) => {
-    const executing: Promise<void>[] = [];
-    for (const item of items) {
-      const p = Promise.resolve().then(() => worker(item)).finally(() => {
-        const idx = executing.indexOf(p);
-        if (idx >= 0) {
-          executing.splice(idx, 1);
-        }
-      });
-      executing.push(p);
-      if (executing.length >= limit) {
-        await Promise.race(executing);
-      }
-    }
-    await Promise.all(executing);
-  };
 
   const runImport = async (dryRun: boolean) => {
     setIsRunning(true);
@@ -65,10 +54,10 @@ const ImportSecularSolstice = () => {
           try {
             const parsed = JSON.parse(line);
             if (parsed.type === 'summary') {
-              setResult({ speechResults: parsed.speechResults, songResults: parsed.songResults });
+              setResult({ speechResults: parsed.speechResults, songResults: parsed.songResults, programResults: parsed.programResults });
               const durationMs = performance.now() - startedAt;
               setProgress(`${dryRun ? 'Dry run' : 'Import'} done in ${Math.round(durationMs)}ms`);
-            } else if (parsed.type === 'speech' || parsed.type === 'song') {
+            } else if (parsed.type === 'speech' || parsed.type === 'song' || parsed.type === 'program') {
               count += 1;
               setLiveItems((prev) => [...prev, parsed]);
               setProgress(`Received ${count} items...`);
@@ -84,7 +73,7 @@ const ImportSecularSolstice = () => {
         try {
           const parsed = JSON.parse(pending);
           if (parsed.type === 'summary') {
-            setResult({ speechResults: parsed.speechResults, songResults: parsed.songResults });
+            setResult({ speechResults: parsed.speechResults, songResults: parsed.songResults, programResults: parsed.programResults });
           }
         } catch (_err) {
           setStatus('Failed to parse trailing stream data');
@@ -200,8 +189,9 @@ const ImportSecularSolstice = () => {
       {liveItems.length > 0 && (
         <ul className="text-xs list-disc list-inside space-y-0.5">
           {liveItems.map((r, index) => (
-            <li key={`${r.title}-${r.label}-${r.status}-${index}`}>
-              {r.type}: {r.title} / {r.label} - {r.status}{' '}
+            <li key={`${r.title}-${r.label || ''}-${r.status}-${index}`}>
+              {r.type}: {r.title}{r.label ? ` / ${r.label}` : ''} - {r.status}{r.elementCount ? ` (${r.elementCount} elements)` : ''}{' '}
+              {r.missingElements && r.missingElements.length > 0 && <span className="text-yellow-500">[missing: {r.missingElements.join(', ')}]</span>}
               {r.url && (
                 <a className="underline text-blue-600" href={r.url} target="_blank" rel="noreferrer">open</a>
               )}
@@ -213,7 +203,7 @@ const ImportSecularSolstice = () => {
         <div className="text-xs space-y-1">
           <div>Speech results ({result.speechResults?.length ?? 0})</div>
           <ul className="list-disc list-inside space-y-0.5">
-            {result.speechResults?.map((r: any, index: number) => (
+            {result.speechResults?.map((r, index) => (
               <li key={`${r.title}-${r.label}-${index}`}>
                 {r.title} / {r.label} - {r.status}{' '}
                 {r.url && (
@@ -224,11 +214,23 @@ const ImportSecularSolstice = () => {
           </ul>
           <div>Song results ({result.songResults?.length ?? 0})</div>
           <ul className="list-disc list-inside space-y-0.5">
-            {result.songResults?.map((r: any, index: number) => (
+            {result.songResults?.map((r, index) => (
               <li key={`${r.title}-${r.label}-${index}`}>
                 {r.title} / {r.label} - {r.status}{' '}
                 {r.url && (
                   <a className="underline" href={r.url} target="_blank" rel="noreferrer">open</a>
+                )}
+              </li>
+            ))}
+          </ul>
+          <div>Program results ({result.programResults?.length ?? 0})</div>
+          <ul className="list-disc list-inside space-y-0.5">
+            {result.programResults?.map((r, index) => (
+              <li key={`${r.title}-${index}`}>
+                {r.title} - {r.status}{r.elementCount ? ` (${r.elementCount} elements)` : ''}{' '}
+                {r.missingElements && r.missingElements.length > 0 && <span className="text-yellow-500">[missing: {r.missingElements.join(', ')}]</span>}
+                {r.url && (
+                  <a className="underline text-blue-600" href={r.url} target="_blank" rel="noreferrer">open</a>
                 )}
               </li>
             ))}

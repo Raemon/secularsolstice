@@ -20,6 +20,7 @@ export async function POST(request: Request) {
         { path: path.join(SECULAR_ROOT, 'songs'), tags: ['song', 'secular-solstice'] },
       ],
       speechesDirs: [path.join(SECULAR_ROOT, 'speeches')],
+      programsDirs: [path.join(SECULAR_ROOT, 'lists')],
     };
 
     if (stream) {
@@ -28,12 +29,12 @@ export async function POST(request: Request) {
         async start(controller) {
           const send = (data: unknown) => controller.enqueue(encoder.encode(JSON.stringify(data) + '\n'));
           try {
-            const { songResults, speechResults } = await importFromDirectories(
+            const { songResults, speechResults, programResults } = await importFromDirectories(
               config,
               dryRun,
               (type, result) => send({ type, ...result })
             );
-            send({ type: 'summary', speechResults, songResults });
+            send({ type: 'summary', speechResults, songResults, programResults });
           } catch (error) {
             send({ type: 'error', error: error instanceof Error ? error.message : 'Failed to import content' });
           } finally {
@@ -45,8 +46,8 @@ export async function POST(request: Request) {
       return new Response(streamBody, { headers: { 'Content-Type': 'application/x-ndjson' } });
     }
 
-    const { songResults, speechResults } = await importFromDirectories(config, dryRun);
-    return NextResponse.json({ speechResults, songResults });
+    const { songResults, speechResults, programResults } = await importFromDirectories(config, dryRun);
+    return NextResponse.json({ speechResults, songResults, programResults });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to import content';
     return NextResponse.json({ error: message }, { status: 500 });

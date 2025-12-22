@@ -488,7 +488,7 @@ export const findVersionBySongTitleAndLabel = async (songTitle: string, label: s
       v.blob_url as "blobUrl"
     from song_versions v
     join songs s on s.id = v.song_id
-    where s.title = ${songTitle} and v.label = ${label} and v.archived = false and s.archived = false
+    where LOWER(s.title) = LOWER(${songTitle}) and v.label = ${label} and v.archived = false and s.archived = false
     order by v.created_at desc
     limit 1
   `;
@@ -774,6 +774,39 @@ export const listAllVersionsWithSongTitles = async () => {
     order by s.title asc, v.label asc
   `;
   return rows as { id: string; songId: string; label: string; songTitle: string; createdAt: string; nextVersionId: string | null; programCredits: string | null; slideMovieStart: number | null; tags: string[]; }[];
+};
+
+export const getLatestVersionBySongTitle = async (songTitle: string): Promise<SongVersionRecord | null> => {
+  const rows = await sql`
+    select
+      v.id as "id",
+      v.song_id as "songId",
+      v.label,
+      v.content,
+      v.audio_url as "audioUrl",
+      v.slides_movie_url as "slidesMovieUrl",
+      v.slide_movie_start as "slideMovieStart",
+      v.bpm,
+      v.transpose,
+      v.previous_version_id as "previousVersionId",
+      v.next_version_id as "nextVersionId",
+      v.original_version_id as "originalVersionId",
+      v.rendered_content as "renderedContent",
+      v.archived as "archived",
+      v.created_by as "createdBy",
+      v.created_at as "createdAt",
+      s.title as "songTitle",
+      v.slide_credits as "slideCredits",
+      v.program_credits as "programCredits",
+      v.blob_url as "blobUrl"
+    from song_versions v
+    join songs s on v.song_id = s.id
+    where LOWER(s.title) = LOWER(${songTitle}) and v.archived = false and s.archived = false and v.next_version_id is null
+    order by v.created_at desc
+    limit 1
+  `;
+  const typedRows = rows as SongVersionResult[];
+  return typedRows.length > 0 ? typedRows[0] : null;
 };
 
 export const updateSongTags = async (songId: string, tags: string[]): Promise<SongRecord> => {

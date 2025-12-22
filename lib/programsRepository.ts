@@ -74,6 +74,20 @@ export const getProgramById = async (programId: string): Promise<ProgramRecord |
   return mapProgramRow(typedRows[0]);
 };
 
+export const getProgramByTitle = async (title: string): Promise<ProgramRecord | null> => {
+  const rows = await sql`
+    select id, title, element_ids, program_ids, created_by, created_at, archived, is_subprogram, video_url, print_program_foreword, print_program_epitaph
+    from programs
+    where LOWER(title) = LOWER(${title}) and archived = false
+    limit 1
+  `;
+  const typedRows = rows as ProgramRow[];
+  if (typedRows.length === 0) {
+    return null;
+  }
+  return mapProgramRow(typedRows[0]);
+};
+
 export const updateProgramElementIds = async (programId: string, elementIds: string[], programIds: string[]): Promise<ProgramRecord> => {
   const rows = await sql`
     update programs
