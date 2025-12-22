@@ -16,6 +16,25 @@ type ChangelogVersion = {
   createdAt: string;
 };
 
+const getChangedText = (current: string | null, previous: string | null): { added: string, removed: string } => {
+  const currentStr = current || '';
+  const previousStr = previous || '';
+  if (currentStr === previousStr) return { added: '', removed: '' };
+  if (!previousStr) return { added: currentStr.slice(0, 60), removed: '' };
+  if (!currentStr) return { added: '', removed: previousStr.slice(0, 60) };
+  // Find common prefix
+  let prefixLen = 0;
+  while (prefixLen < currentStr.length && prefixLen < previousStr.length && currentStr[prefixLen] === previousStr[prefixLen]) prefixLen++;
+  // Find common suffix (don't overlap with prefix)
+  let suffixLen = 0;
+  while (suffixLen < currentStr.length - prefixLen && suffixLen < previousStr.length - prefixLen &&
+         currentStr[currentStr.length - 1 - suffixLen] === previousStr[previousStr.length - 1 - suffixLen]) suffixLen++;
+  return {
+    added: currentStr.slice(prefixLen, currentStr.length - suffixLen).slice(0, 40),
+    removed: previousStr.slice(prefixLen, previousStr.length - suffixLen).slice(0, 40)
+  };
+};
+
 const calculateDiff = (content: string | null, previousContent: string | null) => {
   const currentLength = content?.length ?? 0;
   const previousLength = previousContent?.length ?? 0;
@@ -61,7 +80,7 @@ const ChangelogPage = ({songId, filename, compact = false}: {songId?: string; fi
       <div className="space-y-1 max-w-full overflow-x-auto">
         {versions.map((version) => {
           const { added, removed } = calculateDiff(version.content, version.previousContent);
-          const changedText = version.content !== version.previousContent ? (version.content || '').slice(0, 80) : '';
+          const changedParts = getChangedText(version.content, version.previousContent);
           return (
             <div key={version.id} className={`flex items-center gap-2 ${compact ? 'py-0.5 text-xs' : 'py-1 text-sm gap-4'} font-mono min-w-0`}>
               <span className={`${compact ? 'w-10' : 'w-16 shrink-0'} text-right`}>
@@ -71,11 +90,11 @@ const ChangelogPage = ({songId, filename, compact = false}: {songId?: string; fi
                 {added === 0 && removed === 0 && version.previousContent !== null && <span className="text-gray-500">±0</span>}
               </span>
               <span className={`text-gray-600 w-6 text-right shrink-0 text-[11px] ${compact ? 'hidden sm:inline' : ''}`}>{formatRelativeTimestamp(version.createdAt)}</span>
-              <span className={`text-gray-500 truncate ${compact ? 'hidden sm:inline' : ''}`}>{version.createdBy || 'anonymous'}</span>
+              {version.createdBy ? <Link href={`/users/${version.createdBy}`} className={`text-gray-500 hover:text-gray-300 ${compact ? 'hidden sm:inline' : ''}`}>{version.createdBy}</Link> : <span className={`text-gray-500 ${compact ? 'hidden sm:inline' : ''}`}>anonymous</span>}
               <Link href={`/songs/${version.id}`} className="text-gray-200 hover:underline truncate min-w-0">
                 {compact ? version.label : `${version.songTitle} / ${version.label}`}
               </Link>
-              {!compact && changedText && <span className={`truncate ${removed > added ? 'text-red-500' : 'text-green-500'}`}>{changedText}</span>}
+              {!compact && (changedParts.removed || changedParts.added) && <span className="truncate">{changedParts.removed && <span className="text-red-500">{changedParts.removed}</span>}{changedParts.added && <span className="text-green-500">{changedParts.added}</span>}</span>}
               {version.previousVersionId && <Link href={`/changelog/${version.previousVersionId}/${version.id}`} className={`text-gray-400 hover:text-gray-200 text-xs shrink-0 ${compact ? 'hidden sm:inline' : ''}`}>diff</Link>}
             </div>
           );

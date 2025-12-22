@@ -38,6 +38,7 @@ export type SongVersionRecord = {
   archived: boolean;
   createdBy: string | null;
   createdAt: string;
+  dbCreatedAt: string;
   songTitle?: string;
   slideCredits: string | null;
   programCredits: string | null;
@@ -68,6 +69,7 @@ type SongVersionQueryRow = {
   archived: boolean | null;
   version_created_by: string | null;
   version_created_at: string | null;
+  version_db_created_at: string | null;
   slides_movie_url: string | null;
   slide_movie_start: number | null;
   slide_credits: string | null;
@@ -101,6 +103,7 @@ type SongVersionResult = {
   archived: boolean;
   createdBy: string | null;
   createdAt: string;
+  dbCreatedAt: string;
   songTitle?: string;
   slideCredits: string | null;
   programCredits: string | null;
@@ -131,6 +134,7 @@ const mapVersionRow = (row: SongVersionQueryRow): SongVersionRecord => ({
   archived: Boolean(row.archived),
   createdBy: row.version_created_by,
   createdAt: row.version_created_at as string,
+  dbCreatedAt: row.version_db_created_at as string,
   slidesMovieUrl: row.slides_movie_url,
   slideMovieStart: row.slide_movie_start,
   slideCredits: row.slide_credits,
@@ -164,6 +168,7 @@ export const listSongsWithVersions = async (): Promise<SongWithVersions[]> => {
       v.archived,
       v.created_by as version_created_by,
       v.created_at as version_created_at,
+      v.db_created_at as version_db_created_at,
       v.slide_credits,
       v.program_credits,
       v.blob_url
@@ -238,6 +243,7 @@ export const listSongsWithVersionsPaginated = async (options: { limit?: number; 
             v.archived,
             v.created_by as version_created_by,
             v.created_at as version_created_at,
+            v.db_created_at as version_db_created_at,
             v.slide_credits,
             v.program_credits,
             v.blob_url
@@ -284,6 +290,7 @@ export const listSongsWithVersionsPaginated = async (options: { limit?: number; 
             v.archived,
             v.created_by as version_created_by,
             v.created_at as version_created_at,
+            v.db_created_at as version_db_created_at,
             v.slide_credits,
             v.program_credits,
             v.blob_url
@@ -329,6 +336,7 @@ export const listSongsWithVersionsPaginated = async (options: { limit?: number; 
           v.archived,
           v.created_by as version_created_by,
           v.created_at as version_created_at,
+          v.db_created_at as version_db_created_at,
           v.slide_credits,
           v.program_credits,
           v.blob_url
@@ -371,6 +379,7 @@ export const listSongsWithAllVersions = async (): Promise<SongWithVersions[]> =>
       v.archived,
       v.created_by as version_created_by,
       v.created_at as version_created_at,
+      v.db_created_at as version_db_created_at,
       v.slide_credits,
       v.program_credits,
       v.blob_url
@@ -414,6 +423,7 @@ export const getSongWithVersions = async (songId: string): Promise<SongWithVersi
       v.archived,
       v.created_by as version_created_by,
       v.created_at as version_created_at,
+      v.db_created_at as version_db_created_at,
       v.slide_credits,
       v.program_credits,
       v.blob_url
@@ -446,20 +456,23 @@ export const createSong = async (title: string, createdBy?: string | null, tags:
   return (rows as SongRowResult[])[0];
 };
 
-export const createVersion = async (params: { songId: string; label: string; content: string | null; audioUrl?: string | null; slidesMovieUrl?: string | null; slideMovieStart?: number | null; bpm?: number | null; transpose?: number | null; previousVersionId?: string | null; nextVersionId?: string | null; originalVersionId?: string | null; createdBy?: string | null; slideCredits?: string | null; programCredits?: string | null; blobUrl?: string | null; createdAt?: string | Date | null; }): Promise<SongVersionRecord> => {
+export const createVersion = async (params: { songId: string; label: string; content: string | null; audioUrl?: string | null; slidesMovieUrl?: string | null; slideMovieStart?: number | null; bpm?: number | null; transpose?: number | null; previousVersionId?: string | null; nextVersionId?: string | null; originalVersionId?: string | null; createdBy?: string | null; slideCredits?: string | null; programCredits?: string | null; blobUrl?: string | null; createdAt?: string | Date | null; dbCreatedAt?: string | Date | null; }): Promise<SongVersionRecord> => {
+  // If no createdAt provided, let DB default both columns to now()
   if (params.createdAt === undefined) {
     const rows = await sql`
       insert into song_versions (song_id, label, content, audio_url, slides_movie_url, slide_movie_start, bpm, transpose, previous_version_id, next_version_id, original_version_id, created_by, slide_credits, program_credits, blob_url)
       values (${params.songId}, ${params.label}, ${params.content}, ${params.audioUrl ?? null}, ${params.slidesMovieUrl ?? null}, ${params.slideMovieStart ?? null}, ${params.bpm ?? null}, ${params.transpose ?? null}, ${params.previousVersionId ?? null}, ${params.nextVersionId ?? null}, ${params.originalVersionId ?? null}, ${params.createdBy ?? null}, ${params.slideCredits ?? null}, ${params.programCredits ?? null}, ${params.blobUrl ?? null})
-      returning id, song_id as "songId", label, content, audio_url as "audioUrl", slides_movie_url as "slidesMovieUrl", slide_movie_start as "slideMovieStart", bpm, transpose, previous_version_id as "previousVersionId", next_version_id as "nextVersionId", original_version_id as "originalVersionId", rendered_content as "renderedContent", archived, created_by as "createdBy", created_at as "createdAt", slide_credits as "slideCredits", program_credits as "programCredits", blob_url as "blobUrl"
+      returning id, song_id as "songId", label, content, audio_url as "audioUrl", slides_movie_url as "slidesMovieUrl", slide_movie_start as "slideMovieStart", bpm, transpose, previous_version_id as "previousVersionId", next_version_id as "nextVersionId", original_version_id as "originalVersionId", rendered_content as "renderedContent", archived, created_by as "createdBy", created_at as "createdAt", db_created_at as "dbCreatedAt", slide_credits as "slideCredits", program_credits as "programCredits", blob_url as "blobUrl"
     `;
     return (rows as SongVersionResult[])[0];
   }
 
+  // If dbCreatedAt not provided, use createdAt to keep them identical
+  const dbCreatedAt = params.dbCreatedAt ?? params.createdAt;
   const rows = await sql`
-    insert into song_versions (song_id, label, content, audio_url, slides_movie_url, slide_movie_start, bpm, transpose, previous_version_id, next_version_id, original_version_id, created_by, slide_credits, program_credits, blob_url, created_at)
-    values (${params.songId}, ${params.label}, ${params.content}, ${params.audioUrl ?? null}, ${params.slidesMovieUrl ?? null}, ${params.slideMovieStart ?? null}, ${params.bpm ?? null}, ${params.transpose ?? null}, ${params.previousVersionId ?? null}, ${params.nextVersionId ?? null}, ${params.originalVersionId ?? null}, ${params.createdBy ?? null}, ${params.slideCredits ?? null}, ${params.programCredits ?? null}, ${params.blobUrl ?? null}, ${params.createdAt})
-    returning id, song_id as "songId", label, content, audio_url as "audioUrl", slides_movie_url as "slidesMovieUrl", slide_movie_start as "slideMovieStart", bpm, transpose, previous_version_id as "previousVersionId", next_version_id as "nextVersionId", original_version_id as "originalVersionId", rendered_content as "renderedContent", archived, created_by as "createdBy", created_at as "createdAt", slide_credits as "slideCredits", program_credits as "programCredits", blob_url as "blobUrl"
+    insert into song_versions (song_id, label, content, audio_url, slides_movie_url, slide_movie_start, bpm, transpose, previous_version_id, next_version_id, original_version_id, created_by, slide_credits, program_credits, blob_url, created_at, db_created_at)
+    values (${params.songId}, ${params.label}, ${params.content}, ${params.audioUrl ?? null}, ${params.slidesMovieUrl ?? null}, ${params.slideMovieStart ?? null}, ${params.bpm ?? null}, ${params.transpose ?? null}, ${params.previousVersionId ?? null}, ${params.nextVersionId ?? null}, ${params.originalVersionId ?? null}, ${params.createdBy ?? null}, ${params.slideCredits ?? null}, ${params.programCredits ?? null}, ${params.blobUrl ?? null}, ${params.createdAt}, ${dbCreatedAt})
+    returning id, song_id as "songId", label, content, audio_url as "audioUrl", slides_movie_url as "slidesMovieUrl", slide_movie_start as "slideMovieStart", bpm, transpose, previous_version_id as "previousVersionId", next_version_id as "nextVersionId", original_version_id as "originalVersionId", rendered_content as "renderedContent", archived, created_by as "createdBy", created_at as "createdAt", db_created_at as "dbCreatedAt", slide_credits as "slideCredits", program_credits as "programCredits", blob_url as "blobUrl"
   `;
   return (rows as SongVersionResult[])[0];
 };
@@ -483,6 +496,7 @@ export const findVersionBySongTitleAndLabel = async (songTitle: string, label: s
       v.archived as "archived",
       v.created_by as "createdBy",
       v.created_at as "createdAt",
+      v.db_created_at as "dbCreatedAt",
       v.slide_credits as "slideCredits",
       v.program_credits as "programCredits",
       v.blob_url as "blobUrl"
@@ -501,7 +515,7 @@ export const updateVersionNextId = async (versionId: string, nextVersionId: stri
     update song_versions
     set next_version_id = ${nextVersionId}
     where id = ${versionId}
-    returning id, song_id as "songId", label, content, audio_url as "audioUrl", slides_movie_url as "slidesMovieUrl", slide_movie_start as "slideMovieStart", bpm, transpose, previous_version_id as "previousVersionId", next_version_id as "nextVersionId", original_version_id as "originalVersionId", rendered_content as "renderedContent", archived, created_by as "createdBy", created_at as "createdAt", slide_credits as "slideCredits", program_credits as "programCredits", blob_url as "blobUrl"
+    returning id, song_id as "songId", label, content, audio_url as "audioUrl", slides_movie_url as "slidesMovieUrl", slide_movie_start as "slideMovieStart", bpm, transpose, previous_version_id as "previousVersionId", next_version_id as "nextVersionId", original_version_id as "originalVersionId", rendered_content as "renderedContent", archived, created_by as "createdBy", created_at as "createdAt", db_created_at as "dbCreatedAt", slide_credits as "slideCredits", program_credits as "programCredits", blob_url as "blobUrl"
   `;
   const typedRows = rows as SongVersionResult[];
   if (typedRows.length === 0) {
@@ -529,6 +543,7 @@ export const getVersionById = async (versionId: string): Promise<SongVersionReco
       v.archived as "archived",
       v.created_by as "createdBy",
       v.created_at as "createdAt",
+      v.db_created_at as "dbCreatedAt",
       s.title as "songTitle",
       v.slide_credits as "slideCredits",
       v.program_credits as "programCredits",
@@ -563,6 +578,7 @@ export const getVersionsByIds = async (versionIds: string[]): Promise<SongVersio
       v.archived as "archived",
       v.created_by as "createdBy",
       v.created_at as "createdAt",
+      v.db_created_at as "dbCreatedAt",
       s.title as "songTitle",
       v.slide_credits as "slideCredits",
       v.program_credits as "programCredits",
@@ -600,6 +616,7 @@ export const getPreviousVersionsChain = async (versionId: string): Promise<SongV
       v.archived as "archived",
       v.created_by as "createdBy",
       v.created_at as "createdAt",
+      v.db_created_at as "dbCreatedAt",
       v.slide_credits as "slideCredits",
       v.program_credits as "programCredits",
       v.blob_url as "blobUrl"
@@ -615,7 +632,7 @@ export const getPreviousVersionsChain = async (versionId: string): Promise<SongV
   return rows as SongVersionRecord[];
 };
 
-export const createVersionWithLineage = async (params: { songId: string; label: string; content: string | null; audioUrl?: string | null; slidesMovieUrl?: string | null; slideMovieStart?: number | null; bpm?: number | null; transpose?: number | null; previousVersionId?: string | null; createdBy?: string | null; slideCredits?: string | null; programCredits?: string | null; blobUrl?: string | null; createdAt?: string | Date | null; }): Promise<SongVersionRecord> => {
+export const createVersionWithLineage = async (params: { songId: string; label: string; content: string | null; audioUrl?: string | null; slidesMovieUrl?: string | null; slideMovieStart?: number | null; bpm?: number | null; transpose?: number | null; previousVersionId?: string | null; createdBy?: string | null; slideCredits?: string | null; programCredits?: string | null; blobUrl?: string | null; createdAt?: string | Date | null; dbCreatedAt?: string | Date | null; }): Promise<SongVersionRecord> => {
   let originalVersionId: string | null = null;
   
   if (params.previousVersionId) {
@@ -643,6 +660,7 @@ export const createVersionWithLineage = async (params: { songId: string; label: 
     programCredits: params.programCredits,
     blobUrl: params.blobUrl,
     createdAt: params.createdAt,
+    dbCreatedAt: params.dbCreatedAt,
   });
   
   if (params.previousVersionId) {
@@ -654,7 +672,7 @@ export const createVersionWithLineage = async (params: { songId: string; label: 
       update song_versions
       set original_version_id = ${newVersion.id}
       where id = ${newVersion.id}
-      returning id, song_id as "songId", label, content, audio_url as "audioUrl", slides_movie_url as "slidesMovieUrl", slide_movie_start as "slideMovieStart", bpm, transpose, previous_version_id as "previousVersionId", next_version_id as "nextVersionId", original_version_id as "originalVersionId", rendered_content as "renderedContent", created_by as "createdBy", created_at as "createdAt", slide_credits as "slideCredits", program_credits as "programCredits", blob_url as "blobUrl"
+      returning id, song_id as "songId", label, content, audio_url as "audioUrl", slides_movie_url as "slidesMovieUrl", slide_movie_start as "slideMovieStart", bpm, transpose, previous_version_id as "previousVersionId", next_version_id as "nextVersionId", original_version_id as "originalVersionId", rendered_content as "renderedContent", created_by as "createdBy", created_at as "createdAt", db_created_at as "dbCreatedAt", slide_credits as "slideCredits", program_credits as "programCredits", blob_url as "blobUrl"
     `;
     return (rows as SongVersionResult[])[0];
   }
@@ -699,7 +717,7 @@ export const updateVersion = async (versionId: string, updates: { label?: string
       program_credits = ${finalProgramCredits},
       blob_url = ${finalBlobUrl}
     where id = ${versionId}
-    returning id, song_id as "songId", label, content, audio_url as "audioUrl", slides_movie_url as "slidesMovieUrl", slide_movie_start as "slideMovieStart", bpm, transpose, previous_version_id as "previousVersionId", next_version_id as "nextVersionId", original_version_id as "originalVersionId", rendered_content as "renderedContent", archived, created_by as "createdBy", created_at as "createdAt", slide_credits as "slideCredits", program_credits as "programCredits", blob_url as "blobUrl"
+    returning id, song_id as "songId", label, content, audio_url as "audioUrl", slides_movie_url as "slidesMovieUrl", slide_movie_start as "slideMovieStart", bpm, transpose, previous_version_id as "previousVersionId", next_version_id as "nextVersionId", original_version_id as "originalVersionId", rendered_content as "renderedContent", archived, created_by as "createdBy", created_at as "createdAt", db_created_at as "dbCreatedAt", slide_credits as "slideCredits", program_credits as "programCredits", blob_url as "blobUrl"
   `;
   const typedRows = rows as SongVersionResult[];
   if (typedRows.length === 0) {
@@ -713,7 +731,7 @@ export const updateVersionRenderedContent = async (versionId: string, renderedCo
     update song_versions
     set rendered_content = ${JSON.stringify(renderedContent)}::jsonb
     where id = ${versionId}
-    returning id, song_id as "songId", label, content, audio_url as "audioUrl", slides_movie_url as "slidesMovieUrl", slide_movie_start as "slideMovieStart", bpm, transpose, previous_version_id as "previousVersionId", next_version_id as "nextVersionId", original_version_id as "originalVersionId", rendered_content as "renderedContent", archived, created_by as "createdBy", created_at as "createdAt", slide_credits as "slideCredits", program_credits as "programCredits", blob_url as "blobUrl"
+    returning id, song_id as "songId", label, content, audio_url as "audioUrl", slides_movie_url as "slidesMovieUrl", slide_movie_start as "slideMovieStart", bpm, transpose, previous_version_id as "previousVersionId", next_version_id as "nextVersionId", original_version_id as "originalVersionId", rendered_content as "renderedContent", archived, created_by as "createdBy", created_at as "createdAt", db_created_at as "dbCreatedAt", slide_credits as "slideCredits", program_credits as "programCredits", blob_url as "blobUrl"
   `;
   const typedRows = rows as SongVersionResult[];
   if (typedRows.length === 0) {
@@ -727,7 +745,7 @@ export const archiveVersion = async (versionId: string): Promise<SongVersionReco
     update song_versions
     set archived = true
     where id = ${versionId} and archived = false
-    returning id, song_id as "songId", label, content, audio_url as "audioUrl", slides_movie_url as "slidesMovieUrl", slide_movie_start as "slideMovieStart", bpm, transpose, previous_version_id as "previousVersionId", next_version_id as "nextVersionId", original_version_id as "originalVersionId", rendered_content as "renderedContent", archived, created_by as "createdBy", created_at as "createdAt", slide_credits as "slideCredits", program_credits as "programCredits", blob_url as "blobUrl"
+    returning id, song_id as "songId", label, content, audio_url as "audioUrl", slides_movie_url as "slidesMovieUrl", slide_movie_start as "slideMovieStart", bpm, transpose, previous_version_id as "previousVersionId", next_version_id as "nextVersionId", original_version_id as "originalVersionId", rendered_content as "renderedContent", archived, created_by as "createdBy", created_at as "createdAt", db_created_at as "dbCreatedAt", slide_credits as "slideCredits", program_credits as "programCredits", blob_url as "blobUrl"
   `;
   const typedRows = rows as SongVersionResult[];
   if (typedRows.length === 0) {
@@ -795,6 +813,7 @@ export const getLatestVersionBySongTitle = async (songTitle: string): Promise<So
       v.archived as "archived",
       v.created_by as "createdBy",
       v.created_at as "createdAt",
+      v.db_created_at as "dbCreatedAt",
       s.title as "songTitle",
       v.slide_credits as "slideCredits",
       v.program_credits as "programCredits",
@@ -863,7 +882,7 @@ export type ChangelogVersionRecord = {
   createdAt: string;
 };
 
-export const listVersionsForChangelog = async (songId?: string, filename?: string): Promise<ChangelogVersionRecord[]> => {
+export const listVersionsForChangelog = async (songId?: string, filename?: string, username?: string): Promise<ChangelogVersionRecord[]> => {
   const rows = songId
     ? await sql`
         select
@@ -881,6 +900,7 @@ export const listVersionsForChangelog = async (songId?: string, filename?: strin
         left join song_versions prev on prev.id = v.previous_version_id
         where v.archived = false and s.archived = false and v.song_id = ${songId}
           ${filename ? sql`and v.label = ${filename}` : sql``}
+          ${username ? sql`and v.created_by = ${username}` : sql``}
         order by v.created_at desc
       `
     : await sql`
@@ -899,6 +919,7 @@ export const listVersionsForChangelog = async (songId?: string, filename?: strin
         left join song_versions prev on prev.id = v.previous_version_id
         where v.archived = false and s.archived = false
           ${filename ? sql`and v.label = ${filename}` : sql``}
+          ${username ? sql`and v.created_by = ${username}` : sql``}
         order by v.created_at desc
       `;
   return rows as ChangelogVersionRecord[];

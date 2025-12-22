@@ -34,6 +34,7 @@ create table if not exists programs (
 );
 
 CREATE INDEX if not exists programs_archived_idx on programs USING btree (archived);
+CREATE INDEX if not exists programs_lower_title_idx on programs USING btree (lower(title));
 CREATE INDEX if not exists programs_title_idx on programs USING btree (title);
 
 create table if not exists schema_migrations (
@@ -63,6 +64,7 @@ create table if not exists song_versions (
   slide_movie_start integer,
   rendered_content jsonb,
   blob_url text,
+  db_created_at timestamptz not null default now(),
   constraint song_versions_next_version_id_fkey FOREIGN KEY (next_version_id) REFERENCES song_versions(id) ON DELETE SET NULL,
   constraint song_versions_original_version_id_fkey FOREIGN KEY (original_version_id) REFERENCES song_versions(id) ON DELETE SET NULL,
   constraint song_versions_pkey PRIMARY KEY (id),
@@ -87,6 +89,7 @@ create table if not exists songs (
 );
 
 CREATE INDEX if not exists songs_archived_idx on songs USING btree (archived);
+CREATE INDEX if not exists songs_lower_title_idx on songs USING btree (lower(title));
 CREATE UNIQUE INDEX if not exists songs_title_key on songs USING btree (title);
 
 create table if not exists users (
