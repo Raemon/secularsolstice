@@ -1,7 +1,7 @@
-import ProgramBrowser from './programBrowser/ProgramBrowser';
+import ProgramsList from './ProgramsList';
 
 const ProgramPage = () => {
-  return <ProgramBrowser />;
+  return <ProgramsList />;
 };
 
 export default ProgramPage;

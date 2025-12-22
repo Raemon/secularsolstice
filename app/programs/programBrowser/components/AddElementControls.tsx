@@ -118,7 +118,6 @@ const AddElementControls = ({ programId, versions, onAddElement, onSongCreated, 
             onKeyDown={handleKeyDown}
             placeholder="Search"
             className="text-sm pl-6 pr-2 py-1 outline-none border-none bg-transparent"
-            autoFocus
           />
         </div>
         {searchTerm && filteredVersions.length > 0 && (
