@@ -66,6 +66,7 @@ interface User {
 }
 
 const TOOL_LINKS = [
+  { href: '/blobs', label: 'Blob Storage' },
   { href: '/bulk-create-versions', label: 'Bulk Create Versions' },
   { href: '/chord-player', label: 'Chord Player' },
   { href: '/chordmark-converter', label: 'Chordmark Converter' },
