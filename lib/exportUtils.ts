@@ -29,7 +29,7 @@ const buildExportZip = (songs: SongWithVersions[], programs?: ProgramRecord[], v
   }
 
   songs.forEach((song) => {
-    const songFolderName = `${sanitizeFileName(song.title || 'song')}_${song.id}`;
+    const songFolderName = `${sanitizeFileName(song.title || 'song')}___${song.id}`;
     const songFolder = rootFolder.folder(songFolderName);
     if (!songFolder) return;
 
@@ -37,12 +37,12 @@ const buildExportZip = (songs: SongWithVersions[], programs?: ProgramRecord[], v
     if (!versionsFolder) return;
 
     song.versions.forEach((version) => {
-      const versionFolderName = `${sanitizeFileName(version.label)}_${version.id}`;
+      const versionFolderName = `${sanitizeFileName(version.label)}___${version.id}`;
       const versionFolder = versionsFolder.folder(versionFolderName);
       if (!versionFolder) return;
 
       const contentText = version.content ?? '';
-      const labelFilename = `${sanitizeFileName(version.label)}.txt`;
+      const labelFilename = sanitizeFileName(version.label);
       versionFolder.file(labelFilename, contentText || 'No stored content for this version.');
       versionFolder.file('data.json', JSON.stringify(version, null, 2));
 
