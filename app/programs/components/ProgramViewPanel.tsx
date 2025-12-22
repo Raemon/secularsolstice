@@ -22,6 +22,7 @@ type ProgramViewPanelProps = {
     nextVersionId: string;
     slideCredits: string;
     programCredits: string;
+    blobUrl: string;
   };
   isSubmitting: boolean;
   isArchiving: boolean;
@@ -33,7 +34,7 @@ type ProgramViewPanelProps = {
   onVersionClick: (version: SongVersion) => void;
   onCreateVersionClick: () => void;
   onCancelCreateVersion: () => void;
-  onFormChange: (updates: Partial<{label: string; content: string; audioUrl: string; slidesMovieUrl: string; slideMovieStart: number; bpm: number; transpose: number; previousVersionId: string; nextVersionId: string; slideCredits: string; programCredits: string;}>) => void;
+  onFormChange: (updates: Partial<{label: string; content: string; audioUrl: string; slidesMovieUrl: string; slideMovieStart: number; bpm: number; transpose: number; previousVersionId: string; nextVersionId: string; slideCredits: string; programCredits: string; blobUrl: string;}>) => void;
   onSubmitVersion: () => void;
   onArchiveVersion: () => void;
 };

@@ -15,6 +15,7 @@ const defaultFormState = {
   nextVersionId: '',
   slideCredits: '',
   programCredits: '',
+  blobUrl: '',
 };
 
 type VersionFormState = typeof defaultFormState;
@@ -83,6 +84,7 @@ const useSongVersionPanel = () => {
         nextVersionId: version.nextVersionId || '',
         slideCredits: version.slideCredits || '',
         programCredits: version.programCredits || '',
+        blobUrl: version.blobUrl || '',
       });
     } else {
       setNewVersionForm(defaultFormState);

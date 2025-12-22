@@ -4,7 +4,7 @@ import { createVersionWithLineage, updateVersionRenderedContent } from '@/lib/so
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { songId, label, content, audioUrl, slidesMovieUrl, slideMovieStart, bpm, transpose, previousVersionId, createdBy, renderedContent, slideCredits, programCredits } = body;
+    const { songId, label, content, audioUrl, slidesMovieUrl, slideMovieStart, bpm, transpose, previousVersionId, createdBy, renderedContent, slideCredits, programCredits, blobUrl } = body;
     
     if (!songId || !label) {
       return NextResponse.json({ error: 'songId and label are required' }, { status: 400 });
@@ -27,6 +27,7 @@ export async function POST(request: Request) {
       createdBy: createdBy.trim(),
       slideCredits: slideCredits ?? null,
       programCredits: programCredits ?? null,
+      blobUrl: blobUrl ?? null,
     });
 
     // If client provided pre-rendered content, save it

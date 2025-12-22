@@ -1,0 +1,1 @@
+ALTER TABLE song_versions ADD COLUMN IF NOT EXISTS blob_url TEXT;

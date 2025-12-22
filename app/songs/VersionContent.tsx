@@ -11,6 +11,7 @@ const VersionContent = ({version, print}: {
 }) => {
   const hasAudio = Boolean(version.audioUrl);
   const hasSlidesMovie = Boolean(version.slidesMovieUrl);
+  const hasBlob = Boolean(version.blobUrl);
   const hasContent = Boolean(version.content);
   const fileType = detectFileType(version.label, version.content || '');
   const isChordmarkFile = fileType === 'chordmark';
@@ -24,8 +25,16 @@ const VersionContent = ({version, print}: {
   const normalizedMovieUrl = movieUrl.toLowerCase();
   const videoExtensions = ['.mp4', '.mov', '.webm', '.m4v'];
   const isVideoFile = normalizedMovieUrl ? videoExtensions.some(ext => normalizedMovieUrl.endsWith(ext)) : false;
+  const blobFilename = version.blobUrl ? (() => {
+    try {
+      const pathname = new URL(version.blobUrl).pathname;
+      return pathname.split('/').pop() || 'Attached file';
+    } catch {
+      return version.blobUrl.split('/').pop() || 'Attached file';
+    }
+  })() : null;
 
-  if (!hasAudio && !hasSlidesMovie && !hasContent) {
+  if (!hasAudio && !hasSlidesMovie && !hasBlob && !hasContent) {
     return <p className="text-gray-500 text-xs">No stored content for this version.</p>;
   }
 
@@ -64,6 +73,11 @@ const VersionContent = ({version, print}: {
             Open slides movie
           </a>
         )
+      )}
+      {hasBlob && (
+        <a href={version.blobUrl || undefined} target="_blank" rel="noreferrer" className="text-blue-400 underline text-xs">
+          📎 {blobFilename || 'Attached file'}
+        </a>
       )}
     </div>
   );

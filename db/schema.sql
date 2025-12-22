@@ -62,6 +62,7 @@ create table if not exists song_versions (
   slides_movie_url text,
   slide_movie_start integer,
   rendered_content jsonb,
+  blob_url text,
   constraint song_versions_next_version_id_fkey FOREIGN KEY (next_version_id) REFERENCES song_versions(id) ON DELETE SET NULL,
   constraint song_versions_original_version_id_fkey FOREIGN KEY (original_version_id) REFERENCES song_versions(id) ON DELETE SET NULL,
   constraint song_versions_pkey PRIMARY KEY (id),

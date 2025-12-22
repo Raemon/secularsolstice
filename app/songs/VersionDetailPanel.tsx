@@ -60,7 +60,7 @@ const VersionDetailPanel = ({songTitle, version, previousVersions = [], isCreati
   previousVersions: SongVersion[];
   isExpandedPreviousVersions: boolean;
   isCreatingVersion: boolean;
-  newVersionForm: { label: string; content: string; audioUrl: string; slidesMovieUrl: string; slideMovieStart: number; bpm: number; transpose: number; previousVersionId: string; nextVersionId: string; slideCredits: string; programCredits: string };
+  newVersionForm: { label: string; content: string; audioUrl: string; slidesMovieUrl: string; slideMovieStart: number; bpm: number; transpose: number; previousVersionId: string; nextVersionId: string; slideCredits: string; programCredits: string; blobUrl: string };
   isSubmitting: boolean;
   isArchiving: boolean;
   error: string | null;
@@ -72,7 +72,7 @@ const VersionDetailPanel = ({songTitle, version, previousVersions = [], isCreati
   onVersionClick: (version: SongVersion) => void;
   onCreateVersionClick: () => void;
   onCancelCreateVersion: () => void;
-  onFormChange: (updates: Partial<{ label: string; content: string; audioUrl: string; slidesMovieUrl: string; slideMovieStart: number; bpm: number; transpose: number; previousVersionId: string; nextVersionId: string; slideCredits: string; programCredits: string }>) => void;
+  onFormChange: (updates: Partial<{ label: string; content: string; audioUrl: string; slidesMovieUrl: string; slideMovieStart: number; bpm: number; transpose: number; previousVersionId: string; nextVersionId: string; slideCredits: string; programCredits: string; blobUrl: string }>) => void;
   onSubmitVersion: () => void;
   onArchiveVersion: () => void;
   onTitleChange?: (newTitle: string) => void;

@@ -28,6 +28,7 @@ export type SongVersion = {
   createdBy: string | null;
   slideCredits: string | null;
   programCredits: string | null;
+  blobUrl: string | null;
 };
 
 export type Song = {
@@ -59,5 +60,6 @@ export const createFallbackSongVersion = (partial: Pick<SongVersion, 'id' | 'son
   slideCredits: null,
   programCredits: null,
   createdBy: null,
+  blobUrl: null,
 });
 
