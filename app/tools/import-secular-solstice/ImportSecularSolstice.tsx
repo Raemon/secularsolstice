@@ -189,9 +189,15 @@ const ImportSecularSolstice = () => {
       </div>
       {progress && <div className="text-xs">{progress}</div>}
       {lilypondStatus && <div className="text-xs">{lilypondStatus}</div>}
-      {liveItems.filter(r => r.status !== 'exists').length > 0 && (
+      {liveItems.length > 0 && (
         <ul className="text-xs list-disc list-inside space-y-0.5">
-          {liveItems.filter(r => r.status !== 'exists').map((r, index) => (
+          {isRunning && liveItems.length > 0 && (
+            <li key="current-considering" className="text-gray-400">
+              considering: {liveItems[liveItems.length - 1].type}: {liveItems[liveItems.length - 1].title}
+              {liveItems[liveItems.length - 1].label ? ` / ${liveItems[liveItems.length - 1].label}` : ''} - {liveItems[liveItems.length - 1].status}
+            </li>
+          )}
+          {[...liveItems].reverse().filter(r => r.status !== 'exists').map((r, index) => (
             <li key={`${r.title}-${r.label || ''}-${r.status}-${index}`}>
               {r.type}: {r.title}{r.label ? ` / ${r.label}` : ''} - {r.status}{r.elementCount ? ` (${r.elementCount} elements)` : ''}{r.addedElements ? ` (+${r.addedElements} elements)` : ''}{' '}
               {r.missingElements && r.missingElements.length > 0 && <span className="text-yellow-500">[missing: {r.missingElements.join(', ')}]</span>}

@@ -89,7 +89,7 @@ const findExistingVersion = async (songTitle: string, labels: string[], createdA
 type FileInfo = { fullPath: string; relativePath: string; buffer: Buffer; isText: boolean };
 
 const SKIP_FILES = new Set(['Makefile', '.DS_Store']);
-const SKIP_DIRS = new Set(['gen', 'node_modules', '.git']);
+const SKIP_DIRS = new Set(['node_modules', '.git']);
 
 const collectFiles = async (dirPath: string, baseDir: string): Promise<FileInfo[]> => {
   const files: FileInfo[] = [];
