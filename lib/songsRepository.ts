@@ -882,7 +882,15 @@ export type ChangelogVersionRecord = {
   createdAt: string;
 };
 
-export const listVersionsForChangelog = async (songId?: string, filename?: string, username?: string): Promise<ChangelogVersionRecord[]> => {
+type ChangelogOptions = {
+  songId?: string;
+  filename?: string;
+  username?: string;
+  limit?: number;
+  offset?: number;
+};
+
+export const listVersionsForChangelog = async ({ songId, filename, username, limit, offset }: ChangelogOptions = {}): Promise<ChangelogVersionRecord[]> => {
   const rows = songId
     ? await sql`
         select
@@ -902,6 +910,8 @@ export const listVersionsForChangelog = async (songId?: string, filename?: strin
           ${filename ? sql`and v.label = ${filename}` : sql``}
           ${username ? sql`and v.created_by = ${username}` : sql``}
         order by v.created_at desc
+        ${limit ? sql`limit ${limit}` : sql``}
+        ${offset ? sql`offset ${offset}` : sql``}
       `
     : await sql`
         select
@@ -921,6 +931,8 @@ export const listVersionsForChangelog = async (songId?: string, filename?: strin
           ${filename ? sql`and v.label = ${filename}` : sql``}
           ${username ? sql`and v.created_by = ${username}` : sql``}
         order by v.created_at desc
+        ${limit ? sql`limit ${limit}` : sql``}
+        ${offset ? sql`offset ${offset}` : sql``}
       `;
   return rows as ChangelogVersionRecord[];
 };
