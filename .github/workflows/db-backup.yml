@@ -1,0 +1,52 @@
+name: Database Backup
+
+on:
+  schedule:
+    # Run daily at 4am UTC
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+    # Allow manual trigger from GitHub Actions UI
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Create database backup
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          TIMESTAMP=$(date +%Y-%m-%d-%H%M%S)
+          FILENAME="db-backup-${TIMESTAMP}.sql"
+          echo "Creating backup: ${FILENAME}"
+          pg_dump "$DATABASE_URL" --no-owner --no-acl --no-comments > "${FILENAME}"
+          gzip "${FILENAME}"
+          echo "BACKUP_FILE=${FILENAME}.gz" >> $GITHUB_ENV
+
+      - name: Upload to Backblaze B2
+        env:
+          B2_REGION: ${{ secrets.B2_REGION }}
+          B2_APPLICATION_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
+          B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
+          B2_BUCKET_NAME: ${{ secrets.B2_BUCKET_NAME }}
+        run: |
+          # Install AWS CLI (works with B2's S3-compatible API)
+          pip install awscli
+
+          # Configure AWS CLI for B2
+          aws configure set aws_access_key_id "$B2_APPLICATION_KEY_ID"
+          aws configure set aws_secret_access_key "$B2_APPLICATION_KEY"
+          aws configure set region "$B2_REGION"
+
+          # Upload to B2
+          aws s3 cp "$BACKUP_FILE" "s3://${B2_BUCKET_NAME}/${BACKUP_FILE}" \
+            --endpoint-url "https://s3.${B2_REGION}.backblazeb2.com"
+
+          echo "Backup uploaded successfully: ${BACKUP_FILE}"
+
+      - name: Cleanup
+        run: rm -f *.sql.gz

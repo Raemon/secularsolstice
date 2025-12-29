@@ -1,5 +1,5 @@
-import BackupsPage from './BackupsPage';
+import DbBackupsPage from './DbBackupsPage';
 
 export default function Page() {
-  return <BackupsPage />;
+  return <DbBackupsPage />;
 }
