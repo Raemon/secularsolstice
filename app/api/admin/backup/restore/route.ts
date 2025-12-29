@@ -5,11 +5,20 @@ import path from 'path';
 import JSZip from 'jszip';
 import sql from '@/lib/db';
 
+export type OrphanedRefInfo = {
+  versionId: string;
+  versionLabel: string;
+  refType: 'previousVersionId' | 'nextVersionId' | 'originalVersionId';
+  missingRefId: string;
+  fixed: boolean;
+  error?: string;
+};
+
 export type RestoreProgress = {
   step: string;
   completed: boolean;
   error?: string;
-  details?: { songs: number; versions: number; programs: number };
+  details?: { songs: number; versions: number; programs: number; orphanedRefs?: OrphanedRefInfo[] };
   progress?: { current: number; total: number };
 };
 
@@ -162,23 +171,33 @@ export async function POST(request: NextRequest) {
           if (i % 10 === 0 || i === versions.length - 1) {
             sendProgress({ step: `Inserting versions...`, completed: false, progress: { current: i + 1, total: versions.length } });
           }
-          await sql`
-            INSERT INTO song_versions (
-              id, song_id, label, content, audio_url, slides_movie_url, slide_movie_start,
-              previous_version_id, next_version_id, original_version_id, rendered_content,
-              bpm, transpose, archived, created_by, created_at, db_created_at,
-              slide_credits, program_credits, blob_url
-            ) VALUES (
-              ${version.id}, ${version.songId}, ${version.label}, ${version.content},
-              ${version.audioUrl}, ${version.slidesMovieUrl}, ${version.slideMovieStart},
-              ${null}, ${null}, ${null},
-              ${version.renderedContent ? JSON.stringify(version.renderedContent) : null}::jsonb,
-              ${version.bpm}, ${version.transpose}, ${version.archived}, ${version.createdBy},
-              ${version.createdAt}, ${version.dbCreatedAt || version.createdAt},
-              ${version.slideCredits}, ${version.programCredits}, ${version.blobUrl}
-            )
-          `;
+          try {
+            await sql`
+              INSERT INTO song_versions (
+                id, song_id, label, content, audio_url, slides_movie_url, slide_movie_start,
+                previous_version_id, next_version_id, original_version_id, rendered_content,
+                bpm, transpose, archived, created_by, created_at, db_created_at,
+                slide_credits, program_credits, blob_url
+              ) VALUES (
+                ${version.id}, ${version.songId}, ${version.label}, ${version.content},
+                ${version.audioUrl}, ${version.slidesMovieUrl}, ${version.slideMovieStart},
+                ${null}, ${null}, ${null},
+                ${version.renderedContent ? JSON.stringify(version.renderedContent) : null}::jsonb,
+                ${version.bpm}, ${version.transpose}, ${version.archived}, ${version.createdBy},
+                ${version.createdAt}, ${version.dbCreatedAt || version.createdAt},
+                ${version.slideCredits}, ${version.programCredits}, ${version.blobUrl}
+              )
+            `;
+          } catch (insertError) {
+            const errMsg = insertError instanceof Error ? insertError.message : String(insertError);
+            console.error(`Failed to insert version ${version.id} (label: "${version.label}", songId: ${version.songId}):`, insertError);
+            throw new Error(`Failed to insert version "${version.label}" (${version.id}) for song ${version.songId}: ${errMsg}`);
+          }
         }
+
+        // Build a set of all version IDs for validation
+        const allVersionIds = new Set(versions.map(v => v.id));
+        const orphanedRefs: OrphanedRefInfo[] = [];
 
         const versionsWithRefs = versions.filter(v => v.previousVersionId || v.nextVersionId || v.originalVersionId);
         for (let i = 0; i < versionsWithRefs.length; i++) {
@@ -186,13 +205,68 @@ export async function POST(request: NextRequest) {
           if (i % 10 === 0 || i === versionsWithRefs.length - 1) {
             sendProgress({ step: `Updating version references...`, completed: false, progress: { current: i + 1, total: versionsWithRefs.length } });
           }
-          await sql`
-            UPDATE song_versions SET
-              previous_version_id = ${version.previousVersionId},
-              next_version_id = ${version.nextVersionId},
-              original_version_id = ${version.originalVersionId}
-            WHERE id = ${version.id}
-          `;
+
+          // Validate each reference exists in the backup, set to null if orphaned
+          let previousVersionId = version.previousVersionId;
+          let nextVersionId = version.nextVersionId;
+          let originalVersionId = version.originalVersionId;
+          const currentOrphans: OrphanedRefInfo[] = [];
+
+          if (previousVersionId && !allVersionIds.has(previousVersionId)) {
+            currentOrphans.push({ versionId: version.id, versionLabel: version.label, refType: 'previousVersionId', missingRefId: previousVersionId, fixed: false });
+            previousVersionId = null;
+          }
+          if (nextVersionId && !allVersionIds.has(nextVersionId)) {
+            currentOrphans.push({ versionId: version.id, versionLabel: version.label, refType: 'nextVersionId', missingRefId: nextVersionId, fixed: false });
+            nextVersionId = null;
+          }
+          if (originalVersionId && !allVersionIds.has(originalVersionId)) {
+            currentOrphans.push({ versionId: version.id, versionLabel: version.label, refType: 'originalVersionId', missingRefId: originalVersionId, fixed: false });
+            originalVersionId = null;
+          }
+
+          if (currentOrphans.length > 0) {
+            try {
+              await sql`
+                UPDATE song_versions SET
+                  previous_version_id = ${previousVersionId},
+                  next_version_id = ${nextVersionId},
+                  original_version_id = ${originalVersionId}
+                WHERE id = ${version.id}
+              `;
+              // Mark all orphans for this version as fixed
+              currentOrphans.forEach(o => { o.fixed = true; });
+            } catch (updateError) {
+              const errMsg = updateError instanceof Error ? updateError.message : String(updateError);
+              console.error(`Failed to fix orphaned refs for version ${version.id} (label: "${version.label}"):`, errMsg);
+              currentOrphans.forEach(o => { o.error = errMsg; });
+            }
+            orphanedRefs.push(...currentOrphans);
+          } else {
+            // No orphans, just update normally
+            try {
+              await sql`
+                UPDATE song_versions SET
+                  previous_version_id = ${previousVersionId},
+                  next_version_id = ${nextVersionId},
+                  original_version_id = ${originalVersionId}
+                WHERE id = ${version.id}
+              `;
+            } catch (updateError) {
+              const errMsg = updateError instanceof Error ? updateError.message : String(updateError);
+              console.error(`Failed to update version references for version ${version.id} (label: "${version.label}", songId: ${version.songId}):`, {
+                previousVersionId, nextVersionId, originalVersionId, error: errMsg
+              });
+              throw new Error(`Failed to update references for version "${version.label}" (${version.id}): ${errMsg}. References: prev=${previousVersionId}, next=${nextVersionId}, original=${originalVersionId}`);
+            }
+          }
+        }
+
+        if (orphanedRefs.length > 0) {
+          const fixedCount = orphanedRefs.filter(o => o.fixed).length;
+          const failedCount = orphanedRefs.length - fixedCount;
+          console.warn(`Found ${orphanedRefs.length} orphaned version references (${fixedCount} fixed, ${failedCount} failed):`, orphanedRefs);
+          sendProgress({ step: `Warning: ${orphanedRefs.length} orphaned refs (${fixedCount} fixed, ${failedCount} failed)`, completed: false });
         }
 
         for (let i = 0; i < programs.length; i++) {
@@ -213,10 +287,15 @@ export async function POST(request: NextRequest) {
           `;
         }
 
+        const fixedCount = orphanedRefs.filter(o => o.fixed).length;
+        const failedCount = orphanedRefs.length - fixedCount;
+        const stepMessage = orphanedRefs.length > 0
+          ? `Done! (${orphanedRefs.length} orphaned refs: ${fixedCount} fixed${failedCount > 0 ? `, ${failedCount} failed` : ''})`
+          : 'Done!';
         sendProgress({
-          step: 'Done!',
+          step: stepMessage,
           completed: true,
-          details: { songs: songs.length, versions: versions.length, programs: programs.length },
+          details: { songs: songs.length, versions: versions.length, programs: programs.length, orphanedRefs },
         });
         controller.close();
       } catch (error) {

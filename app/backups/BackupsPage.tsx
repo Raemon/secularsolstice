@@ -5,7 +5,7 @@ import { useUser } from '@/app/contexts/UserContext';
 import type { BackupInfo } from '@/app/api/admin/backup/list/route';
 import type { BackupContents } from '@/app/api/admin/backup/contents/route';
 import type { StatsResponse } from '@/app/api/admin/stats/route';
-import type { RestoreProgress } from '@/app/api/admin/backup/restore/route';
+import type { RestoreProgress, OrphanedRefInfo } from '@/app/api/admin/backup/restore/route';
 import ChevronArrow from '@/app/components/ChevronArrow';
 
 const formatFileSize = (bytes: number) => {
@@ -33,6 +33,7 @@ const BackupsPage = () => {
   const [restoringFile, setRestoringFile] = useState<string | null>(null);
   const [restoreProgress, setRestoreProgress] = useState<{ step: string; percent?: number } | null>(null);
   const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [orphanedRefs, setOrphanedRefs] = useState<OrphanedRefInfo[]>([]);
   const [expandedBackup, setExpandedBackup] = useState<string | null>(null);
   const [backupContents, setBackupContents] = useState<Record<string, BackupContents>>({});
   const [loadingContents, setLoadingContents] = useState<string | null>(null);
@@ -144,6 +145,7 @@ const BackupsPage = () => {
     setRestoringFile(filename);
     setRestoreProgress(null);
     setStatus(null);
+    setOrphanedRefs([]);
     try {
       const response = await fetch(`/api/admin/backup/restore?requestingUserId=${userId}`, {
         method: 'POST',
@@ -173,9 +175,14 @@ const BackupsPage = () => {
               if (data.error) {
                 setStatus({ type: 'error', message: data.error });
               } else if (data.details) {
+                const orphans = data.details.orphanedRefs || [];
+                setOrphanedRefs(orphans);
+                const orphanMsg = orphans.length > 0
+                  ? ` (${orphans.filter(o => o.fixed).length}/${orphans.length} orphaned refs fixed)`
+                  : '';
                 setStatus({
                   type: 'success',
-                  message: `Restored: ${data.details.songs} songs, ${data.details.versions} versions, ${data.details.programs} programs`,
+                  message: `Restored: ${data.details.songs} songs, ${data.details.versions} versions, ${data.details.programs} programs${orphanMsg}`,
                 });
                 fetchStats();
               }
@@ -217,6 +224,20 @@ const BackupsPage = () => {
       {status && (
         <div className={`mb-4 p-2 text-sm ${status.type === 'success' ? 'text-green-400 bg-green-900/30' : 'text-red-400 bg-red-900/30'}`}>
           {status.message}
+        </div>
+      )}
+
+      {orphanedRefs.length > 0 && (
+        <div className="mb-4 p-2 text-sm bg-yellow-900/20">
+          <div className="text-yellow-400 mb-1">Orphaned References ({orphanedRefs.filter(o => o.fixed).length}/{orphanedRefs.length} fixed):</div>
+          <div className="max-h-32 overflow-y-auto text-xs space-y-0.5">
+            {orphanedRefs.map((ref, i) => (
+              <div key={i} className={ref.fixed ? 'text-green-400' : 'text-red-400'}>
+                {ref.fixed ? '✓' : '✗'} {ref.versionLabel}: {ref.refType} → {ref.missingRefId.slice(0, 8)}...
+                {ref.error && <span className="text-red-300 ml-1">({ref.error})</span>}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
