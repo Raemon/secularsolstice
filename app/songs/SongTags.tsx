@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useUser } from '../contexts/UserContext';
 
-const SUGGESTED_TAGS = ['song', 'speech', 'activity', 'act 1', 'act 2', 'act 3', 'act 4'];
+export const SUGGESTED_TAGS = ['song', 'speech', 'activity', 'act 1', 'act 2', 'act 3', 'act 4'];
 
 const SongTags = ({songId, initialTags = []}: {songId?: string; initialTags?: string[]}) => {
   const { canEdit } = useUser();
@@ -147,4 +147,3 @@ const SongTags = ({songId, initialTags = []}: {songId?: string; initialTags?: st
 };
 
 export default SongTags;
-

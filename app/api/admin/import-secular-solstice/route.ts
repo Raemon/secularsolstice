@@ -2,10 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/adminAuth';
 import { validateBearerSecret } from '@/lib/authUtils';
 import { importFromDirectories } from '@/lib/importUtils';
-import { downloadSecularSolsticeRepo } from '@/lib/githubDownloader';
+import { downloadSecularSolsticeRepo, DownloadedRepo } from '@/lib/githubDownloader';
 
 // Allow up to 5 minutes for import (Vercel Pro limit)
 export const maxDuration = 300;
+
+const buildImportConfig = (repo: DownloadedRepo, importTypes: string[]) => ({
+  songsDirs: importTypes.includes('songs') ? [{ path: repo.songsDir, tags: ['song'] }] : [],
+  speechesDirs: importTypes.includes('speeches') ? [repo.speechesDir] : [],
+  programsDirs: (importTypes.includes('programs') || importTypes.includes('resync')) ? [repo.listsDir] : [],
+  activitiesConfig: importTypes.includes('activities') ? { listFile: repo.activitiesListFile, speechesDir: repo.speechesDir } : undefined,
+});
 
 export async function POST(request: NextRequest) {
   let cleanup: (() => Promise<void>) | null = null;
@@ -19,27 +26,22 @@ export async function POST(request: NextRequest) {
     }
     const dryRun = url.searchParams.get('dryRun') === 'true';
     const stream = url.searchParams.get('stream') === 'true';
-
-    // Download and extract the SecularSolstice repo from GitHub
-    const repo = await downloadSecularSolsticeRepo();
-    cleanup = repo.cleanup;
-
     // Parse which types to import (default: all)
     const importTypes = url.searchParams.get('types')?.split(',') || ['songs', 'speeches', 'activities', 'programs', 'resync'];
-
-    const config = {
-      songsDirs: importTypes.includes('songs') ? [{ path: repo.songsDir, tags: ['song'] }] : [],
-      speechesDirs: importTypes.includes('speeches') ? [repo.speechesDir] : [],
-      programsDirs: (importTypes.includes('programs') || importTypes.includes('resync')) ? [repo.listsDir] : [],
-      activitiesConfig: importTypes.includes('activities') ? { listFile: repo.activitiesListFile, speechesDir: repo.speechesDir } : undefined,
-    };
 
     if (stream) {
       const encoder = new TextEncoder();
       const streamBody = new ReadableStream({
         async start(controller) {
           const send = (data: unknown) => controller.enqueue(encoder.encode(JSON.stringify(data) + '\n'));
+          let repo: DownloadedRepo | null = null;
           try {
+            // Download with progress updates
+            repo = await downloadSecularSolsticeRepo((progress) => {
+              send({ type: 'progress', ...progress });
+            });
+            cleanup = repo.cleanup;
+            const config = buildImportConfig(repo, importTypes);
             const { songResults, speechResults, activityResults, programResults, resyncResults } = await importFromDirectories(
               config,
               dryRun,
@@ -60,7 +62,7 @@ export async function POST(request: NextRequest) {
           } catch (error) {
             send({ type: 'error', error: error instanceof Error ? error.message : 'Failed to import content' });
           } finally {
-            await repo.cleanup();
+            if (repo) await repo.cleanup();
             controller.close();
           }
         },
@@ -69,6 +71,10 @@ export async function POST(request: NextRequest) {
       return new Response(streamBody, { headers: { 'Content-Type': 'application/x-ndjson' } });
     }
 
+    // Non-streaming path
+    const repo = await downloadSecularSolsticeRepo();
+    cleanup = repo.cleanup;
+    const config = buildImportConfig(repo, importTypes);
     const { songResults, speechResults, activityResults, programResults, resyncResults } = await importFromDirectories(config, dryRun);
     await repo.cleanup();
     const filteredResyncResults = importTypes.includes('resync') ? resyncResults : [];

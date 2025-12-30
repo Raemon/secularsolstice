@@ -1,7 +1,7 @@
 import path from 'path';
 import { promises as fs } from 'fs';
 import { put } from '@vercel/blob';
-import { createSong, createVersionWithLineage, findVersionBySongTitleAndLabel, getLatestVersionBySongTitle, getLatestVersionIdForSong } from './songsRepository';
+import { createSong, createVersionWithLineage, findVersionBySongTitleAndLabel, getLatestVersionBySongTitle, getLatestVersionIdForSong, addSongTags } from './songsRepository';
 import { createProgram, getProgramByTitle, updateProgramElementIds } from './programsRepository';
 import sql from './db';
 import { AUDIO_EXTENSION_SET } from './audioExtensions';
@@ -388,18 +388,28 @@ export type ProgramImportResult = { title: string; status: string; url?: string;
 type ParsedProgramItem = { type: 'song' | 'section'; name: string };
 
 // Find or create a song with an empty version for a given title
-const findOrCreateEmptyVersion = async (title: string, dryRun: boolean): Promise<string | null> => {
+const findOrCreateEmptyVersion = async (title: string, dryRun: boolean, tags: string[]): Promise<string | null> => {
   // First try to find existing
   const existing = await getLatestVersionBySongTitle(title);
-  if (existing) return existing.id;
+  if (existing) {
+    // Add tags to existing song if we have any
+    if (tags.length > 0 && !dryRun) {
+      await addSongTags(existing.songId, tags);
+    }
+    return existing.id;
+  }
 
   if (dryRun) return null;
 
   // Create song with empty version
-  const songId = await ensureSong(title, ['placeholder']);
+  const songId = await ensureSong(title, tags);
+  // Also add tags in case ensureSong found existing song without versions
+  if (tags.length > 0) {
+    await addSongTags(songId, tags);
+  }
   const created = await createVersionWithLineage({
     songId,
-    label: 'placeholder',
+    label: 'README.md',
     content: `# ${title}\n\n(Placeholder - content not yet imported)`,
     previousVersionId: null,
     createdBy: IMPORT_USER,
@@ -428,6 +438,7 @@ const resolveProgramItems = async (
   const createdPlaceholders: string[] = [];
   let currentSectionItems: string[] = [];
   let currentSectionName: string | null = null;
+  let currentSectionNumber = 0;
 
   const flushSection = async () => {
     if (currentSectionName && currentSectionItems.length > 0) {
@@ -466,9 +477,15 @@ const resolveProgramItems = async (
     if (item.type === 'section') {
       await flushSection();
       currentSectionName = item.name;
+      currentSectionNumber++;
     } else {
       const version = await getLatestVersionBySongTitle(item.name);
+      const actTag = currentSectionNumber > 0 ? `act ${currentSectionNumber}` : null;
       if (version) {
+        // Add act tag if we're in a section and not in dryRun
+        if (actTag && !dryRun) {
+          await addSongTags(version.songId, [actTag]);
+        }
         if (currentSectionName) {
           currentSectionItems.push(version.id);
         } else {
@@ -476,7 +493,7 @@ const resolveProgramItems = async (
         }
       } else {
         // Create placeholder for missing item
-        const placeholderId = await findOrCreateEmptyVersion(item.name, dryRun);
+        const placeholderId = await findOrCreateEmptyVersion(item.name, dryRun, actTag ? [actTag] : []);
         if (placeholderId) {
           if (currentSectionName) {
             currentSectionItems.push(placeholderId);
