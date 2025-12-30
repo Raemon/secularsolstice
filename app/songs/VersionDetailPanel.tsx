@@ -6,6 +6,7 @@ import CreateVersionForm from './CreateVersionForm';
 import VersionHeader from './VersionHeader';
 import SongInfoHeader from './SongInfoHeader';
 import GithubIOLink from './GithubIOLink';
+import PastVersionUsage from './PastVersionUsage';
 import ChangelogPage from '../changelog/ChangelogPage';
 import Comments from './Comments';
 import type { SongVersion } from './types';
@@ -99,6 +100,7 @@ const VersionDetailPanel = ({songTitle, version, previousVersions = [], isCreati
       <div className="flex items-end flex-wrap justify-start sm:justify-end gap-4 sticky top-[-80px] my-4 border-b border-gray-500 pb-2">
         <div className="lg:mr-auto w-full lg:w-auto">
           <VersionHeader version={version} />
+          <PastVersionUsage versionId={version.id} />
         </div>
         <a
           href={`/songs/${version.id}/print`}
@@ -177,6 +179,3 @@ const VersionDetailPanel = ({songTitle, version, previousVersions = [], isCreati
 };
 
 export default VersionDetailPanel;
-
-
-

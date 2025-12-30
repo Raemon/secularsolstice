@@ -131,6 +131,27 @@ export const updateProgramVideoUrl = async (programId: string, videoUrl: string)
   return mapProgramRow(typedRows[0]);
 };
 
+export const getProgramsContainingVersion = async (versionId: string): Promise<ProgramRecord[]> => {
+  const rows = await sql`
+    with direct_programs as (
+      select id, title, element_ids, program_ids, created_by, created_at, archived, is_subprogram, video_url, print_program_foreword, print_program_epitaph
+      from programs
+      where archived = false and ${versionId} = ANY(element_ids)
+    ),
+    parent_programs as (
+      select p.id, p.title, p.element_ids, p.program_ids, p.created_by, p.created_at, p.archived, p.is_subprogram, p.video_url, p.print_program_foreword, p.print_program_epitaph
+      from programs p
+      where p.archived = false
+        and exists (select 1 from direct_programs dp where dp.is_subprogram = true and dp.id = ANY(p.program_ids))
+    )
+    select * from direct_programs
+    union
+    select * from parent_programs
+    order by created_at desc
+  `;
+  return (rows as ProgramRow[]).map(mapProgramRow);
+};
+
 export const updateProgram = async (programId: string, updates: {title?: string; printProgramForeword?: string | null; printProgramEpitaph?: string | null; videoUrl?: string | null; isSubprogram?: boolean}): Promise<ProgramRecord> => {
   const program = await getProgramById(programId);
   if (!program) {
@@ -152,20 +173,3 @@ export const updateProgram = async (programId: string, updates: {title?: string;
   }
   return mapProgramRow(typedRows[0]);
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
