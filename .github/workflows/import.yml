@@ -13,9 +13,13 @@ jobs:
     steps:
       - name: Trigger import from Secular Solstice
         run: |
-          HTTP_CODE=$(curl -s -w "%{http_code}" -o response.txt -X POST \
+          APP_URL="${{ secrets.APP_URL }}"
+          APP_URL="${APP_URL%/}"
+          HTTP_CODE=$(curl -s -w "%{http_code}" -o response.txt \
+            -L --post301 --post302 --post303 \
+            -X POST \
             -H "Authorization: Bearer ${{ secrets.IMPORT_SECRET }}" \
-            "${{ secrets.APP_URL }}/api/admin/import-secular-solstice")
+            "${APP_URL}/api/admin/import-secular-solstice")
           echo "HTTP Code: $HTTP_CODE"
           cat response.txt
           if [ "$HTTP_CODE" != "200" ]; then
