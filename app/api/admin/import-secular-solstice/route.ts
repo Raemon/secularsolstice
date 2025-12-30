@@ -4,6 +4,9 @@ import { validateBearerSecret } from '@/lib/authUtils';
 import { importFromDirectories } from '@/lib/importUtils';
 import { downloadSecularSolsticeRepo } from '@/lib/githubDownloader';
 
+// Allow up to 5 minutes for import (Vercel Pro limit)
+export const maxDuration = 300;
+
 export async function POST(request: NextRequest) {
   let cleanup: (() => Promise<void>) | null = null;
   try {

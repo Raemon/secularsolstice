@@ -2,7 +2,7 @@ name: Daily Import
 
 on:
   schedule:
-    # Run daily at 5 AM UTC (1 hour before backup at 6 AM)
+    # Run daily at 5 AM UTC (1 hour before public backup at 6 AM)
     - cron: '0 5 * * *'
   workflow_dispatch:
     # Allow manual trigger from GitHub Actions UI
@@ -23,5 +23,3 @@ jobs:
             exit 1
           fi
           echo "Import completed successfully"
-
-

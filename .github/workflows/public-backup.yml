@@ -1,0 +1,49 @@
+name: Daily Public Backup
+
+on:
+  schedule:
+    # Run daily at 6 AM UTC
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    # Allow manual trigger from GitHub Actions UI
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download backup from API
+        run: |
+          DATE=$(date +%Y-%m-%d)
+          FILENAME="songs-export-${DATE}.zip"
+          HTTP_CODE=$(curl -s -w "%{http_code}" -o "${FILENAME}" -X POST \
+            -H "Authorization: Bearer ${{ secrets.BACKUP_SECRET }}" \
+            "${{ secrets.APP_URL }}/api/admin/backup")
+          echo "HTTP Code: $HTTP_CODE"
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "Backup API returned error"
+            cat "${FILENAME}"
+            exit 1
+          fi
+          echo "Downloaded backup: ${FILENAME}"
+          ls -la "${FILENAME}"
+          echo "BACKUP_FILE=${FILENAME}" >> $GITHUB_ENV
+
+      - name: Upload to Backblaze B2
+        env:
+          B2_REGION: ${{ secrets.B2_REGION }}
+          B2_PUBLIC_APPLICATION_KEY_ID: ${{ secrets.B2_PUBLIC_APPLICATION_KEY_ID }}
+          B2_PUBLIC_APPLICATION_KEY: ${{ secrets.B2_PUBLIC_APPLICATION_KEY }}
+        run: |
+          pip install awscli
+
+          aws configure set aws_access_key_id "$B2_PUBLIC_APPLICATION_KEY_ID"
+          aws configure set aws_secret_access_key "$B2_PUBLIC_APPLICATION_KEY"
+          aws configure set region "$B2_REGION"
+
+          aws s3 cp "$BACKUP_FILE" "s3://secularsolstice-public/backups/${BACKUP_FILE}" \
+            --endpoint-url "https://s3.${B2_REGION}.backblazeb2.com"
+
+          echo "Backup uploaded successfully: ${BACKUP_FILE}"
+
+      - name: Cleanup
+        run: rm -f *.zip
