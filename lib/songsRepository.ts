@@ -613,6 +613,30 @@ export const updateSongTags = async (songId: string, tags: string[]): Promise<So
   return typedRows[0];
 };
 
+export const addSongTags = async (songId: string, newTags: string[]): Promise<SongRecord> => {
+  if (newTags.length === 0) return getSongById(songId) as Promise<SongRecord>;
+  const rows = await sql`
+    update songs
+    set tags = (select array_agg(distinct elem) from unnest(coalesce(tags, array[]::text[]) || ${newTags}::text[]) as elem)
+    where id = ${songId}
+    returning id, title, created_by as "createdBy", created_at as "createdAt", archived, tags
+  `;
+  const typedRows = rows as SongRowResult[];
+  if (typedRows.length === 0) {
+    throw new Error(`Song ${songId} not found`);
+  }
+  return typedRows[0];
+};
+
+export const getSongById = async (songId: string): Promise<SongRecord | null> => {
+  const rows = await sql`
+    select id, title, created_by as "createdBy", created_at as "createdAt", archived, tags
+    from songs where id = ${songId}
+  `;
+  const typedRows = rows as SongRowResult[];
+  return typedRows.length > 0 ? typedRows[0] : null;
+};
+
 export const updateSongTitle = async (songId: string, title: string): Promise<SongRecord> => {
   const rows = await sql`
     update songs

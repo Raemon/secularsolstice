@@ -57,14 +57,22 @@ const ImportSecularSolstice = () => {
           }
           try {
             const parsed = JSON.parse(line);
-            if (parsed.type === 'summary') {
+            if (parsed.type === 'progress') {
+              if (parsed.phase === 'downloading') {
+                const pct = parsed.totalBytes ? Math.round((parsed.bytesReceived / parsed.totalBytes) * 100) : null;
+                const mb = (parsed.bytesReceived / 1024 / 1024).toFixed(1);
+                setProgress(pct ? `Downloading repo... ${mb}MB (${pct}%)` : `Downloading repo... ${mb}MB`);
+              } else if (parsed.phase === 'extracting') {
+                setProgress('Extracting repo...');
+              }
+            } else if (parsed.type === 'summary') {
               setResult({ speechResults: parsed.speechResults, songResults: parsed.songResults, activityResults: parsed.activityResults, programResults: parsed.programResults, resyncResults: parsed.resyncResults });
               const durationMs = performance.now() - startedAt;
               setProgress(`${dryRun ? 'Dry run' : 'Import'} done in ${Math.round(durationMs)}ms`);
             } else if (parsed.type === 'speech' || parsed.type === 'song' || parsed.type === 'activity' || parsed.type === 'program' || parsed.type === 'resync') {
               count += 1;
               setLiveItems((prev) => [...prev, parsed]);
-              setProgress(`Received ${count} items...`);
+              setProgress(`Processing ${count} items...`);
             } else if (parsed.type === 'error') {
               setStatus(parsed.error || 'Import failed');
             }
