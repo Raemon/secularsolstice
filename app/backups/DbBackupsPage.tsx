@@ -22,12 +22,15 @@ const formatShortDate = (dateStr: string | null) => {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 };
 
+const GITHUB_ACTIONS_RESTORE_URL = 'https://github.com/Raemon/autosingalong/actions/workflows/db-restore.yml';
+
 const DbBackupsPage = () => {
   const { userId, isAdmin, loading: userLoading } = useUser();
   const [backups, setBackups] = useState<BackupInfo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [restoringFile, setRestoringFile] = useState<string | null>(null);
   const [downloadingFile, setDownloadingFile] = useState<string | null>(null);
+  const [restoringFile, setRestoringFile] = useState<string | null>(null);
+  const [copiedFile, setCopiedFile] = useState<string | null>(null);
   const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [stats, setStats] = useState<StatsResponse | null>(null);
 
@@ -86,33 +89,31 @@ const DbBackupsPage = () => {
     }
   };
 
+  const handleCopyFilename = (filename: string) => {
+    navigator.clipboard.writeText(filename);
+    setCopiedFile(filename);
+    setTimeout(() => setCopiedFile(null), 2000);
+  };
+
   const handleRestore = async (filename: string) => {
     if (!userId) return;
     const confirmed = window.confirm(
-      `Are you sure you want to restore from "${filename}"?\n\nThis will:\n1. Create a safety backup of current data\n2. DELETE all current data\n3. Restore from the selected backup\n\nThis cannot be undone (but you can restore from the safety backup).`
+      `Trigger restore from "${filename}"?\n\nThis will run a GitHub Action that:\n1. Creates a safety backup\n2. Restores from this backup\n\nYou can monitor progress in GitHub Actions.`
     );
     if (!confirmed) return;
-
     setRestoringFile(filename);
     setStatus(null);
     try {
-      const response = await fetch(`/api/db-restore?requestingUserId=${userId}`, {
+      const response = await fetch(`/api/trigger-restore?requestingUserId=${userId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ filename }),
       });
       const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to restore backup');
-      }
-      setStatus({
-        type: 'success',
-        message: `Restored successfully. Safety backup: ${data.safetyBackup}`,
-      });
-      fetchStats();
-      fetchBackups();
-    } catch (err: unknown) {
-      console.error('Restore failed:', err);
+      if (!response.ok) throw new Error(data.error || 'Failed to trigger restore');
+      setStatus({ type: 'success', message: 'Restore workflow triggered! Check GitHub Actions for progress.' });
+    } catch (err) {
+      console.error('Trigger failed:', err);
       setStatus({ type: 'error', message: err instanceof Error ? err.message : 'Unknown error' });
     } finally {
       setRestoringFile(null);
@@ -148,18 +149,24 @@ const DbBackupsPage = () => {
       )}
 
       <section className="mb-8">
-        <p className="text-gray-400 text-sm mb-4">
+        <p className="text-gray-400 text-sm mb-2">
           Backups are created automatically via GitHub Actions daily at 4am UTC.
-          You can also trigger a manual backup from the GitHub Actions UI.
+        </p>
+        <p className="text-gray-400 text-sm">
+          Click Restore to trigger a{' '}
+          <a href={GITHUB_ACTIONS_RESTORE_URL} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">
+            GitHub Action
+          </a>{' '}
+          that restores the database (creates a safety backup first).
         </p>
       </section>
 
       <section>
-        <h2 className="text-lg font-semibold mb-3">Available Backups (Cloudflare R2)</h2>
+        <h2 className="text-lg font-semibold mb-3">Available Backups (Backblaze B2)</h2>
         {isLoading ? (
           <div className="text-gray-400">Loading backups...</div>
         ) : backups.length === 0 ? (
-          <div className="text-gray-500">No backups found in R2. Run the GitHub Action to create your first backup.</div>
+          <div className="text-gray-500">No backups found. Run the GitHub Action to create your first backup.</div>
         ) : (
           <div className="space-y-2">
             {backups.map((backup) => (
@@ -172,18 +179,18 @@ const DbBackupsPage = () => {
                   </div>
                   <div className="flex gap-2">
                     <button
-                      onClick={() => handleDownload(backup.filename)}
-                      disabled={downloadingFile !== null}
-                      className={`text-sm px-3 py-1 border border-gray-600 rounded ${downloadingFile === backup.filename ? 'opacity-50 cursor-not-allowed' : 'text-gray-200 hover:bg-gray-800'}`}
-                    >
-                      {downloadingFile === backup.filename ? 'Downloading...' : 'Download'}
-                    </button>
-                    <button
                       onClick={() => handleRestore(backup.filename)}
                       disabled={restoringFile !== null}
-                      className={`text-sm px-3 py-1 border border-red-700 rounded ${restoringFile === backup.filename ? 'opacity-50 cursor-not-allowed' : 'text-red-400 hover:bg-red-900/30'}`}
+                      className={`text-sm px-3 py-1 border border-orange-700 ${restoringFile === backup.filename ? 'opacity-50 cursor-not-allowed' : 'text-orange-400 hover:bg-orange-900/30'}`}
                     >
-                      {restoringFile === backup.filename ? 'Restoring...' : 'Restore'}
+                      {restoringFile === backup.filename ? '...' : 'Restore'}
+                    </button>
+                    <button
+                      onClick={() => handleDownload(backup.filename)}
+                      disabled={downloadingFile !== null}
+                      className={`text-sm px-3 py-1 border border-gray-600 ${downloadingFile === backup.filename ? 'opacity-50 cursor-not-allowed' : 'text-gray-200 hover:bg-gray-800'}`}
+                    >
+                      {downloadingFile === backup.filename ? '...' : 'Download'}
                     </button>
                   </div>
                 </div>

@@ -1,0 +1,74 @@
+name: Database Restore
+
+on:
+  workflow_dispatch:
+    inputs:
+      backup_filename:
+        description: 'Backup filename to restore (e.g. db-backup-2025-01-15-040000.sql.gz)'
+        required: true
+        type: string
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    env:
+      PG_VERSION: "17"
+    steps:
+      - name: Install PostgreSQL client
+        run: |
+          wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /usr/share/keyrings/postgresql-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/postgresql-archive-keyring.gpg] http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-${PG_VERSION}
+          echo "/usr/lib/postgresql/${PG_VERSION}/bin" >> $GITHUB_PATH
+
+      - name: Download backup from B2
+        env:
+          B2_REGION: ${{ secrets.B2_REGION }}
+          B2_APPLICATION_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
+          B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
+          B2_BUCKET_NAME: ${{ secrets.B2_BUCKET_NAME }}
+        run: |
+          pip install awscli
+          aws configure set aws_access_key_id "$B2_APPLICATION_KEY_ID"
+          aws configure set aws_secret_access_key "$B2_APPLICATION_KEY"
+          aws configure set region "$B2_REGION"
+          
+          FILENAME="${{ inputs.backup_filename }}"
+          echo "Downloading backup: ${FILENAME}"
+          aws s3 cp "s3://${B2_BUCKET_NAME}/${FILENAME}" "./${FILENAME}" \
+            --endpoint-url "https://s3.${B2_REGION}.backblazeb2.com"
+          
+          echo "BACKUP_FILE=${FILENAME}" >> $GITHUB_ENV
+
+      - name: Create safety backup before restore
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          B2_REGION: ${{ secrets.B2_REGION }}
+          B2_APPLICATION_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
+          B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
+          B2_BUCKET_NAME: ${{ secrets.B2_BUCKET_NAME }}
+        run: |
+          TIMESTAMP=$(date +%Y-%m-%d-%H%M%S)
+          SAFETY_FILENAME="pre-restore-${TIMESTAMP}.sql"
+          echo "Creating safety backup: ${SAFETY_FILENAME}"
+          pg_dump "$DATABASE_URL" --no-owner --no-acl --no-comments > "${SAFETY_FILENAME}"
+          gzip "${SAFETY_FILENAME}"
+          
+          aws s3 cp "${SAFETY_FILENAME}.gz" "s3://${B2_BUCKET_NAME}/${SAFETY_FILENAME}.gz" \
+            --endpoint-url "https://s3.${B2_REGION}.backblazeb2.com"
+          
+          echo "Safety backup uploaded: ${SAFETY_FILENAME}.gz"
+
+      - name: Restore database
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          echo "Restoring from: ${BACKUP_FILE}"
+          gunzip "${BACKUP_FILE}"
+          SQL_FILE="${BACKUP_FILE%.gz}"
+          psql "$DATABASE_URL" < "${SQL_FILE}"
+          echo "Restore completed successfully"
+
+      - name: Cleanup
+        run: rm -f *.sql *.sql.gz
