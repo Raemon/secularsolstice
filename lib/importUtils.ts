@@ -106,7 +106,7 @@ const collectFiles = async (dirPath: string, baseDir: string): Promise<FileInfo[
       continue;
     }
 
-    if (SKIP_FILES.has(entry.name)) continue;
+    if (SKIP_FILES.has(entry.name) || entry.name.toLowerCase() === 'makefile') continue;
     const ext = path.extname(entry.name).toLowerCase();
     if (AUDIO_EXTENSION_SET.has(ext)) continue; // Skip audio files (handle separately)
 
@@ -144,7 +144,8 @@ export const importSongDirectory = async (
   if (files.length === 0) return results;
 
   for (const file of files) {
-    const sourceLabel = file.relativePath;
+    // Strip "gen/" prefix if present
+    const sourceLabel = file.relativePath.replace(/^gen\//, '');
     const label = normalizeTitle(sourceLabel);
     const createdAt = await getFileCreatedAt(file.fullPath);
     const existingVersion = await findExistingVersion(songTitle, [label, sourceLabel], createdAt);
