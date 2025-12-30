@@ -1,5 +1,8 @@
 import { useRef, useState } from 'react';
 
+const MAX_FILE_SIZE_MB = 50;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+
 const SlidesMovieUpload = ({slidesMovieUrl, onFormChange, songId}:{slidesMovieUrl: string; onFormChange: (updates: Partial<{ label: string; content: string; audioUrl: string; slidesMovieUrl: string; bpm: number; transpose: number; previousVersionId: string; nextVersionId: string; slideCredits: string; programCredits: string }>) => void; songId?: string}) => {
   const [isUploadingMovie, setIsUploadingMovie] = useState(false);
   const [movieUploadError, setMovieUploadError] = useState<string | null>(null);
@@ -8,6 +11,17 @@ const SlidesMovieUpload = ({slidesMovieUrl, onFormChange, songId}:{slidesMovieUr
   const handleMovieSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) {
+      return;
+    }
+    if (!file.type.startsWith('video/')) {
+      setMovieUploadError(`Invalid file type: ${file.type || 'unknown'}. Please select a video file.`);
+      if (movieInputRef.current) movieInputRef.current.value = '';
+      return;
+    }
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+      setMovieUploadError(`Movie file size (${sizeMB}MB) exceeds ${MAX_FILE_SIZE_MB}MB limit`);
+      if (movieInputRef.current) movieInputRef.current.value = '';
       return;
     }
     setMovieUploadError(null);
@@ -20,13 +34,17 @@ const SlidesMovieUpload = ({slidesMovieUrl, onFormChange, songId}:{slidesMovieUr
       }
       const response = await fetch('/api/songs/slides-movie', { method: 'POST', body: formData });
       if (!response.ok) {
-        throw new Error('Failed to upload movie');
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(`Upload failed (${response.status}): ${errorData.error || response.statusText}`);
       }
       const data = await response.json();
       onFormChange({ slidesMovieUrl: data.url });
+      if (movieInputRef.current) movieInputRef.current.value = '';
     } catch (uploadError) {
       console.error('Error uploading movie:', uploadError);
-      setMovieUploadError('Upload failed');
+      const errorMessage = uploadError instanceof Error ? uploadError.message : 'Unknown error occurred';
+      setMovieUploadError(errorMessage);
+      if (movieInputRef.current) movieInputRef.current.value = '';
     } finally {
       setIsUploadingMovie(false);
     }
@@ -61,4 +79,3 @@ const SlidesMovieUpload = ({slidesMovieUrl, onFormChange, songId}:{slidesMovieUr
 };
 
 export default SlidesMovieUpload;
-

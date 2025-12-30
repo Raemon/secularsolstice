@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
 import { getSongBlobPrefix } from '@/lib/blobUtils';
 
+const MAX_FILE_SIZE_MB = 50;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
@@ -10,6 +13,11 @@ export async function POST(request: NextRequest) {
 
     if (!movieFile) {
       return NextResponse.json({ error: 'No movie file provided' }, { status: 400 });
+    }
+
+    if (movieFile.size > MAX_FILE_SIZE_BYTES) {
+      const sizeMB = (movieFile.size / (1024 * 1024)).toFixed(1);
+      return NextResponse.json({ error: `Movie file size (${sizeMB}MB) exceeds ${MAX_FILE_SIZE_MB}MB limit` }, { status: 400 });
     }
 
     const token = process.env.BLOB_READ_WRITE_TOKEN;
@@ -25,6 +33,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ url: blob.url });
   } catch (error) {
     console.error('Error uploading slides movie:', error);
-    return NextResponse.json({ error: 'Failed to upload slides movie' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'Failed to upload slides movie';
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
