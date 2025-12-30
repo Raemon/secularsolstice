@@ -1,4 +1,4 @@
-name: Daily Backup
+name: Daily Public Backup
 
 on:
   schedule:
