@@ -31,8 +31,8 @@ const isValidTextContent = (buffer: Buffer): boolean => {
 };
 
 const uploadToBlob = async (buffer: Buffer, songId: string, fileName: string): Promise<string> => {
-  const token = process.env.secular_solstice__READ_WRITE_TOKEN;
-  if (!token) throw new Error('Blob storage token not configured (secular_solstice__READ_WRITE_TOKEN)');
+  const token = process.env.BLOB_READ_WRITE_TOKEN;
+  if (!token) throw new Error('Blob storage token not configured (BLOB_READ_WRITE_TOKEN)');
   const ext = path.extname(fileName).toLowerCase();
   const contentType = getMimeType(ext);
   const safeName = fileName.replace(/\//g, '-');
@@ -61,7 +61,6 @@ const ensureSong = async (title: string, tags: string[]) => {
     throw error;
   }
 };
-
 
 const getFileCreatedAt = async (filePath: string) => {
   const stats = await fs.stat(filePath);

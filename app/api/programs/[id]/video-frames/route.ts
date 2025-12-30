@@ -13,7 +13,7 @@ export async function POST(request: NextRequest, {params}: {params: Promise<{id:
       return NextResponse.json({error: 'No video file provided'}, {status: 400});
     }
 
-    const token = process.env.secular_solstice__READ_WRITE_TOKEN;
+    const token = process.env.BLOB_READ_WRITE_TOKEN;
     if (!token) {
       return NextResponse.json({error: 'Blob storage token not configured'}, {status: 500});
     }
@@ -30,4 +30,3 @@ export async function POST(request: NextRequest, {params}: {params: Promise<{id:
     return NextResponse.json({error: 'Failed to upload video'}, {status: 500});
   }
 }
-

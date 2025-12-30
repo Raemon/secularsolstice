@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: `File size exceeds ${MAX_FILE_SIZE_MB}MB limit` }, { status: 400 });
     }
 
-    const token = process.env.secular_solstice__READ_WRITE_TOKEN;
+    const token = process.env.BLOB_READ_WRITE_TOKEN;
     if (!token) {
       return NextResponse.json({ error: 'Blob storage token not configured' }, { status: 500 });
     }
