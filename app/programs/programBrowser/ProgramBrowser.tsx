@@ -9,7 +9,9 @@ import type { SongVersion } from '../../songs/types';
 import ProgramSelector from './components/ProgramSelector';
 import ProgramStructurePanel from './ProgramStructurePanel';
 import ProgramViews from './ProgramViews';
+import ProgramEditPanel from './ProgramEditPanel';
 import useVersionPanelManager from '../../hooks/useVersionPanelManager';
+import Link from 'next/link';
 
 type ProgramBrowserProps = {
   initialProgramId?: string;
@@ -25,6 +27,7 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
   const [isLoadingVersions, setIsLoadingVersions] = useState(true);
   const [dataError, setDataError] = useState<string | null>(null);
   const [selectedProgramId, setSelectedProgramId] = useState<string | null>(initialProgramId ?? null);
+  const [isEditingProgram, setIsEditingProgram] = useState(false);
   const hasHydratedInitialVersion = useRef(false);
   const getBasePath = useCallback(
     () => (selectedProgramId ? `/programs/${selectedProgramId}` : '/programs'),
@@ -200,6 +203,7 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
       return;
     }
     setSelectedProgramId(programId);
+    setIsEditingProgram(false);
     clearSelection();
     resetPanelError();
     if (typeof window !== 'undefined') {
@@ -209,6 +213,24 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
         window.history.pushState(null, '', '/programs');
       }
     }
+  };
+
+  const handleEditClick = () => {
+    clearSelection();
+    setIsEditingProgram(true);
+  };
+
+  const handleVersionClickWithEditClose = useCallback((versionId: string, options?: { skipUrlUpdate?: boolean }) => {
+    setIsEditingProgram(false);
+    return handleVersionClick(versionId, options);
+  }, [handleVersionClick]);
+
+  const handleCloseEditPanel = () => {
+    setIsEditingProgram(false);
+  };
+
+  const handleProgramUpdated = (updatedProgram: Program) => {
+    setPrograms((prev) => prev.map((p) => (p.id === updatedProgram.id ? updatedProgram : p)));
   };
 
   const handleReorderElements = useCallback(async (programId: string, reorderedElementIds: string[]) => {
@@ -457,11 +479,11 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
   return (
     <div className="px-2 py-1 sm:p-4">
       <div className="flex flex-col gap-4">
-        <div className={`flex ${selectedVersion ? '' : 'mx-auto'} gap-4 overflow-x-scroll w-full sm:w-auto sm:overflow-x-visible`}>
-          <div className={`overflow-x-scroll sm:overflow-x-visible ${selectedVersion ? 'hidden xl:block' : ''} w-auto`}>
+        <div className={`flex ${selectedVersion || isEditingProgram ? '' : 'mx-auto'} gap-4 overflow-x-scroll w-full sm:w-auto sm:overflow-x-visible`}>
+          <div className={`overflow-x-scroll sm:overflow-x-visible ${selectedVersion || isEditingProgram ? 'hidden xl:block' : ''} w-auto`}>
             {parentProgram && (
-              <div className="text-sm text-gray-400 mb-2">
-                part of <span className="text-gray-300">{parentProgram.title}</span>
+              <div className="text-sm text-gray-400 mb-4">
+                Part of <Link href={`/programs/${parentProgram.id}`} className="text-white hover:underline">{parentProgram.title}</Link>
               </div>
             )}
             <div className="flex items-center justify-between">
@@ -473,7 +495,7 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
               />
             </div>
             <div className="mt-4 ml-1 mb-8">
-              <ProgramViews programId={selectedProgramId ?? ''} isLocked={isProgramLocked(selectedProgramId ?? '')} />
+              <ProgramViews programId={selectedProgramId ?? ''} isLocked={isProgramLocked(selectedProgramId ?? '')} isEditing={isEditingProgram} onEditClick={handleEditClick} />
             </div>
             <ProgramStructurePanel
               program={selectedProgram}
@@ -481,7 +503,7 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
               versions={versions}
               versionMap={versionMap}
               selectedVersionId={selectedVersion?.id}
-              onVersionClick={handleVersionClick}
+              onVersionClick={handleVersionClickWithEditClose}
               onReorderElements={handleReorderElements}
               onChangeVersion={handleChangeVersion}
               onAddElement={handleAddElement}
@@ -514,6 +536,14 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
                 onFormChange={handleFormChange}
                 onSubmitVersion={handleSubmitVersion}
                 onArchiveVersion={handleArchiveVersion}
+              />
+            </div>
+          ) : isEditingProgram && selectedProgramId ? (
+            <div className="flex-3 flex-grow min-w-0">
+              <ProgramEditPanel
+                programId={selectedProgramId}
+                onClose={handleCloseEditPanel}
+                onProgramUpdated={handleProgramUpdated}
               />
             </div>
           ) : (
