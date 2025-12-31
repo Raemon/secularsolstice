@@ -12,8 +12,72 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
+// Pre-validation: catch known invalid patterns before invoking LilyPond (instant feedback)
+function preValidateLilypond(content) {
+  const errors = [];
+  const lines = content.split('\n');
+  
+  // Pattern: trailing dash after numeric chord modifiers like :1.3- or :1.4.6-
+  // Valid: :1.3 :1.4.6 :m :dim :5  Invalid: :1.3- :1.4.6- (dash not followed by digit)
+  const trailingDashPattern = /:(\d+\.)*\d+-(?!\d)/g;
+  lines.forEach((line, idx) => {
+    let match;
+    while ((match = trailingDashPattern.exec(line)) !== null) {
+      const suggestion = match[0].slice(0, -1); // Remove trailing dash
+      errors.push(`Line ${idx + 1}: Invalid chord modifier "${match[0]}" - trailing dash is not valid. Did you mean "${suggestion}"?`);
+    }
+  });
+  
+  return errors;
+}
+
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'lilypond-converter' });
+});
+
+// Syntax check endpoint - validates without full rendering (faster than convert)
+app.post('/check', async (req, res) => {
+  let tempDir = null;
+  try {
+    const { content } = req.body;
+    if (!content) {
+      return res.status(400).json({ error: 'Missing LilyPond content' });
+    }
+    // Fast pre-validation for known patterns
+    const preErrors = preValidateLilypond(content);
+    if (preErrors.length > 0) {
+      return res.status(400).json({ valid: false, errors: preErrors.join('\n') });
+    }
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'lilypond-'));
+    const inputFile = path.join(tempDir, 'input.ly');
+    await fs.writeFile(inputFile, content, 'utf-8');
+    // Use -dno-print-pages to skip rendering (faster), still catches syntax errors
+    try {
+      const { stdout, stderr } = await execAsync(`lilypond -dno-print-pages -dno-point-and-click "${inputFile}" 2>&1`, {
+        cwd: tempDir,
+        timeout: 30000,
+      });
+      const output = stdout + stderr;
+      // Check for error lines
+      const errorLines = output.split('\n').filter(l => l.includes('error:'));
+      if (errorLines.length > 0) {
+        return res.status(400).json({ valid: false, errors: errorLines.join('\n') });
+      }
+      // Extract warnings
+      const warnings = output.split('\n').filter(l => l.includes('warning:')).join('\n');
+      res.json({ valid: true, warnings: warnings || null });
+    } catch (error) {
+      const errorOutput = error.stdout || error.stderr || error.message || 'Unknown error';
+      const errorLines = errorOutput.split('\n').filter(l => l.includes('error:'));
+      return res.status(400).json({ valid: false, errors: errorLines.join('\n') || errorOutput.substring(0, 500) });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to check LilyPond syntax', details: error.message });
+  } finally {
+    if (tempDir) {
+      try { await fs.rm(tempDir, { recursive: true, force: true }); } catch {}
+    }
+  }
 });
 
 app.post('/convert', async (req, res) => {
@@ -26,6 +90,12 @@ app.post('/convert', async (req, res) => {
       return res.status(400).json({ error: 'Missing LilyPond content' });
     }
 
+    // Fast pre-validation for known invalid patterns (instant feedback)
+    const preErrors = preValidateLilypond(content);
+    if (preErrors.length > 0) {
+      return res.status(400).json({ error: 'Invalid LilyPond content', details: preErrors.join('\n') });
+    }
+
     // Create a temporary directory
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'lilypond-'));
     const inputFile = path.join(tempDir, 'input.ly');
@@ -34,11 +104,11 @@ app.post('/convert', async (req, res) => {
     // Write the LilyPond content to a temporary file
     await fs.writeFile(inputFile, content, 'utf-8');
 
-    // Run LilyPond to convert to SVG
+    // Run LilyPond to convert to SVG (120s timeout for complex scores)
     try {
       await execAsync(`lilypond -dbackend=svg -o "${path.join(tempDir, outputBasename)}" "${inputFile}"`, {
         cwd: tempDir,
-        timeout: 30000,
+        timeout: 120000,
       });
     } catch (error) {
       console.error('LilyPond conversion error:', error);

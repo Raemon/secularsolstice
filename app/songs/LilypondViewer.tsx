@@ -75,8 +75,19 @@ const LilypondViewer = ({lilypondContent, versionId, renderedContent}:{lilypondC
       setError(null);
 
       try {
-        // Use external LilyPond server (Fly.io) or fall back to local API
-        const lilypondServerUrl = process.env.NEXT_PUBLIC_LILYPOND_SERVER_URL;
+        // Fetch config from server to get the lilypond server URL (avoids Turbopack env var caching issues)
+        let lilypondServerUrl = process.env.NEXT_PUBLIC_LILYPOND_SERVER_URL;
+        if (!lilypondServerUrl) {
+          try {
+            const configRes = await fetch('/api/config');
+            if (configRes.ok) {
+              const config = await configRes.json();
+              lilypondServerUrl = config.lilypondServerUrl;
+            }
+          } catch (e) {
+            console.warn('[LilypondViewer] Failed to fetch config:', e);
+          }
+        }
         const endpoint = lilypondServerUrl 
           ? `${lilypondServerUrl}/convert`
           : '/api/lilypond-to-svg';
@@ -88,7 +99,7 @@ const LilypondViewer = ({lilypondContent, versionId, renderedContent}:{lilypondC
           ...(isExternalServer 
             ? { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: lilypondContent }) }
             : { body: (() => { const fd = new FormData(); fd.append('content', lilypondContent); return fd; })() }
-          ),
+        ),
         });
 
         console.log('[LilypondViewer] Response status:', response.status, response.statusText);
