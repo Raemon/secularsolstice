@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, EB_Garamond } from "next/font/google";
 import "./globals.css";
 import ConditionalHeader from "./ConditionalHeader";
 import { UserProvider } from "./contexts/UserContext";
+import LocalDbIndicator from "./components/LocalDbIndicator";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -40,6 +41,7 @@ export default function RootLayout({
         <UserProvider>
           <ConditionalHeader />
           {children}
+          <LocalDbIndicator />
         </UserProvider>
       </body>
     </html>
