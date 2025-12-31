@@ -98,6 +98,7 @@ const SongsFileList = ({ initialSongId, initialVersionId }: SongsFileListProps =
     const searchLower = searchTerm.toLowerCase();
     return songs.filter(song => {
       if (song.title.toLowerCase().includes(searchLower)) return true;
+      if (song.tags.some(tag => tag.toLowerCase().includes(searchLower))) return true;
       return song.versions.some(version => version.label.toLowerCase().includes(searchLower));
     }).sort((a, b) => {
       const aOnlyReadme = a.versions.length > 0 && a.versions.every(v => v.label === 'README.md');
