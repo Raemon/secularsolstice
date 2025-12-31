@@ -2,17 +2,18 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { generateSlidesFromHtml } from '../../../../src/components/slides/slideGenerators';
+import SlideViewer from '../../../../src/components/slides/SlideViewer';
+import { generateSlidesFromHtml, lyricsToHtml } from '../../../../src/components/slides/slideGenerators';
 import type { Slide } from '../../../../src/components/slides/types';
 import { extractLyrics } from '../../../../lib/lyricsExtractor';
-import type { SongVersion } from '../../../songs/types';
-import FullScreenSlideItem from '../../../../src/components/slides/FullScreenSlideItem';
 
 type SongSlideData = {
   versionId: string;
   songTitle: string;
   versionLabel: string;
   slides: Slide[];
+  slidesMovieUrl?: string | null;
+  slideMovieStart?: number | null;
 };
 
 const SongSlidesPage = () => {
@@ -21,7 +22,7 @@ const SongSlidesPage = () => {
   const [slideData, setSlideData] = useState<SongSlideData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentSlide, setCurrentSlide] = useState(0);
+  const [backgroundMovieUrl, setBackgroundMovieUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchVersion = async () => {
@@ -31,37 +32,26 @@ const SongSlidesPage = () => {
           throw new Error('Failed to load version');
         }
         const data = await response.json();
-        const version: SongVersion = data.version;
-        
-        const convertToLyricsOnly = (content: string, label: string): string => {
-          try {
-            const lyrics = extractLyrics(content, label);
-            return `<div>${lyrics.split('\n').map(line => `<p>${line || '&nbsp;'}</p>`).join('')}</div>`;
-          } catch (err) {
-            console.error('Failed to extract lyrics:', err);
-            return content;
-          }
-        };
+        const version = data.version;
+        const songTitle = version.songTitle || 'Song';
         
         let slides: Slide[] = [];
         const linesPerSlide = 10;
         
-        // Generate slides from content
         try {
           let contentToProcess = '';
           
           if (version.content) {
-            contentToProcess = convertToLyricsOnly(version.content, version.label);
+            const lyrics = extractLyrics(version.content, version.label);
+            contentToProcess = lyricsToHtml(lyrics);
           } else if (version.renderedContent) {
-            // Use htmlLyricsOnly or htmlFull from the rendered content object
             contentToProcess = version.renderedContent.htmlLyricsOnly || version.renderedContent.htmlFull || version.renderedContent.legacy || '';
           }
           
           if (contentToProcess) {
             slides = generateSlidesFromHtml(contentToProcess, { linesPerSlide });
             
-            // Add title slide at the beginning
-            const titleSlide: Slide = [{ text: data.songTitle || 'Song', isHeading: true, level: 1 }];
+            const titleSlide: Slide = [{ text: songTitle, isHeading: true, level: 1 }];
             slides.unshift(titleSlide);
           }
         } catch (err) {
@@ -70,9 +60,11 @@ const SongSlidesPage = () => {
         
         setSlideData({
           versionId: version.id,
-          songTitle: data.songTitle || 'Song',
+          songTitle: songTitle,
           versionLabel: version.label,
           slides: slides,
+          slidesMovieUrl: version.slidesMovieUrl,
+          slideMovieStart: version.slideMovieStart ?? null,
         });
         setError(null);
       } catch (err) {
@@ -85,44 +77,49 @@ const SongSlidesPage = () => {
     fetchVersion();
   }, [versionId]);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!slideData) return;
-      
-      if (e.key === 'ArrowRight' || e.key === ' ') {
-        e.preventDefault();
-        setCurrentSlide(prev => Math.min(prev + 1, slideData.slides.length - 1));
-      } else if (e.key === 'ArrowLeft') {
-        e.preventDefault();
-        setCurrentSlide(prev => Math.max(prev - 1, 0));
+  const handleSlideChange = (currentSlide: number) => {
+    if (!slideData) return;
+    const startAt = slideData.slideMovieStart ?? 1;
+    if (slideData.slidesMovieUrl && currentSlide >= startAt) {
+      if (backgroundMovieUrl !== slideData.slidesMovieUrl) {
+        setBackgroundMovieUrl(slideData.slidesMovieUrl);
       }
-    };
-    
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [slideData]);
+    } else {
+      if (backgroundMovieUrl !== null) {
+        setBackgroundMovieUrl(null);
+      }
+    }
+  };
 
   if (loading) {
-    return <div className="p-4">Loading slides...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-gray-400">Loading slides...</div>
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="p-4 text-red-600">{error}</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-red-600">Error: {error}</div>
+      </div>
+    );
   }
 
   if (!slideData || slideData.slides.length === 0) {
-    return <div className="p-4">No slides available</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-gray-400">No slides available</div>
+      </div>
+    );
   }
 
+  const programTitleSlideIndices = new Set<number>([0]);
+
   return (
-    <div className="relative">
-      <FullScreenSlideItem slide={slideData.slides[currentSlide]} />
-      <div className="fixed bottom-4 right-4 text-white text-sm bg-black bg-opacity-50 px-3 py-1 rounded">
-        {currentSlide + 1} / {slideData.slides.length}
-      </div>
-    </div>
+    <SlideViewer slides={slideData.slides} title={slideData.songTitle} backgroundMovieUrl={backgroundMovieUrl} programTitleSlideIndices={programTitleSlideIndices} showControls={true} onSlideChange={handleSlideChange} />
   );
 };
 
 export default SongSlidesPage;
-

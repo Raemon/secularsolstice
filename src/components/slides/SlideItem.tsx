@@ -11,7 +11,6 @@ type SlideItemProps = {
   slide: Slide;
   className?: string;
   backgroundImageUrl?: string;
-  backgroundOpacity?: number;
   isProgramTitle?: boolean;
   hasMovie?: boolean;
 };
@@ -72,4 +71,3 @@ const SlideItem = ({slide, className, backgroundImageUrl, isProgramTitle = false
 };
 
 export default SlideItem;
-

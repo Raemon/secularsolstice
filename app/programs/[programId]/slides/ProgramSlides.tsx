@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState, useRef } from 'react';
-import SlideItem from '../../../../src/components/slides/SlideItem';
+import SlideViewer from '../../../../src/components/slides/SlideViewer';
 import { generateSlidesFromHtml, lyricsToHtml } from '../../../../src/components/slides/slideGenerators';
 import { extractFrames } from '../../../../src/components/slides/slideUtils';
 import type { Slide } from '../../../../src/components/slides/types';
@@ -30,10 +30,7 @@ const ProgramSlides = ({ programId }: ProgramSlidesProps) => {
   const [isExtractingFrames, setIsExtractingFrames] = useState(false);
   const [extractingProgramId, setExtractingProgramId] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const slidesMovieRef = useRef<HTMLVideoElement>(null);
   const [backgroundMovieUrl, setBackgroundMovieUrl] = useState<string | null>(null);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -241,7 +238,7 @@ const ProgramSlides = ({ programId }: ProgramSlidesProps) => {
 
   const processedSlides = useMemo(() => {
     return allSlides.map(songData => {
-      if (songData.tags.includes('speech')) {
+      if (!songData.tags.includes('song')) {
         return {
           ...songData,
           slides: songData.slides.slice(0, 1)
@@ -378,69 +375,36 @@ const ProgramSlides = ({ programId }: ProgramSlidesProps) => {
 
   useEffect(() => {
     setCurrentSlide(0);
-  }, [flattenedSlides.length]);
-
-  useEffect(() => {
     setBackgroundMovieUrl(null);
-  }, [selectedProgram?.id]);
+  }, [flattenedSlides.length, selectedProgram?.id]);
 
-  useEffect(() => {
+  const handleSlideChange = (newSlideIndex: number) => {
+    setCurrentSlide(newSlideIndex);
     if (slideToSongIndex.length === 0) return;
-    const songIndex = slideToSongIndex[Math.min(currentSlide, slideToSongIndex.length - 1)];
-    const songData = typeof songIndex === 'number' ? processedSlides[songIndex] : undefined;
-    const range = typeof songIndex === 'number' ? songSlideRanges[songIndex] : undefined;
-    if (songData?.slidesMovieUrl && range) {
-      const withinSongSlides = currentSlide >= range.start && currentSlide < range.start + range.length;
-      if (withinSongSlides) {
-        const positionInSong = currentSlide - range.start + 1;
+    
+    let activeVideoUrl: string | null = null;
+    
+    for (let i = processedSlides.length - 1; i >= 0; i--) {
+      const songData = processedSlides[i];
+      const range = songSlideRanges[i];
+      
+      if (!songData?.slidesMovieUrl || !range) continue;
+      
+      if (newSlideIndex >= range.start) {
+        const positionInSong = newSlideIndex - range.start + 1;
         const startAt = songData.slideMovieStart ?? 1;
+        
         if (positionInSong >= startAt) {
-          if (backgroundMovieUrl !== songData.slidesMovieUrl) {
-            setBackgroundMovieUrl(songData.slidesMovieUrl);
-          }
+          activeVideoUrl = songData.slidesMovieUrl;
+          break;
         }
       }
     }
-  }, [currentSlide, slideToSongIndex, processedSlides, songSlideRanges, backgroundMovieUrl]);
-
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(document.fullscreenElement === containerRef.current);
-    };
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-  }, []);
-
-  useEffect(() => {
-    const video = slidesMovieRef.current;
-    if (!video) return;
-    if (backgroundMovieUrl) {
-      video.src = backgroundMovieUrl;
-      video.load();
-      video.play().catch(err => console.error('Error playing slides movie:', err));
-    } else {
-      video.pause();
-      video.removeAttribute('src');
-      video.load();
-    }
-  }, [backgroundMovieUrl]);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (flattenedSlides.length === 0) return;
-      
-      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-        e.preventDefault();
-        setCurrentSlide(prev => Math.min(prev + 1, flattenedSlides.length - 1));
-      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-        e.preventDefault();
-        setCurrentSlide(prev => Math.max(prev - 1, 0));
-      }
-    };
     
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [flattenedSlides]);
+    if (backgroundMovieUrl !== activeVideoUrl) {
+      setBackgroundMovieUrl(activeVideoUrl);
+    }
+  };
 
   if (loading) {
     return (
@@ -474,38 +438,9 @@ const ProgramSlides = ({ programId }: ProgramSlidesProps) => {
     );
   }
 
-  const backgroundImageUrl = backgroundMovieUrl ? undefined : getBackgroundForSlide(currentSlide);
-  const overlayOpacity = programTitleSlideIndices.has(currentSlide) ? .75 : 0.5;
-  const toggleFullscreen = () => {
-    const container = containerRef.current;
-    if (!container) return;
-    if (!document.fullscreenElement) {
-      container.requestFullscreen().catch(err => console.error('Failed to enter fullscreen:', err));
-      return;
-    }
-    if (document.exitFullscreen) {
-      document.exitFullscreen().catch(err => console.error('Failed to exit fullscreen:', err));
-    }
-  };
-
   return (
-    <div ref={containerRef} className="relative w-screen h-screen flex items-center justify-center">
-      <style>
-        {`
-          .slideMeta {
-            opacity: 0.65;
-            font-style: italic;
-            color: white;
-          }
-        `}
-      </style>
+    <>
       <video ref={videoRef} style={{display: 'none'}} crossOrigin="anonymous" />
-      {backgroundMovieUrl && (
-        <video ref={slidesMovieRef} className="absolute inset-0 w-full h-full object-cover" muted loop playsInline autoPlay preload="auto" style={{zIndex: 0}} />
-      )}
-      {backgroundMovieUrl && (
-        <div className="absolute inset-0 bg-black" style={{opacity: overlayOpacity, zIndex: 1}} />
-      )}
       {!isFullyLoaded && totalVersionsToLoad > 0 && (
         <div className="fixed top-4 left-4 z-10 text-white text-sm bg-black bg-opacity-50 px-3 py-1 rounded">
           Loading: {loadedVersionsCount}/{totalVersionsToLoad} songs
@@ -521,15 +456,9 @@ const ProgramSlides = ({ programId }: ProgramSlidesProps) => {
           {showUploader ? 'Close' : 'Video Backgrounds'}
         </button>
         <DownloadSlidesButton slides={flattenedSlides} programTitle={selectedProgram.title} getBackgroundForSlide={getBackgroundForSlide} programTitleSlideIndices={programTitleSlideIndices} />
-        <button onClick={toggleFullscreen} className="text-white text-xs bg-black bg-opacity-50 px-3 py-1 rounded">
-          {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
-        </button>
       </div>
-      <SlideItem slide={flattenedSlides[currentSlide]} className={backgroundMovieUrl ? "w-screen h-screen flex items-center justify-center p-4 font-georgia bg-transparent" : "bg-black w-screen h-screen flex items-center justify-center p-4 font-georgia"} backgroundImageUrl={backgroundImageUrl} backgroundOpacity={programTitleSlideIndices.has(currentSlide) ? .75 : 0.5} isProgramTitle={programTitleSlideIndices.has(currentSlide)} hasMovie={!!backgroundMovieUrl} />
-      <div className="fixed bottom-4 right-4 text-white text-sm bg-black bg-opacity-50 px-3 py-1 rounded">
-        {currentSlide + 1} / {flattenedSlides.length}
-      </div>
-    </div>
+      <SlideViewer slides={flattenedSlides} title={selectedProgram.title} backgroundMovieUrl={backgroundMovieUrl} programTitleSlideIndices={programTitleSlideIndices} getBackgroundForSlide={getBackgroundForSlide} showControls={true} onSlideChange={handleSlideChange} />
+    </>
   );
 };
 

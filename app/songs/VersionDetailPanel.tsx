@@ -24,6 +24,7 @@ const VersionActionButtons = ({isCreatingVersion, version, isSubmitting, isArchi
   onCreateVersionClick: () => void;
   onCancelCreateVersion: () => void;
 }) => {
+  const { isAdmin } = useUser();
   return (
     <div className="flex items-center gap-2">
       {isCreatingVersion && (
@@ -35,7 +36,7 @@ const VersionActionButtons = ({isCreatingVersion, version, isSubmitting, isArchi
           Save
         </button>
       )}
-      {isCreatingVersion && version.id !== 'new' && (
+      {isCreatingVersion && version.id !== 'new' && isAdmin && (
         <button
           onClick={onArchiveVersion}
           className="text-red-600 text-xs hover:text-red-800 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-red-800"
@@ -132,7 +133,7 @@ const VersionDetailPanel = ({songTitle, version, previousVersions = [], isCreati
               onCancelCreateVersion={onCancelCreateVersion}
             />
           ) : (
-            <Tooltip content="To edit, update your name in the top-right corner">
+            <Tooltip content="To edit, update your name in the top-right corner" placement="left-start">
               <VersionActionButtons
                 isCreatingVersion={isCreatingVersion}
                 version={version}
