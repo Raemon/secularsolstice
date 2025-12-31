@@ -75,13 +75,20 @@ const LilypondViewer = ({lilypondContent, versionId, renderedContent}:{lilypondC
       setError(null);
 
       try {
-        const formData = new FormData();
-        formData.append('content', lilypondContent);
+        // Use external LilyPond server (Fly.io) or fall back to local API
+        const lilypondServerUrl = process.env.NEXT_PUBLIC_LILYPOND_SERVER_URL;
+        const endpoint = lilypondServerUrl 
+          ? `${lilypondServerUrl}/convert`
+          : '/api/lilypond-to-svg';
+        const isExternalServer = !!lilypondServerUrl;
 
-        console.log('[LilypondViewer] Sending request to /api/lilypond-to-svg');
-        const response = await fetch('/api/lilypond-to-svg', {
+        console.log('[LilypondViewer] Sending request to', endpoint);
+        const response = await fetch(endpoint, {
           method: 'POST',
-          body: formData,
+          ...(isExternalServer 
+            ? { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: lilypondContent }) }
+            : { body: (() => { const fd = new FormData(); fd.append('content', lilypondContent); return fd; })() }
+          ),
         });
 
         console.log('[LilypondViewer] Response status:', response.status, response.statusText);
@@ -230,4 +237,3 @@ const LilypondViewer = ({lilypondContent, versionId, renderedContent}:{lilypondC
 };
 
 export default LilypondViewer;
-
