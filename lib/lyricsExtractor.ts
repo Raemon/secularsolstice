@@ -451,7 +451,7 @@ export const extractLyricsFromUltimateGuitar = (content: string): string => {
 /**
  * Detect file type from filename or content
  */
-export const detectFileType = (filename: string, content: string): 'lilypond' | 'chordmark' | 'ultimateguitar' | 'text' | 'markdown' | 'unknown' => {
+export const detectFileType = (filename: string, content: string): 'lilypond' | 'chordmark' | 'ultimateguitar' | 'text' | 'markdown' | 'html' | 'unknown' => {
   const lowerFilename = filename.toLowerCase();
   
   // Check file extension first
@@ -474,7 +474,16 @@ export const detectFileType = (filename: string, content: string): 'lilypond' | 
   if (lowerFilename.endsWith('.markdown') || lowerFilename.endsWith('.md')) {
     return 'markdown';
   }
+
+  if (lowerFilename.endsWith('.html') || lowerFilename.endsWith('.htm')) {
+    return 'html';
+  }
   
+  // Check content patterns for HTML
+  if (content.trim().startsWith('<!DOCTYPE html') || content.trim().startsWith('<html') || /<html[\s>]/i.test(content)) {
+    return 'html';
+  }
+
   // Check content patterns for lilypond
   if (content.includes('\\lyricmode') || content.includes('\\version') || content.includes('\\relative')) {
     return 'lilypond';
@@ -527,4 +536,3 @@ export const extractLyricsFromVersion = (version: { label: string; content: stri
   
   return extractLyrics(version.content, version.label);
 };
-

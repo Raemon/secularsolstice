@@ -5,6 +5,7 @@ import MarkdownRenderer from './MarkdownRenderer';
 import BlobAttachment from './BlobAttachment';
 import { AUDIO_EXTENSIONS } from '../../lib/audioExtensions';
 import { detectFileType } from '../../lib/lyricsExtractor';
+import DOMPurify from 'isomorphic-dompurify';
 
 const VersionContent = ({version, print}: {
   version: SongVersion;
@@ -19,6 +20,7 @@ const VersionContent = ({version, print}: {
   const isLilypondFile = fileType === 'lilypond';
   const isMarkdownFile = fileType === 'markdown';
   const isUltimateGuitarFile = fileType === 'ultimateguitar';
+  const isHtmlFile = fileType === 'html';
   const isTxtFile = fileType === 'text' || fileType === 'unknown';
   const audioUrl = version.audioUrl || '';
   const normalizedAudioUrl = audioUrl.toLowerCase();
@@ -50,6 +52,9 @@ const VersionContent = ({version, print}: {
       )}
       {hasContent && isChordmarkFile && (
         <ChordmarkRenderer content={version.content || ''} initialBpm={version.bpm || 90} initialTranspose={version.transpose ?? 0} print={print} renderedContent={version.renderedContent} />
+      )}
+      {hasContent && isHtmlFile && (
+        <div className="markdown-content text-sm" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(version.content || '') }} />
       )}
       {hasContent && isTxtFile && (
         <div className="text-content text-xs overflow-x-auto max-w-full">{version.content}</div>
