@@ -22,6 +22,7 @@ export type ProgramStructureNodeProps = {
   onAddElement: (programId: string, versionId: string) => void | Promise<void>;
   onRemoveElement: (programId: string, elementId: string) => void | Promise<void>;
   canEdit: boolean;
+  isEditing?: boolean;
   onSongCreated?: (data?: { song?: SongRecord; version?: SongVersionRecord }) => Promise<void> | void;
   onCreateSubprogram?: (programId: string) => void | Promise<void>;
   topLevelProgramTitle?: string;
@@ -44,6 +45,7 @@ const ProgramStructureNode = ({
   onAddElement,
   onRemoveElement,
   canEdit,
+  isEditing,
   onSongCreated,
   onCreateSubprogram,
   topLevelProgramTitle,
@@ -100,7 +102,7 @@ const ProgramStructureNode = ({
             );
           }}
           keyExtractor={(elementId: string) => `${elementId}-${current.id}`}
-          disabled={isLocked}
+          disabled={isLocked || !isEditing}
         />
       </div>
       {current.programIds.length > 0 && (
@@ -138,6 +140,7 @@ const ProgramStructureNode = ({
                 onAddElement={onAddElement}
                 onRemoveElement={onRemoveElement}
                 canEdit={canEdit}
+                isEditing={isEditing}
                 onSongCreated={onSongCreated}
                 onCreateSubprogram={onCreateSubprogram}
                 topLevelProgramTitle={topLevelProgramTitle}

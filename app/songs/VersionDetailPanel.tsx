@@ -104,7 +104,7 @@ const VersionDetailPanel = ({songTitle, version, previousVersions = [], isCreati
           <PastVersionUsage versionId={version.id} />
         </div>
         <a
-          href={`/songs/${version.id}/print`}
+          href={`/songs/${songId}/${version.id}/print`}
           target="_blank"
           rel="noopener noreferrer"
           className="text-blue-400 text-xs hover:text-blue-600 underline"
@@ -112,7 +112,7 @@ const VersionDetailPanel = ({songTitle, version, previousVersions = [], isCreati
           Print View
         </a>
         <a
-          href={`/songs/${version.id}/slides`}
+          href={`/songs/${songId}/${version.id}/slides`}
           target="_blank"
           rel="noopener noreferrer"
           className="text-blue-400 text-xs hover:text-blue-600 underline"

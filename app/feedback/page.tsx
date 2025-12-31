@@ -1,8 +1,7 @@
-import { ProgramFeedback } from "./ProgramFeedback";
+import { FeedbackProgramList } from "./FeedbackProgramList";
 
 const FeedbackPage = () => {
-  return <ProgramFeedback />;
+  return <FeedbackProgramList />;
 };
 
 export default FeedbackPage;
-

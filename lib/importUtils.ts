@@ -84,7 +84,7 @@ const findExistingVersion = async (songTitle: string, labels: string[], createdA
 
 type FileInfo = { fullPath: string; relativePath: string; buffer: Buffer; isText: boolean };
 
-const SKIP_FILES = new Set(['Makefile', '.DS_Store']);
+const SKIP_FILES = new Set(['makefile', '.ds_store', 'index.html', 'thumb.png']);
 const SKIP_DIRS = new Set(['node_modules', '.git']);
 
 const collectFiles = async (dirPath: string, baseDir: string): Promise<FileInfo[]> => {
@@ -107,7 +107,7 @@ const collectFiles = async (dirPath: string, baseDir: string): Promise<FileInfo[
       continue;
     }
 
-    if (SKIP_FILES.has(entry.name) || entry.name.toLowerCase() === 'makefile') continue;
+    if (SKIP_FILES.has(entry.name.toLowerCase())) continue;
     const ext = path.extname(entry.name).toLowerCase();
     if (AUDIO_EXTENSION_SET.has(ext)) continue; // Skip audio files (handle separately)
 
@@ -121,7 +121,7 @@ const collectFiles = async (dirPath: string, baseDir: string): Promise<FileInfo[
 
 export type ImportResult = { title: string; label: string; status: string; url?: string; error?: string };
 
-const versionUrl = (versionId: string | null | undefined) => versionId ? `/songs/${versionId}` : undefined;
+const versionUrl = (songId: string | null | undefined, versionId: string | null | undefined) => songId && versionId ? `/songs/${songId}/${versionId}` : undefined;
 
 export const importSongDirectory = async (
   songDirPath: string,
@@ -153,7 +153,7 @@ export const importSongDirectory = async (
 
     // If timestamps match exactly, the file hasn't changed since import
     if (existingVersion?.matches) {
-      const url = versionUrl(existingVersion.existing?.id);
+      const url = versionUrl(existingVersion.existing?.songId, existingVersion.existing?.id);
       const result = { title: songTitle, label, status: 'exists', url };
       results.push(result);
       onResult?.(result);
@@ -169,7 +169,7 @@ export const importSongDirectory = async (
         ? existingContent === newContent
         : Boolean(existingVersion.existing.blobUrl); // Binary exists = assume unchanged
       if (contentMatches) {
-        const url = versionUrl(existingVersion.existing.id);
+        const url = versionUrl(existingVersion.existing.songId, existingVersion.existing.id);
         const result = { title: songTitle, label, status: 'exists', url };
         results.push(result);
         onResult?.(result);
@@ -177,7 +177,7 @@ export const importSongDirectory = async (
       }
       // Content differs - would update (create new version in lineage)
       if (dryRun) {
-        const url = versionUrl(existingVersion.existing.id);
+        const url = versionUrl(existingVersion.existing.songId, existingVersion.existing.id);
         const result = { title: songTitle, label, status: 'would-update', url };
         results.push(result);
         onResult?.(result);
@@ -200,7 +200,7 @@ export const importSongDirectory = async (
           });
           // Process lilypond in background
           processVersionLilypondIfNeeded(created.id).catch(err => console.error('[importUtils] Background lilypond processing failed:', err));
-          const url = versionUrl(created.id);
+          const url = versionUrl(created.songId, created.id);
           const result = { title: songTitle, label, status: 'created', url };
           results.push(result);
           onResult?.(result);
@@ -211,7 +211,7 @@ export const importSongDirectory = async (
           });
           // Process lilypond in background (blob could be .ly file)
           processVersionLilypondIfNeeded(created.id).catch(err => console.error('[importUtils] Background lilypond processing failed:', err));
-          const url = versionUrl(created.id);
+          const url = versionUrl(created.songId, created.id);
           const result = { title: songTitle, label, status: 'created-binary', url };
           results.push(result);
           onResult?.(result);
@@ -266,7 +266,7 @@ const importTextFile = async (
 
   // If timestamps match exactly, the file hasn't changed since import
   if (existingVersion?.matches) {
-    const url = versionUrl(existingVersion.existing?.id);
+    const url = versionUrl(existingVersion.existing?.songId, existingVersion.existing?.id);
     const result = { title, label, status: 'exists', url };
     onResult?.(result);
     return result;
@@ -276,14 +276,14 @@ const importTextFile = async (
   if (existingVersion?.existing) {
     const existingContent = existingVersion.existing.content;
     if (existingContent === content) {
-      const url = versionUrl(existingVersion.existing.id);
+      const url = versionUrl(existingVersion.existing.songId, existingVersion.existing.id);
       const result = { title, label, status: 'exists', url };
       onResult?.(result);
       return result;
     }
     // Content differs - would update
     if (dryRun) {
-      const url = versionUrl(existingVersion.existing.id);
+      const url = versionUrl(existingVersion.existing.songId, existingVersion.existing.id);
       const result = { title, label, status: 'would-update', url };
       onResult?.(result);
       return result;
@@ -302,7 +302,7 @@ const importTextFile = async (
       });
       // Process lilypond in background
       processVersionLilypondIfNeeded(created.id).catch(err => console.error('[importUtils] Background lilypond processing failed:', err));
-      const url = versionUrl(created.id);
+      const url = versionUrl(created.songId, created.id);
       const result = { title, label, status: 'created', url };
       onResult?.(result);
       return result;
@@ -418,7 +418,7 @@ const findOrCreateEmptyVersion = async (title: string, dryRun: boolean, tags: st
   const created = await createVersionWithLineage({
     songId,
     label: 'README.md',
-    content: `# ${title}\n\n(Placeholder - content not yet imported)`,
+    content: `${title}\n\n(Imported from secularsolstice.github.io, empty version placeholder)`,
     previousVersionId: null,
     createdBy: IMPORT_USER,
     dbCreatedAt: new Date(),
@@ -459,7 +459,7 @@ const resolveProgramItems = async (
           }
           programIds.push(existingSubProgram.id);
         } else if (!dryRun) {
-          const subProgram = await createProgram(currentSectionName, IMPORT_USER, true);
+          const subProgram = await createProgram(currentSectionName, IMPORT_USER, true, true);
           await updateProgramElementIds(subProgram.id, currentSectionItems, []);
           programIds.push(subProgram.id);
         } else {
@@ -469,7 +469,7 @@ const resolveProgramItems = async (
       } else {
         // Create new subprogram (or placeholder in dryRun)
         if (!dryRun) {
-          const subProgram = await createProgram(currentSectionName, IMPORT_USER, true);
+          const subProgram = await createProgram(currentSectionName, IMPORT_USER, true, true);
           await updateProgramElementIds(subProgram.id, currentSectionItems, []);
           programIds.push(subProgram.id);
         } else {
@@ -595,7 +595,7 @@ export const importProgramFile = async (
       return result;
     }
 
-    const program = await createProgram(programTitle, IMPORT_USER);
+    const program = await createProgram(programTitle, IMPORT_USER, false, true);
     await updateProgramElementIds(program.id, elementIds, programIds);
     const url = `/programs/${program.id}`;
     const result: ProgramImportResult = {

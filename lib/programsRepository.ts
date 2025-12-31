@@ -55,10 +55,10 @@ export const listPrograms = async (): Promise<ProgramRecord[]> => {
   return (rows as ProgramRow[]).map(mapProgramRow);
 };
 
-export const createProgram = async (title: string, createdBy?: string | null, isSubprogram?: boolean): Promise<ProgramRecord> => {
+export const createProgram = async (title: string, createdBy?: string | null, isSubprogram?: boolean, locked?: boolean): Promise<ProgramRecord> => {
   const rows = await sql`
-    insert into programs (title, created_by, is_subprogram)
-    values (${title}, ${createdBy ?? null}, ${isSubprogram ?? false})
+    insert into programs (title, created_by, is_subprogram, locked)
+    values (${title}, ${createdBy ?? null}, ${isSubprogram ?? false}, ${locked ?? false})
     returning id, title, element_ids, program_ids, created_by, created_at, archived, is_subprogram, video_url, print_program_foreword, print_program_epitaph, locked
   `;
   return mapProgramRow((rows as ProgramRow[])[0]!);
@@ -176,5 +176,5 @@ export const updateProgram = async (programId: string, updates: {title?: string;
   if (typedRows.length === 0) {
     throw new Error(`Program ${programId} not found or archived`);
   }
-  return mapProgramRow(typedRows[0]);
+  return mapProgramRow(typedRows[0])
 };

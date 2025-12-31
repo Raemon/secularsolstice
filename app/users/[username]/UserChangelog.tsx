@@ -86,7 +86,7 @@ const UserChangelog = ({username}: {username: string}) => {
                   {added === 0 && removed === 0 && version.previousContent !== null && <span className="text-gray-500">±0</span>}
                 </span>
                 <span className="text-gray-600 w-6 text-right shrink-0 text-[11px]">{formatRelativeTimestamp(version.createdAt)}</span>
-                <Link href={`/songs/${version.id}`} className="text-gray-200 hover:underline truncate min-w-0">
+                <Link href={`/songs/${version.songId}/${version.id}`} className="text-gray-200 hover:underline truncate min-w-0">
                   {version.songTitle} / {version.label}
                 </Link>
                 {(changedParts.removed || changedParts.added) && <span className="truncate">{changedParts.removed && <span className="text-red-500">{changedParts.removed}</span>}{changedParts.added && <span className="text-green-500">{changedParts.added}</span>}</span>}

@@ -69,7 +69,7 @@ const ChangelogPage = ({songId, filename, compact = false}: {songId?: string; fi
                 : <span className={`text-gray-500 ${compact ? 'hidden sm:inline' : ''}`}>
                   anonymous
                 </span>}
-              <Link href={`/songs/${version.id}`} className="text-gray-200 hover:underline truncate min-w-0">
+              <Link href={`/songs/${version.songId}/${version.id}`} className="text-gray-200 hover:underline truncate min-w-0">
                 {compact ? version.label : `${version.songTitle} / ${version.label}`}
               </Link>
               {!compact && (changedParts.removed || changedParts.added) && <span className="truncate">{changedParts.removed && <span className="text-red-500">{changedParts.removed}</span>}{changedParts.added && <span className="text-green-500">{changedParts.added}</span>}</span>}

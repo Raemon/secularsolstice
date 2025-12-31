@@ -16,6 +16,7 @@ export type ProgramStructurePanelProps = {
   onAddElement: (programId: string, versionId: string) => void | Promise<void>;
   onRemoveElement: (programId: string, elementId: string) => void | Promise<void>;
   canEdit: boolean;
+  isEditing?: boolean;
   onSongCreated?: () => void | Promise<void>;
   onCreateSubprogram?: (programId: string) => void | Promise<void>;
   isProgramLocked?: (programId: string) => boolean;
@@ -33,6 +34,7 @@ const ProgramStructurePanel = ({
   onAddElement,
   onRemoveElement,
   canEdit,
+  isEditing,
   onSongCreated,
   onCreateSubprogram,
   isProgramLocked,
@@ -65,6 +67,7 @@ const ProgramStructurePanel = ({
         onAddElement={onAddElement}
         onRemoveElement={onRemoveElement}
         canEdit={canEdit}
+        isEditing={isEditing}
         onSongCreated={onSongCreated}
         onCreateSubprogram={onCreateSubprogram}
         topLevelProgramTitle={program.title}
