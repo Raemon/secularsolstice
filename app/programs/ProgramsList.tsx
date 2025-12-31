@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import type { Program } from './types';
+import ProgramItem from './ProgramItem';
 
 const ProgramsList = () => {
   const [programs, setPrograms] = useState<Program[]>([]);
@@ -45,21 +45,11 @@ const ProgramsList = () => {
 
   return (
     <div className="p-8">
-      <ul className="space-y-4 mx-auto max-w-4xl">
-        {topLevelPrograms.map((program) => {
-          const firstVersionId = program.elementIds[0];
-          const href = firstVersionId
-            ? `/programs/${program.id}/${firstVersionId}`
-            : `/programs/${program.id}`;
-          return (
-            <li key={program.id}>
-              <Link href={href} className="text-2xl text-white font-georgia hover:underline">
-                {program.title}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
+      <div className="mx-auto max-w-4xl">
+        {topLevelPrograms.map((program) => (
+          <ProgramItem key={program.id} program={program} />
+        ))}
+      </div>
     </div>
   );
 };

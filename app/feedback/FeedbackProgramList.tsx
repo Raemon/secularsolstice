@@ -1,8 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import Link from 'next/link';
 import type { Program } from '../programs/types';
+import ProgramItem from '../programs/ProgramItem';
 
 export const FeedbackProgramList = () => {
   const [programs, setPrograms] = useState<Program[]>([]);
@@ -46,15 +46,11 @@ export const FeedbackProgramList = () => {
 
   return (
     <div className="p-8">
-      <ul className="space-y-4 mx-auto max-w-4xl">
+      <div className="mx-auto max-w-4xl">
         {programs.map((program) => (
-          <li key={program.id}>
-            <Link href={`/feedback/${program.id}`} className="text-2xl text-white font-georgia hover:underline">
-              {program.title}
-            </Link>
-          </li>
+          <ProgramItem key={program.id} program={program} linkPrefix="/feedback" />
         ))}
-      </ul>
+      </div>
     </div>
   );
 };

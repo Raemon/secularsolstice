@@ -259,7 +259,7 @@ export const listSongsWithVersionsPaginated = async (options: { limit?: number; 
     select count(*)::int as total from songs where archived = false
   `;
   const total = (countResult as { total: number }[])[0].total;
-  // Build the query - order by most recent version update
+  // Build the query - order by most recent version update, with README-only songs at bottom
   const rows = await sql`
     with latest_per_label as (
       ${latestVersionPerLabelCte()}
@@ -272,12 +272,13 @@ export const listSongsWithVersionsPaginated = async (options: { limit?: number; 
         s.created_at as song_created_at,
         s.archived as song_archived,
         s.tags as song_tags,
-        max(v.created_at) as latest_version_at
+        max(v.created_at) as latest_version_at,
+        (count(v.id) = 1 and bool_and(v.label = 'README.md')) as only_readme
       from songs s
       left join latest_per_label v on v.song_id = s.id
       where s.archived = false ${excludeIds.length > 0 ? sql`and s.id != ALL(${excludeIds})` : sql``}
       group by s.id
-      order by latest_version_at desc nulls last
+      order by only_readme asc, latest_version_at desc nulls last
       ${limit !== undefined ? sql`limit ${limit} offset ${offset}` : sql``}
     )
     select
@@ -308,7 +309,7 @@ export const listSongsWithVersionsPaginated = async (options: { limit?: number; 
       v.blob_url
     from ranked_songs rs
     left join latest_per_label v on v.song_id = rs.song_id
-    order by rs.latest_version_at desc nulls last, v.created_at desc nulls last
+    order by rs.only_readme asc, rs.latest_version_at desc nulls last, v.created_at desc nulls last
   `;
   const songs = groupSongVersionRows(rows as SongVersionQueryRow[]);
   const loadedCount = offset + songs.length + excludeIds.length;
