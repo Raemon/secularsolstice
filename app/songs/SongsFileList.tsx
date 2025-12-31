@@ -1,7 +1,7 @@
 'use client';
 
 import maxBy from 'lodash/maxBy';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
 import SearchInput from './SearchInput';
 import SongItem from './SongItem';
@@ -49,39 +49,41 @@ const SongsFileList = ({ initialVersionId }: SongsFileListProps = {}) => {
   }, []);
 
   console.log('songs', songs);
-  const filteredSongs = songs.filter(song => {
+  const filteredSongs = useMemo(() => {
     const searchLower = searchTerm.toLowerCase();
-    if (song.title.toLowerCase().includes(searchLower)) {
-      return true;
-    }
-    return song.versions.some(version =>
-      version.label.toLowerCase().includes(searchLower) 
-      // || (version.content && version.content.toLowerCase().includes(searchLower))
-    );
-  }).sort((a, b) => {
-    // Sort songs with only README.md versions to the bottom
-    const aOnlyReadme = a.versions.length > 0 && a.versions.every(v => v.label === 'README.md');
-    const bOnlyReadme = b.versions.length > 0 && b.versions.every(v => v.label === 'README.md');
-    if (aOnlyReadme && !bOnlyReadme) return 1;
-    if (!aOnlyReadme && bOnlyReadme) return -1;
-    if (sortOption === 'alphabetical') {
-      return a.title.toLowerCase().localeCompare(b.title.toLowerCase());
-    } else if (sortOption === 'recently-updated') {
-      // Find the most recent version for each song
-      // Handle songs with no versions
-      if (a.versions.length === 0 && b.versions.length === 0) return 0;
-      if (a.versions.length === 0) return 1; // a comes after b
-      if (b.versions.length === 0) return -1; // b comes after a
-      
-      const aLatestVersion = getLatestVersion(a.versions);
-      const bLatestVersion = getLatestVersion(b.versions);
-      if (!aLatestVersion || !bLatestVersion) {
-        return 0;
+    return songs.filter(song => {
+      if (song.title.toLowerCase().includes(searchLower)) {
+        return true;
       }
-      return new Date(bLatestVersion.createdAt).getTime() - new Date(aLatestVersion.createdAt).getTime();
-    }
-    return 0;
-  });
+      return song.versions.some(version =>
+        version.label.toLowerCase().includes(searchLower) 
+        // || (version.content && version.content.toLowerCase().includes(searchLower))
+      );
+    }).sort((a, b) => {
+      // Sort songs with only README.md versions to the bottom
+      const aOnlyReadme = a.versions.length > 0 && a.versions.every(v => v.label === 'README.md');
+      const bOnlyReadme = b.versions.length > 0 && b.versions.every(v => v.label === 'README.md');
+      if (aOnlyReadme && !bOnlyReadme) return 1;
+      if (!aOnlyReadme && bOnlyReadme) return -1;
+      if (sortOption === 'alphabetical') {
+        return a.title.toLowerCase().localeCompare(b.title.toLowerCase());
+      } else if (sortOption === 'recently-updated') {
+        // Find the most recent version for each song
+        // Handle songs with no versions
+        if (a.versions.length === 0 && b.versions.length === 0) return 0;
+        if (a.versions.length === 0) return 1; // a comes after b
+        if (b.versions.length === 0) return -1; // b comes after a
+        
+        const aLatestVersion = getLatestVersion(a.versions);
+        const bLatestVersion = getLatestVersion(b.versions);
+        if (!aLatestVersion || !bLatestVersion) {
+          return 0;
+        }
+        return new Date(bLatestVersion.createdAt).getTime() - new Date(aLatestVersion.createdAt).getTime();
+      }
+      return 0;
+    });
+  }, [songs, searchTerm, sortOption]);
 
 
   const getBasePath = useCallback(() => '/songs', []);
