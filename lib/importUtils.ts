@@ -83,7 +83,7 @@ const findExistingVersion = async (songTitle: string, labels: string[], createdA
 
 type FileInfo = { fullPath: string; relativePath: string; buffer: Buffer; isText: boolean };
 
-const SKIP_FILES = new Set(['Makefile', '.DS_Store']);
+const SKIP_FILES = new Set(['makefile', '.ds_store', 'index.html', 'thumb.png']);
 const SKIP_DIRS = new Set(['node_modules', '.git']);
 
 const collectFiles = async (dirPath: string, baseDir: string): Promise<FileInfo[]> => {
@@ -106,7 +106,7 @@ const collectFiles = async (dirPath: string, baseDir: string): Promise<FileInfo[
       continue;
     }
 
-    if (SKIP_FILES.has(entry.name) || entry.name.toLowerCase() === 'makefile') continue;
+    if (SKIP_FILES.has(entry.name.toLowerCase())) continue;
     const ext = path.extname(entry.name).toLowerCase();
     if (AUDIO_EXTENSION_SET.has(ext)) continue; // Skip audio files (handle separately)
 
@@ -411,7 +411,7 @@ const findOrCreateEmptyVersion = async (title: string, dryRun: boolean, tags: st
   const created = await createVersionWithLineage({
     songId,
     label: 'README.md',
-    content: `# ${title}\n\n(Placeholder - content not yet imported)`,
+    content: `${title}\n\n(Imported from secularsolstice.github.io, empty version placeholder)`,
     previousVersionId: null,
     createdBy: IMPORT_USER,
     dbCreatedAt: new Date(),
