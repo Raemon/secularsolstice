@@ -120,7 +120,7 @@ const collectFiles = async (dirPath: string, baseDir: string): Promise<FileInfo[
 
 export type ImportResult = { title: string; label: string; status: string; url?: string; error?: string };
 
-const versionUrl = (versionId: string | null | undefined) => versionId ? `/songs/${versionId}` : undefined;
+const versionUrl = (songId: string | null | undefined, versionId: string | null | undefined) => songId && versionId ? `/songs/${songId}/${versionId}` : undefined;
 
 export const importSongDirectory = async (
   songDirPath: string,
@@ -152,7 +152,7 @@ export const importSongDirectory = async (
 
     // If timestamps match exactly, the file hasn't changed since import
     if (existingVersion?.matches) {
-      const url = versionUrl(existingVersion.existing?.id);
+      const url = versionUrl(existingVersion.existing?.songId, existingVersion.existing?.id);
       const result = { title: songTitle, label, status: 'exists', url };
       results.push(result);
       onResult?.(result);
@@ -168,7 +168,7 @@ export const importSongDirectory = async (
         ? existingContent === newContent
         : Boolean(existingVersion.existing.blobUrl); // Binary exists = assume unchanged
       if (contentMatches) {
-        const url = versionUrl(existingVersion.existing.id);
+        const url = versionUrl(existingVersion.existing.songId, existingVersion.existing.id);
         const result = { title: songTitle, label, status: 'exists', url };
         results.push(result);
         onResult?.(result);
@@ -176,7 +176,7 @@ export const importSongDirectory = async (
       }
       // Content differs - would update (create new version in lineage)
       if (dryRun) {
-        const url = versionUrl(existingVersion.existing.id);
+        const url = versionUrl(existingVersion.existing.songId, existingVersion.existing.id);
         const result = { title: songTitle, label, status: 'would-update', url };
         results.push(result);
         onResult?.(result);
@@ -197,7 +197,7 @@ export const importSongDirectory = async (
           const created = await createVersionWithLineage({
             songId: songId!, label, content, previousVersionId, createdBy: IMPORT_USER, createdAt, dbCreatedAt: new Date(),
           });
-          const url = versionUrl(created.id);
+          const url = versionUrl(created.songId, created.id);
           const result = { title: songTitle, label, status: 'created', url };
           results.push(result);
           onResult?.(result);
@@ -206,7 +206,7 @@ export const importSongDirectory = async (
           const created = await createVersionWithLineage({
             songId: songId!, label, content: null, blobUrl, previousVersionId, createdBy: IMPORT_USER, createdAt, dbCreatedAt: new Date(),
           });
-          const url = versionUrl(created.id);
+          const url = versionUrl(created.songId, created.id);
           const result = { title: songTitle, label, status: 'created-binary', url };
           results.push(result);
           onResult?.(result);
@@ -261,7 +261,7 @@ const importTextFile = async (
 
   // If timestamps match exactly, the file hasn't changed since import
   if (existingVersion?.matches) {
-    const url = versionUrl(existingVersion.existing?.id);
+    const url = versionUrl(existingVersion.existing?.songId, existingVersion.existing?.id);
     const result = { title, label, status: 'exists', url };
     onResult?.(result);
     return result;
@@ -271,14 +271,14 @@ const importTextFile = async (
   if (existingVersion?.existing) {
     const existingContent = existingVersion.existing.content;
     if (existingContent === content) {
-      const url = versionUrl(existingVersion.existing.id);
+      const url = versionUrl(existingVersion.existing.songId, existingVersion.existing.id);
       const result = { title, label, status: 'exists', url };
       onResult?.(result);
       return result;
     }
     // Content differs - would update
     if (dryRun) {
-      const url = versionUrl(existingVersion.existing.id);
+      const url = versionUrl(existingVersion.existing.songId, existingVersion.existing.id);
       const result = { title, label, status: 'would-update', url };
       onResult?.(result);
       return result;
@@ -295,7 +295,7 @@ const importTextFile = async (
       const created = await createVersionWithLineage({
         songId: songId!, label, content, previousVersionId, createdBy: IMPORT_USER, createdAt, dbCreatedAt: new Date(),
       });
-      const url = versionUrl(created.id);
+      const url = versionUrl(created.songId, created.id);
       const result = { title, label, status: 'created', url };
       onResult?.(result);
       return result;

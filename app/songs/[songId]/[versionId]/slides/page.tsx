@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import SlideViewer from '../../../../src/components/slides/SlideViewer';
-import { generateSlidesFromHtml, lyricsToHtml } from '../../../../src/components/slides/slideGenerators';
-import type { Slide } from '../../../../src/components/slides/types';
-import { extractLyrics } from '../../../../lib/lyricsExtractor';
+import SlideViewer from '../../../../../src/components/slides/SlideViewer';
+import { generateSlidesFromHtml, lyricsToHtml } from '../../../../../src/components/slides/slideGenerators';
+import type { Slide } from '../../../../../src/components/slides/types';
+import { extractLyrics } from '../../../../../lib/lyricsExtractor';
 
 type SongSlideData = {
   versionId: string;

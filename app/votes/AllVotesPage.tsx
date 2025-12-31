@@ -77,7 +77,7 @@ const AllVotesPage = () => {
           <div key={vote.id} className="border border-gray-700 p-4 bg-gray-900">
             <div className="flex justify-between items-start mb-2">
               <div className="flex-1">
-                <a href={`/songs/${vote.version_id}`} className="text-blue-400 hover:text-blue-300 hover:underline font-medium">
+                <a href={`/songs/${vote.song_id}/${vote.version_id}`} className="text-blue-400 hover:text-blue-300 hover:underline font-medium">
                   {vote.song_title}
                 </a>
                 <span className="text-gray-500 text-sm ml-2">({vote.version_label})</span>

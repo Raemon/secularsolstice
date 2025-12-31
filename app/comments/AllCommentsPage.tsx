@@ -72,7 +72,7 @@ const AllCommentsPage = () => {
           <div key={comment.id} className="border border-gray-700 p-4 bg-gray-900">
             <div className="flex justify-between items-start mb-2">
               <div className="flex-1">
-                <a href={`/songs/${comment.version_id}`} className="text-blue-400 hover:text-blue-300 hover:underline font-medium">
+                <a href={`/songs/${comment.song_id}/${comment.version_id}`} className="text-blue-400 hover:text-blue-300 hover:underline font-medium">
                   {comment.song_title}
                 </a>
                 <span className="text-gray-500 text-sm ml-2">({comment.version_label})</span>

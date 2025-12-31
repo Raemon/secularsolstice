@@ -8,7 +8,7 @@ const RecentPrograms = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/programs/recent?limit=10')
+    fetch('/api/programs/recent?limit=6')
       .then(res => res.json())
       .then(data => { setPrograms(data.programs || []); setLoading(false); })
       .catch(() => setLoading(false));

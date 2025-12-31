@@ -11,7 +11,7 @@ const VersionHeader = ({songTitle, version, showTitle = false}: {
   return (
     <div>
       {showTitle && songTitle && <h1 className="text-2xl font-georgia">{songTitle}</h1>}
-      {version.label && <h1 className="text-[14px] font-mono hover:underline"><Link href={`/songs/${version.id}`}>{version.label}</Link></h1>}
+      {version.label && <h1 className="text-[14px] font-mono hover:underline"><Link href={`/songs/${version.songId}/${version.id}`}>{version.label}</Link></h1>}
       <div className="text-sm flex items-center gap-1 text-gray-400">
         Version last edited <Tooltip content={createdDate.toLocaleString()}>
           <span className="text-white">{createdDate.toLocaleDateString()}</span>
@@ -23,4 +23,3 @@ const VersionHeader = ({songTitle, version, showTitle = false}: {
 };
 
 export default VersionHeader;
-

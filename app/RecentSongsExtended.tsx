@@ -30,7 +30,7 @@ const TruncatedFilename = ({label, className}: {label: string; className?: strin
 
 const VersionRow = ({version}: {version: SongVersion}) => {
   return (
-    <Link href={`/songs/${version.id}`} className="flex items-center gap-3 px-2 py-[2px] hover:bg-black/50">
+    <Link href={`/songs/${version.songId}/${version.id}`} className="flex items-center gap-3 px-2 py-[2px] hover:bg-black/50">
       <span className="flex-1 font-mono min-w-0 w-[100px] text-gray-300" style={{fontSize: '12px'}}>
         <TruncatedFilename label={version.label} />
       </span>
@@ -67,7 +67,7 @@ const RecentSongs = () => {
         return (
           <div key={song.id} className="flex">
             <div className="w-1/2 px-2 py-1 text-lg font-medium border-b border-gray-500 font-georgia">
-              <Link href={`/songs/${mostRecentVersions[0]?.id || ''}`} className="text-white hover:text-gray-300">
+              <Link href={`/songs/${song.id}`} className="text-white hover:text-gray-300">
                 {song.title}
               </Link>
               {tagsMinusSong.length > 0 && (
