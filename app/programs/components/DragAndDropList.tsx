@@ -59,19 +59,21 @@ const DragAndDropList = <T,>({ items, onReorder, renderItem, keyExtractor, disab
             onDragEnd={handleDragEnd}
             className={`flex items-center gap-2 ${disabled ? 'cursor-default' : draggedIndex === index ? 'opacity-50 cursor-grabbing' : 'cursor-grab'}`}
           >
-            <div className={`${disabled ? 'text-gray-700' : 'text-gray-500'} select-none`} style={{ userSelect: 'none', pointerEvents: 'none' }}>
-              <svg width="14" height="14" viewBox="0 0 12 12" fill="currentColor">
-                <circle cx="2" cy="2" r="1"/>
-                <circle cx="2" cy="6" r="1"/>
-                <circle cx="2" cy="10" r="1"/>
-                <circle cx="6" cy="2" r="1"/>
-                <circle cx="6" cy="6" r="1"/>
-                <circle cx="6" cy="10" r="1"/>
-                <circle cx="10" cy="2" r="1"/>
-                <circle cx="10" cy="6" r="1"/>
-                <circle cx="10" cy="10" r="1"/>
-              </svg>
-            </div>
+            {!disabled && (
+              <div className="text-gray-500 select-none" style={{ userSelect: 'none', pointerEvents: 'none' }}>
+                <svg width="14" height="14" viewBox="0 0 12 12" fill="currentColor">
+                  <circle cx="2" cy="2" r="1"/>
+                  <circle cx="2" cy="6" r="1"/>
+                  <circle cx="2" cy="10" r="1"/>
+                  <circle cx="6" cy="2" r="1"/>
+                  <circle cx="6" cy="6" r="1"/>
+                  <circle cx="6" cy="10" r="1"/>
+                  <circle cx="10" cy="2" r="1"/>
+                  <circle cx="10" cy="6" r="1"/>
+                  <circle cx="10" cy="10" r="1"/>
+                </svg>
+              </div>
+            )}
             <div className="flex-1">
               {renderItem(item, index)}
             </div>
