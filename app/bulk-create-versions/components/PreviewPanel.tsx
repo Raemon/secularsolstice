@@ -23,8 +23,8 @@ const PreviewPanel = ({ previewItems, onVersionSelect, onToggleDontImport, onCom
       ) : (
         <div className="max-h-[600px] overflow-y-auto">
           {Object.entries(groupedItems).map(([sectionTitle, items]) => (
-            <div key={sectionTitle} className="border-b-2 border-gray-600">
-              <div className="bg-gray-700/50 px-2 py-1 text-sm font-georgia font-medium">{sectionTitle}</div>
+            <div key={sectionTitle}>
+              <div className="px-2 py-1 text-base font-medium border-b border-gray-500 font-georgia">{sectionTitle}</div>
               {items.map(item => (
                 <PreviewPanelItem key={item.itemKey} item={item} onSelectVersion={onVersionSelect} onToggleDontImport={onToggleDontImport} onCompare={onCompare} />
               ))}
