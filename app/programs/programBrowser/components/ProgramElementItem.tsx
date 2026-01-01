@@ -24,9 +24,10 @@ export type ProgramElementItemProps = {
   canEdit: boolean;
   isEditing?: boolean;
   selectedVersionId?: string;
+  isPendingDeletion?: boolean;
 };
 
-const ProgramElementItem = ({id, version, allVersions, onRemove, onChangeVersion, onClick, onCreateNewVersion, canEdit, isEditing, selectedVersionId}: ProgramElementItemProps) => {
+const ProgramElementItem = ({id, version, allVersions, onRemove, onChangeVersion, onClick, onCreateNewVersion, canEdit, isEditing, selectedVersionId, isPendingDeletion}: ProgramElementItemProps) => {
   const songVersions = version ? allVersions.filter(v => v.songId === version.songId).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) : [];
   const dropdownOptions = songVersions.map(v => ({value: v.id, label: `${v.label} - ${formatRelativeTimestamp(v.createdAt)}`}));
   const sameLabelVersions = version ? songVersions.filter(v => v.label === version.label) : [];
@@ -34,7 +35,7 @@ const ProgramElementItem = ({id, version, allVersions, onRemove, onChangeVersion
   const isSpeech = version?.tags?.includes('speech');
 
   return (
-    <div className={`text-sm ${isEditing ? 'pl-[8px]' : ''} py-1 flex items-center gap-1 hover:bg-black cursor-pointer group  ${selectedVersionId === id && 'text-primary'}`} onClick={() => onClick?.(id)}>
+    <div className={`text-sm ${isEditing ? 'pl-[8px]' : ''} py-1 flex items-center gap-1 hover:bg-black cursor-pointer group  ${selectedVersionId === id && 'text-primary'} ${isPendingDeletion ? 'opacity-50 line-through' : ''}`} onClick={() => onClick?.(id)}>
       <span className={`font-georgia text-base flex-1 min-w-0 truncate hover:text-blue-400 ${isSpeech ? 'italic' : ''} w-[130px] sm:w-auto`}>{version?.songTitle}</span>
       <div className={`text-gray-400 flex items-center gap-1 shrink-0 text-xs ${!isLatestVersion && 'opacity-50'}`}>
         <span className={`${selectedVersionId === id ? 'text-primary' : 'text-gray-300'} truncate w-[50px] sm:max-w-[200px] `}>{version?.label ?? id}</span>

@@ -20,6 +20,7 @@ export type ProgramStructurePanelProps = {
   onSongCreated?: () => void | Promise<void>;
   onCreateSubprogram?: (programId: string) => void | Promise<void>;
   isProgramLocked?: (programId: string) => boolean;
+  pendingDeletions?: Set<string>;
 };
 
 const ProgramStructurePanel = ({
@@ -38,6 +39,7 @@ const ProgramStructurePanel = ({
   onSongCreated,
   onCreateSubprogram,
   isProgramLocked,
+  pendingDeletions,
 }: ProgramStructurePanelProps): ReactElement => {
   if (!program) {
     return (
@@ -72,6 +74,7 @@ const ProgramStructurePanel = ({
         onCreateSubprogram={onCreateSubprogram}
         topLevelProgramTitle={program.title}
         isProgramLocked={isProgramLocked}
+        pendingDeletions={pendingDeletions}
       />
     </div>
   );

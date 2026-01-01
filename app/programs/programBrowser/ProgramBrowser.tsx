@@ -31,6 +31,7 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
   const [selectedProgramId, setSelectedProgramId] = useState<string | null>(initialProgramId ?? null);
   const [isEditingProgram, setIsEditingProgram] = useState(false);
   const [pendingElementChanges, setPendingElementChanges] = useState<PendingElementChanges>({});
+  const [pendingDeletions, setPendingDeletions] = useState<Set<string>>(new Set());
   const [isSavingChanges, setIsSavingChanges] = useState(false);
   const hasHydratedInitialVersion = useRef(false);
   const getBasePath = useCallback(
@@ -190,7 +191,7 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
     return map;
   }, [programMap, pendingElementChanges, isEditingProgram]);
 
-  const hasPendingChanges = Object.keys(pendingElementChanges).length > 0;
+  const hasPendingChanges = Object.keys(pendingElementChanges).length > 0 || pendingDeletions.size > 0;
 
   const versionMap = useMemo(() => {
     const map: Record<string, VersionOption> = {};
@@ -226,6 +227,7 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
       const confirmed = typeof window !== 'undefined' && window.confirm('You have unsaved changes. Discard them?');
       if (!confirmed) return;
       setPendingElementChanges({});
+      setPendingDeletions(new Set());
     }
     setSelectedProgramId(programId);
     setIsEditingProgram(false);
@@ -250,6 +252,7 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
       const confirmed = typeof window !== 'undefined' && window.confirm('You have unsaved changes. Discard them?');
       if (!confirmed) return;
       setPendingElementChanges({});
+      setPendingDeletions(new Set());
     }
     setIsEditingProgram(false);
     return handleVersionClick(versionId, options);
@@ -360,11 +363,11 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
     if (!program) {
       return;
     }
-    const nextElementIds = program.elementIds.filter((id) => id !== elementId);
     if (isEditingProgram) {
-      setPendingElementChanges((prev) => ({ ...prev, [programId]: nextElementIds }));
+      setPendingDeletions((prev) => new Set(prev).add(elementId));
       return;
     }
+    const nextElementIds = program.elementIds.filter((id) => id !== elementId);
     try {
       const response = await fetch(`/api/programs/${programId}`, {
         method: 'PATCH',
@@ -386,13 +389,28 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
 
   const handleSavePendingChanges = useCallback(async () => {
     const entries = Object.entries(pendingElementChanges);
-    if (entries.length === 0) {
+    const programsToUpdate = new Map<string, string[]>();
+    entries.forEach(([programId, elementIds]) => {
+      programsToUpdate.set(programId, elementIds);
+    });
+    if (pendingDeletions.size > 0) {
+      const hierarchyIds = collectProgramHierarchy(selectedProgramId);
+      programs.filter((p) => hierarchyIds.has(p.id)).forEach((program) => {
+        const currentElements = programsToUpdate.get(program.id) ?? program.elementIds;
+        const filteredElements = currentElements.filter((id) => !pendingDeletions.has(id));
+        if (filteredElements.length !== currentElements.length) {
+          programsToUpdate.set(program.id, filteredElements);
+        }
+      });
+    }
+    if (programsToUpdate.size === 0) {
       setIsEditingProgram(false);
+      setPendingDeletions(new Set());
       return;
     }
     setIsSavingChanges(true);
     const results = await Promise.allSettled(
-      entries.map(async ([programId, elementIds]) => {
+      Array.from(programsToUpdate.entries()).map(async ([programId, elementIds]) => {
         const program = programMap[programId];
         if (!program) throw new Error(`Program ${programId} not found`);
         const response = await fetch(`/api/programs/${programId}`, {
@@ -412,7 +430,7 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
     const failedIds: string[] = [];
     const errors: string[] = [];
     results.forEach((result, index) => {
-      const programId = entries[index][0];
+      const programId = Array.from(programsToUpdate.keys())[index];
       if (result.status === 'fulfilled') {
         succeeded.push(result.value.program);
       } else {
@@ -436,14 +454,16 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
       setDataError(`Failed to save: ${errors.join(', ')}`);
     } else {
       setPendingElementChanges({});
+      setPendingDeletions(new Set());
       setIsEditingProgram(false);
       setDataError(null);
     }
     setIsSavingChanges(false);
-  }, [pendingElementChanges, programMap]);
+  }, [pendingElementChanges, pendingDeletions, programMap, programs, selectedProgramId, collectProgramHierarchy]);
 
   const handleCancelPendingChanges = useCallback(() => {
     setPendingElementChanges({});
+    setPendingDeletions(new Set());
     setIsEditingProgram(false);
   }, []);
 
@@ -591,6 +611,14 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
 
   return (
     <div className="px-2 py-1 sm:p-4">
+      canEdit: {canEdit ? 'true' : 'false'}<br/>
+      isEditingProgram: {isEditingProgram ? 'true' : 'false'}<br/>
+      pendingDeletions: {JSON.stringify(pendingDeletions)}<br/>
+      pendingElementChanges: {JSON.stringify(pendingElementChanges)}<br/>
+      hasPendingChanges: {hasPendingChanges ? 'true' : 'false'}<br/>
+      isSavingChanges: {isSavingChanges ? 'true' : 'false'}<br/>
+      isProgramLocked: {isProgramLocked(selectedProgramId ?? '') ? 'true' : 'false'}<br/>
+      parentProgram: {JSON.stringify(parentProgram)}<br/>
       <div className="flex flex-col gap-4">
         <div className={`flex ${selectedVersion || isEditingProgram ? '' : 'mx-auto'} gap-4 overflow-x-scroll w-full sm:w-auto sm:overflow-x-visible`}>
           <div className={`overflow-x-scroll sm:overflow-x-visible ${selectedVersion || isEditingProgram ? 'hidden xl:block' : ''} w-auto`}>
@@ -608,7 +636,7 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
               />
             </div>
             <div className="mt-4 ml-1 mb-8">
-              <ProgramViews programId={selectedProgramId ?? ''} isLocked={isProgramLocked(selectedProgramId ?? '')} isEditing={isEditingProgram} hasPendingChanges={hasPendingChanges} isSaving={isSavingChanges} onEditClick={handleEditClick} onSaveClick={handleSavePendingChanges} onCancelClick={handleCancelPendingChanges} />
+              <ProgramViews programId={selectedProgramId ?? ''} canEdit={canEdit} isLocked={isProgramLocked(selectedProgramId ?? '')} isEditing={isEditingProgram} hasPendingChanges={hasPendingChanges} isSaving={isSavingChanges} onEditClick={handleEditClick} onSaveClick={handleSavePendingChanges} onCancelClick={handleCancelPendingChanges} />
             </div>
             <ProgramStructurePanel
               program={selectedProgram}
@@ -626,6 +654,7 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
               onSongCreated={loadVersionOptions}
               onCreateSubprogram={handleCreateSubprogram}
               isProgramLocked={isProgramLocked}
+              pendingDeletions={pendingDeletions}
             />
           </div>  
           {selectedVersion ? (

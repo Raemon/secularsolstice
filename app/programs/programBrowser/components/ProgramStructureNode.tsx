@@ -28,6 +28,7 @@ export type ProgramStructureNodeProps = {
   topLevelProgramTitle?: string;
   isProgramLocked?: (programId: string) => boolean;
   parentIsLocked?: boolean;
+  pendingDeletions?: Set<string>;
 };
 
 const ProgramStructureNode = ({
@@ -50,10 +51,14 @@ const ProgramStructureNode = ({
   onCreateSubprogram,
   topLevelProgramTitle,
   isProgramLocked,
+  pendingDeletions,
 }: ProgramStructureNodeProps): ReactElement => {
   const nextTrail = new Set(trail);
   nextTrail.add(current.id);
   const isLocked = parentIsLocked ?? isProgramLocked?.(current.id) ?? false;
+
+  const dragDisabled = !canEdit || !isEditing || isLocked;
+  console.log('ProgramStructureNode drag state:', { programId: current.id, canEdit, isEditing, isLocked, dragDisabled, depth });
 
   return (
     <div className={`px-0 sm:px-2 ${depth > 0 ? 'ml-1' : ''}`}>
@@ -72,7 +77,7 @@ const ProgramStructureNode = ({
           onSongCreated={onSongCreated}
           onCreateSubprogram={onCreateSubprogram}
           topLevelProgramTitle={topLevelProgramTitle}
-          disabled={!canEdit || isLocked}
+          disabled={dragDisabled}
         />
       </div>
       <div className="mt-2 flex flex-col">
@@ -99,11 +104,12 @@ const ProgramStructureNode = ({
                 selectedVersionId={selectedVersionId}
                 canEdit={canEdit && !isLocked}
                 isEditing={isEditing}
+                isPendingDeletion={pendingDeletions?.has(elementId)}
               />
             );
           }}
           keyExtractor={(elementId: string) => `${elementId}-${current.id}`}
-          disabled={isLocked || !isEditing}
+          disabled={dragDisabled}
         />
       </div>
       {current.programIds.length > 0 && (
@@ -146,6 +152,7 @@ const ProgramStructureNode = ({
                 onCreateSubprogram={onCreateSubprogram}
                 topLevelProgramTitle={topLevelProgramTitle}
                 isProgramLocked={isProgramLocked}
+                pendingDeletions={pendingDeletions}
               />
             );
           })}
