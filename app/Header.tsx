@@ -11,18 +11,23 @@ const Header = () => {
   const pathname = usePathname();
   const { isAdmin } = useUser();
   const [poweruserOpen, setPoweruserOpen] = useState(false);
+  const [adminOpen, setAdminOpen] = useState(false);
   const poweruserRef = useRef<HTMLDivElement>(null);
+  const adminRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!poweruserOpen) return;
+    if (!poweruserOpen && !adminOpen) return;
     const handleClickOutside = (event: MouseEvent) => {
-      if (poweruserRef.current && !poweruserRef.current.contains(event.target as Node)) {
+      if (poweruserOpen && poweruserRef.current && !poweruserRef.current.contains(event.target as Node)) {
         setPoweruserOpen(false);
+      }
+      if (adminOpen && adminRef.current && !adminRef.current.contains(event.target as Node)) {
+        setAdminOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [poweruserOpen]);
+  }, [poweruserOpen, adminOpen]);
   
   if (pathname?.includes('/print') || pathname?.match(/\/programs\/[^/]+\/slides/)) {
     return null;
@@ -57,10 +62,25 @@ const Header = () => {
               <Link href="/public-backups" className="block px-2 py-1 text-sm hover:bg-gray-800 text-gray-200" onClick={() => setPoweruserOpen(false)}>Public Backups</Link>
               <Link href="/bulk-create-versions" className="block px-2 py-1 text-sm hover:bg-gray-800 text-gray-200" onClick={() => setPoweruserOpen(false)}>Bulk Import from Doc</Link>
               <DownloadAllSongsButton />
-              {isAdmin && <Link href="/admin" className="block px-2 py-1 text-sm hover:bg-gray-800 text-gray-200" onClick={() => setPoweruserOpen(false)}>Admin</Link>}
             </div>
           )}
         </div>
+
+        {isAdmin && (
+          <div className="relative" ref={adminRef}>
+            <button onClick={() => setAdminOpen(!adminOpen)} className={`hover:underline text-sm ${isAdminPage ? activeTextClass : inactiveTextClass}`}>Admin ▼</button>
+            {adminOpen && (
+              <div className="absolute bg-black z-10 mt-1 border border-gray-500 shadow-lg min-w-[150px] top-full left-0">
+                <Link href="/db-backups" className="block px-2 py-1 text-sm hover:bg-gray-800 text-gray-200" onClick={() => setAdminOpen(false)}>Database Backups</Link>
+                <Link href="/blobs" className="block px-2 py-1 text-sm hover:bg-gray-800 text-gray-200" onClick={() => setAdminOpen(false)}>Blob Storage</Link>
+                <Link href="/comments" className="block px-2 py-1 text-sm hover:bg-gray-800 text-gray-200" onClick={() => setAdminOpen(false)}>All Comments</Link>
+                <Link href="/votes" className="block px-2 py-1 text-sm hover:bg-gray-800 text-gray-200" onClick={() => setAdminOpen(false)}>All Votes</Link>
+                <Link href="/test-lilypond" className="block px-2 py-1 text-sm hover:bg-gray-800 text-gray-200" onClick={() => setAdminOpen(false)}>Test Lilypond</Link>
+                <Link href="/tools/import-secular-solstice" className="block px-2 py-1 text-sm hover:bg-gray-800 text-gray-200" onClick={() => setAdminOpen(false)}>Import solstice.github.io</Link>
+              </div>
+            )}
+          </div>
+        )}
       </nav>
       <div className="order-1 lg:order-3">
         <UsernameInput lightMode={!!isScriptPage} />
