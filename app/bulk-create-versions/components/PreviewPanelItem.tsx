@@ -3,16 +3,15 @@ import type { PreviewItem } from '../types';
 type Props = {
   item: PreviewItem;
   onSelectVersion: (itemKey: string, versionId: string | null) => void;
-  onToggleDontImport: (itemKey: string) => void;
   onCompare: (item: PreviewItem, versionId: string, versionLabel: string, versionContent: string) => void;
 };
 
-const PreviewPanelItem = ({item, onSelectVersion, onToggleDontImport, onCompare}: Props) => {
+const PreviewPanelItem = ({item, onSelectVersion, onCompare}: Props) => {
   const {candidateSong} = item;
-  const isNewSong = candidateSong === null;
-  const songTitle = isNewSong ? 'Create new song' : candidateSong.song.title;
-  const similarity = isNewSong ? null : candidateSong.similarity;
-  const versions = isNewSong ? [] : candidateSong.song.versions;
+  const songTitle = candidateSong!.song.title;
+  const similarity = candidateSong!.similarity;
+  const versions = candidateSong!.song.versions;
+  const isNewVersionSelected = !item.dontImport && item.selectedVersionId === null;
 
   return (
     <div className={`flex ${item.dontImport ? 'opacity-50' : ''}`}>
@@ -23,14 +22,14 @@ const PreviewPanelItem = ({item, onSelectVersion, onToggleDontImport, onCompare}
       </div>
       <div className="border-b py-1 border-gray-500 w-1/2 flex flex-col justify-center">
         <div
-          onClick={() => onToggleDontImport(item.itemKey)}
-          className={`flex items-center gap-3 px-2 py-[2px] cursor-pointer hover:bg-white/20 ${item.dontImport ? 'text-red-400' : ''}`}
+          onClick={() => onSelectVersion(item.itemKey, null)}
+          className={`flex items-center gap-3 px-2 py-[2px] cursor-pointer ${isNewVersionSelected ? 'text-primary' : 'hover:bg-white/20'}`}
         >
-          <span className="font-mono" style={{fontSize: '12px'}}>
-            {item.dontImport ? '● ' : '○ '}Don't import
+          <span className={`font-mono ${isNewVersionSelected ? 'font-medium' : ''}`} style={{fontSize: '12px'}}>
+            <span className={isNewVersionSelected ? 'text-primary' : 'text-gray-300'}>{isNewVersionSelected ? '● ' : '○ '}new version</span>
           </span>
         </div>
-        {!isNewSong && versions.map(version => {
+        {versions.map(version => {
           const isSelected = !item.dontImport && version.id === item.selectedVersionId;
           return (
             <div

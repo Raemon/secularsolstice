@@ -53,8 +53,19 @@ const BulkCreateVersions = () => {
   const handleVersionSelection = (itemKey: string, versionId: string | null) => {
     setSelectionStates(prev => {
       const newMap = new Map(prev);
-      const current = prev.get(itemKey) || { selectedVersionId: null, dontImport: false };
-      newMap.set(itemKey, { ...current, selectedVersionId: versionId, dontImport: false });
+      const sectionTitle = itemKey.split('::')[0];
+      // Deselect all other items in the same section
+      previewItems.forEach(item => {
+        if (item.sectionTitle === sectionTitle) {
+          if (item.itemKey === itemKey) {
+            // Select this item
+            newMap.set(itemKey, { selectedVersionId: versionId, dontImport: false });
+          } else {
+            // Deselect other items in the same section
+            newMap.set(item.itemKey, { selectedVersionId: item.selectedVersionId, dontImport: true });
+          }
+        }
+      });
       return newMap;
     });
   };
@@ -107,7 +118,7 @@ const BulkCreateVersions = () => {
         <ResultsList results={results} />
       </div>
       <div className="w-1/2">
-        <PreviewPanel previewItems={previewItems} onVersionSelect={handleVersionSelection} onToggleDontImport={handleToggleDontImport} onCompare={handleCompare} />
+        <PreviewPanel previewItems={previewItems} onVersionSelect={handleVersionSelection} onCompare={handleCompare} />
       </div>
       {diffModal.open && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50" onClick={() => setDiffModal(prev => ({ ...prev, open: false }))}>
