@@ -23,7 +23,7 @@ const ProgramViews = ({programId, canEdit, isLocked, isEditing, hasPendingChange
       <a href={`/programs/${programId}/script`} className="text-sm hover:opacity-50">
         Script
       </a>
-      <a href={`/feedback?programId=${programId}`} className="text-sm hover:opacity-50">
+      <a href={`/feedback/${programId}`} className="text-sm hover:opacity-50">
         Feedback
       </a>
       {showEditControls && (isEditing ? (
