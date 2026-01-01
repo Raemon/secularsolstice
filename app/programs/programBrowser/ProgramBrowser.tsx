@@ -13,6 +13,8 @@ import ProgramEditPanel from './ProgramEditPanel';
 import useVersionPanelManager from '../../hooks/useVersionPanelManager';
 import Link from 'next/link';
 
+type PendingElementChanges = Record<string, string[]>;
+
 type ProgramBrowserProps = {
   initialProgramId?: string;
   initialVersionId?: string;
@@ -28,6 +30,8 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
   const [dataError, setDataError] = useState<string | null>(null);
   const [selectedProgramId, setSelectedProgramId] = useState<string | null>(initialProgramId ?? null);
   const [isEditingProgram, setIsEditingProgram] = useState(false);
+  const [pendingElementChanges, setPendingElementChanges] = useState<PendingElementChanges>({});
+  const [isSavingChanges, setIsSavingChanges] = useState(false);
   const hasHydratedInitialVersion = useRef(false);
   const getBasePath = useCallback(
     () => (selectedProgramId ? `/programs/${selectedProgramId}` : '/programs'),
@@ -172,6 +176,22 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
     return map;
   }, [programs]);
 
+  // When editing, overlay pending changes on top of actual program data
+  const effectiveProgramMap = useMemo(() => {
+    if (!isEditingProgram || Object.keys(pendingElementChanges).length === 0) {
+      return programMap;
+    }
+    const map: Record<string, Program> = { ...programMap };
+    Object.entries(pendingElementChanges).forEach(([programId, elementIds]) => {
+      if (map[programId]) {
+        map[programId] = { ...map[programId], elementIds };
+      }
+    });
+    return map;
+  }, [programMap, pendingElementChanges, isEditingProgram]);
+
+  const hasPendingChanges = Object.keys(pendingElementChanges).length > 0;
+
   const versionMap = useMemo(() => {
     const map: Record<string, VersionOption> = {};
     versions.forEach((version) => {
@@ -180,7 +200,7 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
     return map;
   }, [versions]);
 
-  const selectedProgram = selectedProgramId ? programMap[selectedProgramId] ?? null : null;
+  const selectedProgram = selectedProgramId ? effectiveProgramMap[selectedProgramId] ?? null : null;
 
   const isProgramLocked = useCallback((programId: string): boolean => {
     const program = programMap[programId];
@@ -202,6 +222,11 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
     if (selectedProgramId === programId) {
       return;
     }
+    if (hasPendingChanges) {
+      const confirmed = typeof window !== 'undefined' && window.confirm('You have unsaved changes. Discard them?');
+      if (!confirmed) return;
+      setPendingElementChanges({});
+    }
     setSelectedProgramId(programId);
     setIsEditingProgram(false);
     clearSelection();
@@ -221,12 +246,21 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
   };
 
   const handleVersionClickWithEditClose = useCallback((versionId: string, options?: { skipUrlUpdate?: boolean }) => {
+    if (hasPendingChanges) {
+      const confirmed = typeof window !== 'undefined' && window.confirm('You have unsaved changes. Discard them?');
+      if (!confirmed) return;
+      setPendingElementChanges({});
+    }
     setIsEditingProgram(false);
     return handleVersionClick(versionId, options);
-  }, [handleVersionClick]);
+  }, [handleVersionClick, hasPendingChanges]);
 
   const handleCloseEditPanel = () => {
-    setIsEditingProgram(false);
+    if (hasPendingChanges) {
+      const confirmed = typeof window !== 'undefined' && window.confirm('You have unsaved changes. Discard them?');
+      if (!confirmed) return;
+    }
+    handleCancelPendingChanges();
   };
 
   const handleProgramUpdated = (updatedProgram: Program) => {
@@ -234,8 +268,12 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
   };
 
   const handleReorderElements = useCallback(async (programId: string, reorderedElementIds: string[]) => {
-    const program = programMap[programId];
+    const program = effectiveProgramMap[programId];
     if (!program) {
+      return;
+    }
+    if (isEditingProgram) {
+      setPendingElementChanges((prev) => ({ ...prev, [programId]: reorderedElementIds }));
       return;
     }
     try {
@@ -254,14 +292,18 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
       console.error('Failed to reorder elements:', err);
       setDataError(err instanceof Error ? err.message : 'Failed to reorder elements');
     }
-  }, [programMap]);
+  }, [effectiveProgramMap, isEditingProgram]);
 
   const handleChangeVersion = useCallback(async (programId: string, oldId: string, newId: string) => {
-    const program = programMap[programId];
+    const program = effectiveProgramMap[programId];
     if (!program) {
       return;
     }
     const nextElementIds = program.elementIds.map((id) => id === oldId ? newId : id);
+    if (isEditingProgram) {
+      setPendingElementChanges((prev) => ({ ...prev, [programId]: nextElementIds }));
+      return;
+    }
     try {
       const response = await fetch(`/api/programs/${programId}`, {
         method: 'PATCH',
@@ -279,10 +321,10 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
       console.error('Failed to change version:', err);
       setDataError(err instanceof Error ? err.message : 'Failed to change version');
     }
-  }, [programMap]);
+  }, [effectiveProgramMap, isEditingProgram]);
 
   const handleAddElement = useCallback(async (programId: string, versionId: string) => {
-    const program = programMap[programId];
+    const program = effectiveProgramMap[programId];
     if (!program) {
       return;
     }
@@ -290,6 +332,10 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
       return;
     }
     const nextElementIds = [...program.elementIds, versionId];
+    if (isEditingProgram) {
+      setPendingElementChanges((prev) => ({ ...prev, [programId]: nextElementIds }));
+      return;
+    }
     try {
       const response = await fetch(`/api/programs/${programId}`, {
         method: 'PATCH',
@@ -307,14 +353,18 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
       console.error('Failed to add element:', err);
       setDataError(err instanceof Error ? err.message : 'Failed to add element');
     }
-  }, [programMap]);
+  }, [effectiveProgramMap, isEditingProgram]);
 
   const handleRemoveElement = useCallback(async (programId: string, elementId: string) => {
-    const program = programMap[programId];
+    const program = effectiveProgramMap[programId];
     if (!program) {
       return;
     }
     const nextElementIds = program.elementIds.filter((id) => id !== elementId);
+    if (isEditingProgram) {
+      setPendingElementChanges((prev) => ({ ...prev, [programId]: nextElementIds }));
+      return;
+    }
     try {
       const response = await fetch(`/api/programs/${programId}`, {
         method: 'PATCH',
@@ -332,7 +382,70 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
       console.error('Failed to remove element:', err);
       setDataError(err instanceof Error ? err.message : 'Failed to remove element');
     }
-  }, [programMap]);
+  }, [effectiveProgramMap, isEditingProgram]);
+
+  const handleSavePendingChanges = useCallback(async () => {
+    const entries = Object.entries(pendingElementChanges);
+    if (entries.length === 0) {
+      setIsEditingProgram(false);
+      return;
+    }
+    setIsSavingChanges(true);
+    const results = await Promise.allSettled(
+      entries.map(async ([programId, elementIds]) => {
+        const program = programMap[programId];
+        if (!program) throw new Error(`Program ${programId} not found`);
+        const response = await fetch(`/api/programs/${programId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ elementIds, programIds: program.programIds }),
+        });
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || `Failed to update program ${programId}`);
+        }
+        const data = await response.json();
+        return { programId, program: data.program as Program };
+      })
+    );
+    const succeeded: Program[] = [];
+    const failedIds: string[] = [];
+    const errors: string[] = [];
+    results.forEach((result, index) => {
+      const programId = entries[index][0];
+      if (result.status === 'fulfilled') {
+        succeeded.push(result.value.program);
+      } else {
+        failedIds.push(programId);
+        errors.push(result.reason?.message || 'Unknown error');
+      }
+    });
+    if (succeeded.length > 0) {
+      setPrograms((prev) => prev.map((p) => {
+        const updated = succeeded.find((u) => u.id === p.id);
+        return updated ?? p;
+      }));
+    }
+    if (failedIds.length > 0) {
+      setPendingElementChanges((prev) => {
+        const next: Record<string, string[]> = {};
+        failedIds.forEach((id) => { if (prev[id]) next[id] = prev[id]; });
+        return next;
+      });
+      console.error('Failed to save some changes:', errors);
+      setDataError(`Failed to save: ${errors.join(', ')}`);
+    } else {
+      setPendingElementChanges({});
+      setIsEditingProgram(false);
+      setDataError(null);
+    }
+    setIsSavingChanges(false);
+  }, [pendingElementChanges, programMap]);
+
+  const handleCancelPendingChanges = useCallback(() => {
+    setPendingElementChanges({});
+    setIsEditingProgram(false);
+  }, []);
 
   const handleCreateSubprogram = useCallback(async (programId: string) => {
     if (!programId || !userName) {
@@ -495,11 +608,11 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
               />
             </div>
             <div className="mt-4 ml-1 mb-8">
-              <ProgramViews programId={selectedProgramId ?? ''} isLocked={isProgramLocked(selectedProgramId ?? '')} isEditing={isEditingProgram} onEditClick={handleEditClick} />
+              <ProgramViews programId={selectedProgramId ?? ''} isLocked={isProgramLocked(selectedProgramId ?? '')} isEditing={isEditingProgram} hasPendingChanges={hasPendingChanges} isSaving={isSavingChanges} onEditClick={handleEditClick} onSaveClick={handleSavePendingChanges} onCancelClick={handleCancelPendingChanges} />
             </div>
             <ProgramStructurePanel
               program={selectedProgram}
-              programMap={programMap}
+              programMap={effectiveProgramMap}
               versions={versions}
               versionMap={versionMap}
               selectedVersionId={selectedVersion?.id}

@@ -37,7 +37,7 @@ const ContentEditor = ({ onContentChange, showStatus, initialContent }: Props) =
         contentEditable
         suppressContentEditableWarning
         role="textbox"
-        className="w-full h-96 p-2 text-xs font-mono border border-gray-300 overflow-y-auto"
+        className="w-full h-[calc(100vh-300px)] max- p-2 text-xs font-mono border border-gray-300 overflow-y-auto"
         onPaste={handlePaste}
         onInput={handleInput}
       />

@@ -201,7 +201,7 @@ export const useProcessSections = (
   sections: Section[],
   versionSuffix: string,
   userName: string,
-  versionSelections: Map<string, string>
+  previewItems: import('./types').PreviewItem[]
 ) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [results, setResults] = useState<ProcessResult[]>([]);
@@ -220,8 +220,10 @@ export const useProcessSections = (
     setIsProcessing(true);
     setResults([]);
 
-    if (sections.length === 0) {
-      alert('No sections found. Make sure your text contains headings (h1-h6)');
+    // Filter to only items that are not marked "don't import"
+    const itemsToProcess = previewItems.filter(item => !item.dontImport);
+    if (itemsToProcess.length === 0) {
+      alert('No items selected for import. Uncheck "don\'t import" on items you want to process.');
       setIsProcessing(false);
       return;
     }
@@ -238,32 +240,20 @@ export const useProcessSections = (
 
     const processedResults: ProcessResult[] = [];
 
-    for (const section of sections) {
-      let matchedSong: Song | null = null;
-      let previousVersionId: string | null = null;
-      const selectedVersionId = versionSelections.get(section.title);
-      if (selectedVersionId) {
-        // Find song by version ID
-        for (const song of songsToUse) {
-          const version = song.versions.find(v => v.id === selectedVersionId);
-          if (version) {
-            matchedSong = song;
-            previousVersionId = selectedVersionId;
-            break;
-          }
-        }
-      } else {
-        matchedSong = findMatchingSong(section.title, songsToUse);
-        if (matchedSong) {
-          const latestVersion = matchedSong.versions.find(v => v.nextVersionId === null);
-          previousVersionId = latestVersion?.id || null;
-        }
-      }
-      
-      if (!matchedSong) {
-        processedResults.push({ title: section.title, matched: false });
+    for (const item of itemsToProcess) {
+      if (item.candidateSong === null) {
+        // Create new song
+        processedResults.push({ title: item.sectionTitle, matched: false });
         continue;
       }
+
+      const matchedSong = songsToUse.find(s => s.id === item.candidateSong!.song.id);
+      if (!matchedSong) {
+        processedResults.push({ title: item.sectionTitle, matched: false });
+        continue;
+      }
+
+      const previousVersionId = item.selectedVersionId;
 
       try {
         const response = await fetch('/api/songs/versions', {
@@ -272,7 +262,7 @@ export const useProcessSections = (
           body: JSON.stringify({
             songId: matchedSong.id,
             label: versionSuffix.trim(),
-            content: section.content,
+            content: item.content,
             previousVersionId,
             createdBy: userName,
           }),
@@ -281,21 +271,21 @@ export const useProcessSections = (
         if (!response.ok) {
           const errorData = await response.json();
           processedResults.push({
-            title: section.title,
+            title: item.sectionTitle,
             matched: true,
             songId: matchedSong.id,
             error: errorData.error || 'Failed to create version',
           });
         } else {
           processedResults.push({
-            title: section.title,
+            title: item.sectionTitle,
             matched: true,
             songId: matchedSong.id,
           });
         }
       } catch (error) {
         processedResults.push({
-          title: section.title,
+          title: item.sectionTitle,
           matched: true,
           songId: matchedSong.id,
           error: error instanceof Error ? error.message : 'Unknown error',
@@ -310,30 +300,81 @@ export const useProcessSections = (
   return { isProcessing, results, processSections };
 };
 
-export const usePreviewItems = (sections: Section[], songs: Song[], versionSuffix: string, versionSelections: Map<string, string>) => {
+export type SelectionState = {
+  selectedVersionId: string | null;
+  dontImport: boolean;
+};
+
+export const usePreviewItems = (sections: Section[], songs: Song[], versionSuffix: string, selectionStates: Map<string, SelectionState>) => {
   return useMemo(() => {
-    return sections.map(section => {
-      const matchedSong = findMatchingSong(section.title, songs);
+    const items: import('./types').PreviewItem[] = [];
+    for (const section of sections) {
       const candidateSongs = findCandidateSongs(section.title, songs);
-      const userSelection = versionSelections.get(section.title);
-      let selectedVersionId: string | null = null;
-      if (userSelection !== undefined) {
-        selectedVersionId = userSelection || null;
-      } else if (candidateSongs.length > 0) {
+      // Find best match for auto-selection
+      let bestVersionId: string | null = null;
+      let bestSongId: string | null = null;
+      if (candidateSongs.length > 0) {
         const bestMatch = findBestVersionMatch(section.content, candidateSongs);
         if (bestMatch && bestMatch.contentSimilarity > 50) {
-          selectedVersionId = bestMatch.versionId;
+          bestVersionId = bestMatch.versionId;
+          // Find which song has this version
+          for (const c of candidateSongs) {
+            if (c.song.versions.some(v => v.id === bestVersionId)) {
+              bestSongId = c.song.id;
+              break;
+            }
+          }
         }
       }
-      return {
+      // Add "create new song" option
+      const newKey = `${section.title}::new`;
+      const newSelection = selectionStates.get(newKey);
+      const hasGoodMatch = candidateSongs.length > 0 && candidateSongs[0].similarity >= 90;
+      items.push({
+        itemKey: newKey,
         sectionTitle: section.title,
-        song: matchedSong,
-        candidateSongs,
-        selectedVersionId,
+        candidateSong: null,
+        selectedVersionId: null,
+        dontImport: newSelection?.dontImport ?? hasGoodMatch, // default: don't import if good match exists
         versionName: versionSuffix.trim() || '(no suffix)',
         content: section.content,
         contentPreview: section.content.slice(0, 100) + (section.content.length > 100 ? '...' : ''),
-      };
-    });
-  }, [sections, songs, versionSuffix, versionSelections]);
+      });
+      // Add one item per candidate song
+      for (let i = 0; i < candidateSongs.length; i++) {
+        const candidate = candidateSongs[i];
+        const itemKey = `${section.title}::${candidate.song.id}`;
+        const userSelection = selectionStates.get(itemKey);
+        // Default: best match is selected, others are "don't import"
+        const isBestMatch = candidate.song.id === bestSongId;
+        let selectedVersionId: string | null = null;
+        let dontImport: boolean;
+        if (userSelection !== undefined) {
+          selectedVersionId = userSelection.selectedVersionId;
+          dontImport = userSelection.dontImport;
+        } else {
+          // Auto-select: only best match is enabled, others default to "don't import"
+          dontImport = !isBestMatch;
+          if (isBestMatch && bestVersionId) {
+            selectedVersionId = bestVersionId;
+          } else if (!dontImport && candidate.song.versions.length > 0) {
+            // If enabled but no specific version, select the latest
+            const latestVersion = candidate.song.versions.find(v => v.nextVersionId === null);
+            selectedVersionId = latestVersion?.id || candidate.song.versions[0].id;
+          }
+        }
+        items.push({
+          itemKey,
+          sectionTitle: section.title,
+          candidateSong: candidate,
+          selectedVersionId,
+          dontImport,
+          versionName: versionSuffix.trim() || '(no suffix)',
+          content: section.content,
+          contentPreview: section.content.slice(0, 100) + (section.content.length > 100 ? '...' : ''),
+        });
+      }
+    }
+    return items;
+  }, [sections, songs, versionSuffix, selectionStates]);
 };

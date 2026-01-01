@@ -98,6 +98,7 @@ const ProgramStructureNode = ({
                 onClick={onElementClick}
                 selectedVersionId={selectedVersionId}
                 canEdit={canEdit && !isLocked}
+                isEditing={isEditing}
               />
             );
           }}

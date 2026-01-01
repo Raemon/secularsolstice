@@ -20,10 +20,11 @@ export type CandidateSong = {
 };
 
 export type PreviewItem = {
+  itemKey: string; // unique key: `${sectionTitle}::${songId}` or `${sectionTitle}::new`
   sectionTitle: string;
-  song: Song | null;
-  candidateSongs: CandidateSong[];
+  candidateSong: CandidateSong | null; // null means "create new song"
   selectedVersionId: string | null;
+  dontImport: boolean;
   versionName: string;
   content: string;
   contentPreview: string;

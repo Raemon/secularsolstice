@@ -32,7 +32,7 @@ const VersionRow = ({version, songId, isSelected}: {version: SongVersion; songId
   return (
     <Link 
       href={`/songs/${songId}/${version.id}`}
-      className={`flex items-center gap-3 px-2 py-[2px] ${isSelected ? 'text-primary' : 'hover:bg-black/50'}`}
+      className={`flex items-center gap-3 px-2 py-[2px] ${isSelected ? 'text-primary' : 'hover:bg-white/10'}`}
     >
       <span className={`flex-1 font-mono min-w-0 w-[100px] ${isSelected ? 'font-medium' : ''}`} style={{fontSize: '12px'}}>
         <TruncatedFilename label={version.label} className={isSelected ? 'text-primary' : 'text-gray-400'} />
@@ -61,8 +61,8 @@ const SongItem = ({song, selectedSongId, selectedVersionId, showTags = true, max
   );
 
   return (
-    <div className="flex">
-      <div className="group flex items-center w-1/2 justify-between px-2 py-1 text-lg font-medium border-b border-gray-500 font-georgia">
+    <div className="flex bg-black/30">
+      <div className="group flex items-center w-1/2 justify-between pl-3 pr-2 py-1 text-lg font-medium border-b border-gray-800 font-georgia">
         <Link href={`/songs/${song.id}`} className="flex flex-col">
           <span className={isSongSelected ? 'text-primary' : 'hover:text-gray-300'}>
             {song.title}
@@ -70,7 +70,7 @@ const SongItem = ({song, selectedSongId, selectedVersionId, showTags = true, max
           {showTags && <span className="text-[10px] text-gray-400 font-mono">{tagsMinusSong.join(', ')}</span>}
         </Link>
       </div>
-      <div className="border-b py-1 border-gray-500 w-1/2 flex flex-col justify-center">
+      <div className="border-b py-1 border-gray-800 w-1/2 flex flex-col justify-center pr-2">
         {mostRecentVersions.length === 0 ? (
           <p className="px-2 py-1 text-xs text-gray-500">No versions stored yet.</p>
         ) : (

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createVersionWithLineage, updateVersionRenderedContent } from '@/lib/songsRepository';
+import { processVersionLilypondIfNeeded } from '@/lib/lilypondRenderer';
 
 export async function POST(request: Request) {
   try {
@@ -33,8 +34,15 @@ export async function POST(request: Request) {
     // If client provided pre-rendered content, save it
     if (renderedContent && Object.keys(renderedContent).length > 0) {
       await updateVersionRenderedContent(newVersion.id, renderedContent);
+      // Still try to process lilypond in background if not already rendered
+      if (!renderedContent.lilypond) {
+        processVersionLilypondIfNeeded(newVersion.id).catch(err => console.error('[versions/route] Background lilypond processing failed:', err));
+      }
       return NextResponse.json({ version: { ...newVersion, renderedContent } });
     }
+
+    // Process lilypond in background (don't await to avoid slowing response)
+    processVersionLilypondIfNeeded(newVersion.id).catch(err => console.error('[versions/route] Background lilypond processing failed:', err));
 
     return NextResponse.json({ version: newVersion });
   } catch (error) {
@@ -48,4 +56,3 @@ export async function POST(request: Request) {
     }, { status: 500 });
   }
 }
-

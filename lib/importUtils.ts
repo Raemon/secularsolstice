@@ -3,6 +3,7 @@ import { promises as fs } from 'fs';
 import { put } from '@vercel/blob';
 import { createSong, createVersionWithLineage, findVersionBySongTitleAndLabel, getLatestVersionBySongTitle, getLatestVersionIdForSong, addSongTags } from './songsRepository';
 import { createProgram, getProgramByTitle, updateProgramElementIds } from './programsRepository';
+import { processVersionLilypondIfNeeded } from './lilypondRenderer';
 import sql from './db';
 import { AUDIO_EXTENSION_SET } from './audioExtensions';
 import { runWithLimit } from './asyncUtils';
@@ -197,6 +198,8 @@ export const importSongDirectory = async (
           const created = await createVersionWithLineage({
             songId: songId!, label, content, previousVersionId, createdBy: IMPORT_USER, createdAt, dbCreatedAt: new Date(),
           });
+          // Process lilypond in background
+          processVersionLilypondIfNeeded(created.id).catch(err => console.error('[importUtils] Background lilypond processing failed:', err));
           const url = versionUrl(created.songId, created.id);
           const result = { title: songTitle, label, status: 'created', url };
           results.push(result);
@@ -206,6 +209,8 @@ export const importSongDirectory = async (
           const created = await createVersionWithLineage({
             songId: songId!, label, content: null, blobUrl, previousVersionId, createdBy: IMPORT_USER, createdAt, dbCreatedAt: new Date(),
           });
+          // Process lilypond in background (blob could be .ly file)
+          processVersionLilypondIfNeeded(created.id).catch(err => console.error('[importUtils] Background lilypond processing failed:', err));
           const url = versionUrl(created.songId, created.id);
           const result = { title: songTitle, label, status: 'created-binary', url };
           results.push(result);
@@ -295,6 +300,8 @@ const importTextFile = async (
       const created = await createVersionWithLineage({
         songId: songId!, label, content, previousVersionId, createdBy: IMPORT_USER, createdAt, dbCreatedAt: new Date(),
       });
+      // Process lilypond in background
+      processVersionLilypondIfNeeded(created.id).catch(err => console.error('[importUtils] Background lilypond processing failed:', err));
       const url = versionUrl(created.songId, created.id);
       const result = { title, label, status: 'created', url };
       onResult?.(result);

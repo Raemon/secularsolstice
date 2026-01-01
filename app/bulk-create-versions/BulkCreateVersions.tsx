@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import VersionSuffixInput from './components/VersionSuffixInput';
 import ContentEditor from './components/ContentEditor';
 import StatusMessage from './components/StatusMessage';
 import ResultsList from './components/ResultsList';
 import PreviewPanel from './components/PreviewPanel';
 import VersionDiffPage from '../changelog/[oldVersionId]/[newVersionId]/VersionDiffPage';
-import { useSongs, useSections, useStatus, useProcessSections, usePreviewItems } from './hooks';
+import { useSongs, useSections, useStatus, useProcessSections, usePreviewItems, SelectionState } from './hooks';
 import { useUser } from '../contexts/UserContext';
 import type { PreviewItem } from './types';
 
@@ -27,7 +27,7 @@ const BulkCreateVersions = () => {
   const [versionSuffix, setVersionSuffix] = useState('');
   const [htmlContent, setHtmlContent] = useState('');
   const [initialContent, setInitialContent] = useState<string | undefined>(undefined);
-  const [versionSelections, setVersionSelections] = useState<Map<string, string>>(new Map());
+  const [selectionStates, setSelectionStates] = useState<Map<string, SelectionState>>(new Map());
   const [diffModal, setDiffModal] = useState<DiffModalState>({ open: false, oldText: '', newText: '', oldLabel: '', newLabel: '', title: '' });
 
   useEffect(() => {
@@ -47,20 +47,24 @@ const BulkCreateVersions = () => {
   const { songs, loadSongs } = useSongs();
   const sections = useSections(htmlContent);
   const { statusMessage, statusType, showStatus } = useStatus();
-  const previewItems = usePreviewItems(sections, songs, versionSuffix, versionSelections);
-  const effectiveSelections = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const item of previewItems) {
-      if (item.selectedVersionId) map.set(item.sectionTitle, item.selectedVersionId);
-    }
-    return map;
-  }, [previewItems]);
-  const { isProcessing, results, processSections } = useProcessSections(songs, loadSongs, sections, versionSuffix, userName, effectiveSelections);
+  const previewItems = usePreviewItems(sections, songs, versionSuffix, selectionStates);
+  const { isProcessing, results, processSections } = useProcessSections(songs, loadSongs, sections, versionSuffix, userName, previewItems);
 
-  const handleVersionSelection = (sectionTitle: string, versionId: string | null) => {
-    setVersionSelections(prev => {
+  const handleVersionSelection = (itemKey: string, versionId: string | null) => {
+    setSelectionStates(prev => {
       const newMap = new Map(prev);
-      newMap.set(sectionTitle, versionId === null ? '' : versionId);
+      const current = prev.get(itemKey) || { selectedVersionId: null, dontImport: false };
+      newMap.set(itemKey, { ...current, selectedVersionId: versionId, dontImport: false });
+      return newMap;
+    });
+  };
+
+  const handleToggleDontImport = (itemKey: string) => {
+    setSelectionStates(prev => {
+      const newMap = new Map(prev);
+      const item = previewItems.find(i => i.itemKey === itemKey);
+      const current = prev.get(itemKey) || { selectedVersionId: item?.selectedVersionId || null, dontImport: item?.dontImport || false };
+      newMap.set(itemKey, { ...current, dontImport: !current.dontImport });
       return newMap;
     });
   };
@@ -103,7 +107,7 @@ const BulkCreateVersions = () => {
         <ResultsList results={results} />
       </div>
       <div className="w-1/2">
-        <PreviewPanel previewItems={previewItems} onVersionSelect={handleVersionSelection} onCompare={handleCompare} />
+        <PreviewPanel previewItems={previewItems} onVersionSelect={handleVersionSelection} onToggleDontImport={handleToggleDontImport} onCompare={handleCompare} />
       </div>
       {diffModal.open && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50" onClick={() => setDiffModal(prev => ({ ...prev, open: false }))}>
