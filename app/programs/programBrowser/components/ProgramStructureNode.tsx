@@ -56,7 +56,7 @@ const ProgramStructureNode = ({
   const isLocked = parentIsLocked ?? isProgramLocked?.(current.id) ?? false;
 
   return (
-    <div className={`px-0 sm:px-2 ${depth > 0 ? 'ml-1' : ''}`}>
+    <div className={`px-0 ${depth > 1 ? 'ml-3' : ''}`}>
       <div className="flex items-center justify-between gap-2">
         {depth > 0 && (
           <Link href={`/programs/${current.id}`} className="text-xl font-georgia hover:underline">
