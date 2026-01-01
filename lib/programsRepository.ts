@@ -50,7 +50,7 @@ export const listPrograms = async (): Promise<ProgramRecord[]> => {
     select id, title, element_ids, program_ids, created_by, created_at, archived, is_subprogram, video_url, print_program_foreword, print_program_epitaph, locked
     from programs
     where archived = false
-    order by created_at asc
+    order by created_at desc
   `;
   return (rows as ProgramRow[]).map(mapProgramRow);
 };
