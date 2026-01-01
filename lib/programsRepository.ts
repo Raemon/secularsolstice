@@ -55,12 +55,18 @@ export const listPrograms = async (): Promise<ProgramRecord[]> => {
   return (rows as ProgramRow[]).map(mapProgramRow);
 };
 
-export const createProgram = async (title: string, createdBy?: string | null, isSubprogram?: boolean, locked?: boolean): Promise<ProgramRecord> => {
-  const rows = await sql`
-    insert into programs (title, created_by, is_subprogram, locked)
-    values (${title}, ${createdBy ?? null}, ${isSubprogram ?? false}, ${locked ?? false})
-    returning id, title, element_ids, program_ids, created_by, created_at, archived, is_subprogram, video_url, print_program_foreword, print_program_epitaph, locked
-  `;
+export const createProgram = async (title: string, createdBy?: string | null, isSubprogram?: boolean, locked?: boolean, createdAt?: string): Promise<ProgramRecord> => {
+  const rows = createdAt
+    ? await sql`
+        insert into programs (title, created_by, is_subprogram, locked, created_at)
+        values (${title}, ${createdBy ?? null}, ${isSubprogram ?? false}, ${locked ?? false}, ${createdAt})
+        returning id, title, element_ids, program_ids, created_by, created_at, archived, is_subprogram, video_url, print_program_foreword, print_program_epitaph, locked
+      `
+    : await sql`
+        insert into programs (title, created_by, is_subprogram, locked)
+        values (${title}, ${createdBy ?? null}, ${isSubprogram ?? false}, ${locked ?? false})
+        returning id, title, element_ids, program_ids, created_by, created_at, archived, is_subprogram, video_url, print_program_foreword, print_program_epitaph, locked
+      `;
   return mapProgramRow((rows as ProgramRow[])[0]!);
 };
 
