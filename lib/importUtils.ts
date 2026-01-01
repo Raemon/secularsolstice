@@ -43,6 +43,47 @@ const uploadToBlob = async (buffer: Buffer, songId: string, fileName: string): P
 
 const normalizeTitle = (name: string) => name.replace(/_/g, ' ').trim();
 
+// Strip markdown formatting from a line (headers, bold, italic, etc.)
+// Using custom stripping rather than marked library since we only need plain text from a single line
+const stripMarkdownFormatting = (line: string): string => {
+  return line
+    .replace(/^#+\s*/, '') // Remove markdown headers (#, ##, ###, etc.)
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1') // Extract text from links [text](url) -> text
+    .replace(/\*\*/g, '') // Remove bold (**)
+    .replace(/\*/g, '') // Remove italic/emphasis (*)
+    .replace(/__/g, '') // Remove bold (__)
+    .replace(/_/g, '') // Remove italic/emphasis (_)
+    .replace(/`/g, '') // Remove code backticks
+    .trim();
+};
+
+// Process README.md content: remove first line if it matches the song title
+const processReadmeContent = (content: string, songTitle: string): string => {
+  if (!content) return content;
+  const lines = content.split('\n');
+  const firstLine = lines[0];
+  const strippedFirstLine = stripMarkdownFormatting(firstLine);
+  const normalizedSongTitle = normalizeTitle(songTitle);
+  // strippedFirstLine is already trimmed; normalizedSongTitle handles underscore→space
+  if (strippedFirstLine.toLowerCase() === normalizedSongTitle.toLowerCase()) {
+    let startIdx = 1;
+    while (startIdx < lines.length && lines[startIdx].trim() === '') {
+      startIdx++;
+    }
+    return lines.slice(startIdx).join('\n');
+  }
+  return content;
+};
+
+// Get text content from a file buffer, applying README.md title stripping if applicable
+const getProcessedTextContent = (buffer: Buffer, relativePath: string, songTitle: string): string => {
+  let content = buffer.toString('utf-8');
+  if (path.basename(relativePath).toLowerCase() === 'readme.md') {
+    content = processReadmeContent(content, songTitle);
+  }
+  return content;
+};
+
 const getSongByTitle = async (title: string, includeArchived = false) => {
   const rows = await sql`select id, tags from songs where LOWER(title) = LOWER(${title}) ${includeArchived ? sql`` : sql`and archived = false`} limit 1`;
   return rows.length > 0 ? rows[0] as { id: string; tags: string[] | null } : null;
@@ -163,7 +204,7 @@ export const importSongDirectory = async (
     // If version exists but timestamps don't match, compare content
     if (existingVersion?.existing) {
       const existingContent = existingVersion.existing.content;
-      const newContent = file.isText ? file.buffer.toString('utf-8') : null;
+      const newContent = file.isText ? getProcessedTextContent(file.buffer, file.relativePath, songTitle) : null;
       // For text files, compare content; for binary, compare by blob existence
       const contentMatches = file.isText
         ? existingContent === newContent
@@ -194,7 +235,7 @@ export const importSongDirectory = async (
       } else {
         const previousVersionId = await getLatestVersionIdForSong(songId!);
         if (file.isText) {
-          const content = file.buffer.toString('utf-8');
+          const content = getProcessedTextContent(file.buffer, file.relativePath, songTitle);
           const created = await createVersionWithLineage({
             songId: songId!, label, content, previousVersionId, createdBy: IMPORT_USER, createdAt, dbCreatedAt: new Date(),
           });
