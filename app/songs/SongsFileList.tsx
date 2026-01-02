@@ -30,6 +30,7 @@ const SongsFileList = ({ initialSongId, initialVersionId }: SongsFileListProps =
   const [localError, setLocalError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const listContainerRef = useRef<HTMLDivElement>(null);
   const [sortOption, setSortOption] = useState<'alphabetical' | 'recently-updated'>('recently-updated');
 
   // Version detail state
@@ -79,6 +80,21 @@ const SongsFileList = ({ initialSongId, initialVersionId }: SongsFileListProps =
     };
     fetchVersion();
   }, [initialVersionId]);
+
+  // Scroll to selected song/version in the list
+  useEffect(() => {
+    if (loading || songs.length === 0 || !listContainerRef.current) return;
+    const container = listContainerRef.current;
+    let element: Element | null = null;
+    if (initialVersionId) {
+      element = container.querySelector(`[data-version-id="${initialVersionId}"]`);
+    } else if (initialSongId) {
+      element = container.querySelector(`[data-song-id="${initialSongId}"]`);
+    }
+    if (element) {
+      element.scrollIntoView({ block: 'center', behavior: 'instant' });
+    }
+  }, [loading, songs.length, initialSongId, initialVersionId]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -242,7 +258,7 @@ const SongsFileList = ({ initialSongId, initialVersionId }: SongsFileListProps =
     <div className="min-h-[calc(100vh-100px)] pt-8 relative">
       <div className="flex gap-4 justify-center">
         {/* Song list - on small screens hide when detail is shown, on xl+ always show greyed */}
-        <div className={`h-[calc(100vh-120px)] px-4 overflow-y-auto shrink-0 max-w-[650px] ${hasDetailPanel ? `hidden xl:block w-[650px] ${isCreatingVersion ? 'opacity-50' : 'opacity-50 hover:opacity-100'}` : 'flex-1 w-full'}`}>
+        <div ref={listContainerRef} className={`h-[calc(100vh-120px)] px-4 overflow-y-auto shrink-0 max-w-[650px] ${hasDetailPanel ? `hidden xl:block w-[650px] ${isCreatingVersion ? 'opacity-50' : 'opacity-50 hover:opacity-100'}` : 'flex-1 w-full'}`}>
           <div className="flex gap-2 items-center mb-4 sticky top-0 bg-[#11101b] pb-4 z-10">
             <SearchInput ref={searchInputRef} searchTerm={searchTerm} onSearchChange={setSearchTerm} />
             <div className="flex gap-0">

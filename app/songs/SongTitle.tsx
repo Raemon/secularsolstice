@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useUser } from '../contexts/UserContext';
+import Link from 'next/link';
 
 const SongTitle = ({songId, title}: {songId?: string; title: string}) => {
   const { canEdit } = useUser();
@@ -84,7 +85,7 @@ const SongTitle = ({songId, title}: {songId?: string; title: string}) => {
 
   return (
     <span className="flex items-center gap-2">
-      {displayTitle}
+      <Link href={`/songs/${songId}`}>{displayTitle}</Link>
       {songId && (
         <button
           onClick={() => { setEditedTitle(displayTitle); setIsEditing(true); }}

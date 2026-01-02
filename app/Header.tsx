@@ -36,6 +36,7 @@ const Header = () => {
   const isFeedbackPage = pathname?.includes('/feedback');
   const isSongsPage = pathname?.includes('/songs');
   const isProgramsPage = pathname?.includes('/programs');
+  const isBlogPage = pathname?.includes('/blog');
   const isChangelogPage = pathname?.includes('/changelog');
   const isAdminPage = pathname?.includes('/admin');
   const isScriptPage = pathname?.match(/\/programs\/[^/]+\/script/);
@@ -53,6 +54,7 @@ const Header = () => {
       <nav className="flex gap-3 lg:gap-6 items-center w-full lg:w-auto justify-between lg:ml-auto lg:justify-start order-2 lg:order-1 px-1 lg:pr-8 mt-3 sm:mt-0">
         <Link href="/songs" className={`hover:underline text-sm ${isSongsPage ? activeTextClass : inactiveTextClass}`}>Songs/Speeches</Link>
         <Link href="/programs" className={`hover:underline text-sm ${isProgramsPage ? activeTextClass : inactiveTextClass}`}>Programs</Link>
+        <Link href="/blog" className={`hover:underline text-sm ${isBlogPage ? activeTextClass : inactiveTextClass}`}>Blog</Link>
 
         <div className="relative" ref={poweruserRef}>
           <button onClick={() => setPoweruserOpen(!poweruserOpen)} className={`hover:underline text-sm ${inactiveTextClass}`}>Power User ▼</button>

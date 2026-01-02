@@ -32,6 +32,7 @@ const VersionRow = ({version, songId, isSelected}: {version: SongVersion; songId
   return (
     <Link 
       href={`/songs/${songId}/${version.id}`}
+      data-version-id={version.id}
       className={`flex items-center gap-3 px-2 py-[2px] ${isSelected ? 'text-primary' : 'hover:bg-white/10'}`}
     >
       <span className={`flex-1 font-mono min-w-0 w-[100px] ${isSelected ? 'font-medium' : ''}`} style={{fontSize: '12px'}}>
@@ -61,7 +62,7 @@ const SongItem = ({song, selectedSongId, selectedVersionId, showTags = true, max
   );
 
   return (
-    <div className="flex bg-black/30">
+    <div className="flex bg-black/30" data-song-id={song.id}>
       <div className="group flex items-center w-1/2 justify-between pl-3 pr-2 py-1 text-lg font-medium border-b border-gray-800 font-georgia">
         <Link href={`/songs/${song.id}`} className="flex flex-col">
           <span className={isSongSelected ? 'text-primary' : 'hover:text-gray-300'}>
