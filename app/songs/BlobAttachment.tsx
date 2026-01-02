@@ -13,7 +13,7 @@ const getFileType = (pathname: string): 'image' | 'video' | 'audio' | 'pdf' | 't
   if (['mp3', 'wav', 'ogg', 'aac', 'm4a', 'flac'].includes(ext)) return 'audio';
   if (ext === 'pdf') return 'pdf';
   if (['musicxml', 'mxl', 'mxml', 'xml'].includes(ext)) return 'musicxml';
-  if (ext === 'mscz') return 'musescore';
+  if (['mscz', 'mscx'].includes(ext)) return 'musescore';
   if (['txt', 'md', 'json', 'csv'].includes(ext)) return 'text';
   return null;
 };
