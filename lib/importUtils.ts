@@ -180,7 +180,13 @@ const collectFiles = async (dirPath: string, baseDir: string): Promise<FileInfo[
     const ext = path.extname(entry.name).toLowerCase();
     if (AUDIO_EXTENSION_SET.has(ext)) continue; // Skip audio files (handle separately)
 
-    const buffer = await fs.readFile(fullPath);
+    let buffer: Buffer;
+    try {
+      buffer = await fs.readFile(fullPath);
+    } catch (err) {
+      console.warn(`Failed to read file ${fullPath}:`, err);
+      continue;
+    }
     const relativePath = path.relative(baseDir, fullPath).replace(/\\/g, '/');
     // .mscx files are always blobs; files > 100KB are blobs even if valid text
     const isText = ext !== '.mscx' && isValidTextContent(buffer) && buffer.length <= 100 * 1024;
@@ -204,22 +210,46 @@ export const importSongDirectory = async (
   const songTitle = normalizeTitle(dirName);
 
   let songId: string | null = null;
-  if (dryRun) {
-    const existingSong = await getSongByTitle(songTitle);
-    songId = existingSong ? existingSong.id : null;
-  } else {
-    songId = await ensureSong(songTitle, tags);
+  try {
+    if (dryRun) {
+      const existingSong = await getSongByTitle(songTitle);
+      songId = existingSong ? existingSong.id : null;
+    } else {
+      songId = await ensureSong(songTitle, tags);
+    }
+  } catch (error) {
+    const result = { title: songTitle, label: '', status: 'failed', error: error instanceof Error ? error.message : 'unknown error' };
+    results.push(result);
+    onResult?.(result);
+    return results;
   }
 
-  const files = await collectFiles(songDirPath, songDirPath);
+  let files: FileInfo[];
+  try {
+    files = await collectFiles(songDirPath, songDirPath);
+  } catch (error) {
+    const result = { title: songTitle, label: '', status: 'failed', error: `Failed to collect files: ${error instanceof Error ? error.message : 'unknown error'}` };
+    results.push(result);
+    onResult?.(result);
+    return results;
+  }
   if (files.length === 0) return results;
 
   for (const file of files) {
     // Strip "gen/" prefix if present
     const sourceLabel = file.relativePath.replace(/^gen\//, '');
     const label = normalizeTitle(sourceLabel);
-    const createdAt = await getFileCreatedAt(file.fullPath);
-    const existingVersion = await findExistingVersion(songTitle, [label, sourceLabel], createdAt);
+    let createdAt: string;
+    let existingVersion: Awaited<ReturnType<typeof findExistingVersion>> | null = null;
+    try {
+      createdAt = await getFileCreatedAt(file.fullPath);
+      existingVersion = await findExistingVersion(songTitle, [label, sourceLabel], createdAt);
+    } catch (error) {
+      const result = { title: songTitle, label, status: 'failed', error: `Failed to check existing version: ${error instanceof Error ? error.message : 'unknown error'}` };
+      results.push(result);
+      onResult?.(result);
+      continue;
+    }
 
     // If timestamps match exactly, the file hasn't changed since import
     if (existingVersion?.matches) {
@@ -262,29 +292,49 @@ export const importSongDirectory = async (
         results.push(result);
         onResult?.(result);
       } else {
-        const previousVersionId = await getLatestVersionIdForSong(songId!);
+        let previousVersionId: string | null = null;
+        try {
+          previousVersionId = await getLatestVersionIdForSong(songId!);
+        } catch (error) {
+          const result = { title: songTitle, label, status: 'failed', error: `Failed to get latest version: ${error instanceof Error ? error.message : 'unknown error'}` };
+          results.push(result);
+          onResult?.(result);
+          continue;
+        }
         if (file.isText) {
-          const content = getProcessedTextContent(file.buffer, file.relativePath, songTitle);
-          const created = await createVersionWithLineage({
-            songId: songId!, label, content, previousVersionId, createdBy: IMPORT_USER, createdAt, dbCreatedAt: new Date(),
-          });
-          // Process lilypond in background
-          processVersionLilypondIfNeeded(created.id).catch(err => console.error('[importUtils] Background lilypond processing failed:', err));
-          const url = versionUrl(created.songId, created.id);
-          const result = { title: songTitle, label, status: 'created', url };
-          results.push(result);
-          onResult?.(result);
+          try {
+            const content = getProcessedTextContent(file.buffer, file.relativePath, songTitle);
+            const created = await createVersionWithLineage({
+              songId: songId!, label, content, previousVersionId, createdBy: IMPORT_USER, createdAt, dbCreatedAt: new Date(),
+            });
+            // Process lilypond in background
+            processVersionLilypondIfNeeded(created.id).catch(err => console.error('[importUtils] Background lilypond processing failed:', err));
+            const url = versionUrl(created.songId, created.id);
+            const result = { title: songTitle, label, status: 'created', url };
+            results.push(result);
+            onResult?.(result);
+          } catch (error) {
+            const result = { title: songTitle, label, status: 'failed', error: `Failed to create version: ${error instanceof Error ? error.message : 'unknown error'}` };
+            results.push(result);
+            onResult?.(result);
+          }
         } else {
-          const blobUrl = await uploadToBlob(file.buffer, songId!, sourceLabel);
-          const created = await createVersionWithLineage({
-            songId: songId!, label, content: null, blobUrl, previousVersionId, createdBy: IMPORT_USER, createdAt, dbCreatedAt: new Date(),
-          });
-          // Process lilypond in background (blob could be .ly file)
-          processVersionLilypondIfNeeded(created.id).catch(err => console.error('[importUtils] Background lilypond processing failed:', err));
-          const url = versionUrl(created.songId, created.id);
-          const result = { title: songTitle, label, status: 'created-binary', url };
-          results.push(result);
-          onResult?.(result);
+          try {
+            const blobUrl = await uploadToBlob(file.buffer, songId!, sourceLabel);
+            const created = await createVersionWithLineage({
+              songId: songId!, label, content: null, blobUrl, previousVersionId, createdBy: IMPORT_USER, createdAt, dbCreatedAt: new Date(),
+            });
+            // Process lilypond in background (blob could be .ly file)
+            processVersionLilypondIfNeeded(created.id).catch(err => console.error('[importUtils] Background lilypond processing failed:', err));
+            const url = versionUrl(created.songId, created.id);
+            const result = { title: songTitle, label, status: 'created-binary', url };
+            results.push(result);
+            onResult?.(result);
+          } catch (error) {
+            const result = { title: songTitle, label, status: 'failed', error: `Failed to create binary version: ${error instanceof Error ? error.message : 'unknown error'}` };
+            results.push(result);
+            onResult?.(result);
+          }
         }
       }
     } catch (error) {
@@ -324,15 +374,29 @@ const importTextFile = async (
   if (!content) return null;
 
   let songId: string | null = null;
-  if (dryRun) {
-    const existingSong = await getSongByTitle(title);
-    songId = existingSong ? existingSong.id : null;
-  } else {
-    songId = await ensureSong(title, [tag]);
+  try {
+    if (dryRun) {
+      const existingSong = await getSongByTitle(title);
+      songId = existingSong ? existingSong.id : null;
+    } else {
+      songId = await ensureSong(title, [tag]);
+    }
+  } catch (error) {
+    const result = { title, label, status: 'failed', error: `Failed to ensure song: ${error instanceof Error ? error.message : 'unknown error'}` };
+    onResult?.(result);
+    return result;
   }
 
-  const createdAt = await getFileCreatedAt(filePath);
-  const existingVersion = await findExistingVersion(title, [label, sourceLabel], createdAt);
+  let createdAt: string;
+  let existingVersion: Awaited<ReturnType<typeof findExistingVersion>> | null = null;
+  try {
+    createdAt = await getFileCreatedAt(filePath);
+    existingVersion = await findExistingVersion(title, [label, sourceLabel], createdAt);
+  } catch (error) {
+    const result = { title, label, status: 'failed', error: `Failed to check existing version: ${error instanceof Error ? error.message : 'unknown error'}` };
+    onResult?.(result);
+    return result;
+  }
 
   // If timestamps match exactly, the file hasn't changed since import
   if (existingVersion?.matches) {
@@ -366,16 +430,29 @@ const importTextFile = async (
       onResult?.(result);
       return result;
     } else {
-      const previousVersionId = await getLatestVersionIdForSong(songId!);
-      const created = await createVersionWithLineage({
-        songId: songId!, label, content, previousVersionId, createdBy: IMPORT_USER, createdAt, dbCreatedAt: new Date(),
-      });
-      // Process lilypond in background
-      processVersionLilypondIfNeeded(created.id).catch(err => console.error('[importUtils] Background lilypond processing failed:', err));
-      const url = versionUrl(created.songId, created.id);
-      const result = { title, label, status: 'created', url };
-      onResult?.(result);
-      return result;
+      let previousVersionId: string | null = null;
+      try {
+        previousVersionId = await getLatestVersionIdForSong(songId!);
+      } catch (error) {
+        const result = { title, label, status: 'failed', error: `Failed to get latest version: ${error instanceof Error ? error.message : 'unknown error'}` };
+        onResult?.(result);
+        return result;
+      }
+      try {
+        const created = await createVersionWithLineage({
+          songId: songId!, label, content, previousVersionId, createdBy: IMPORT_USER, createdAt, dbCreatedAt: new Date(),
+        });
+        // Process lilypond in background
+        processVersionLilypondIfNeeded(created.id).catch(err => console.error('[importUtils] Background lilypond processing failed:', err));
+        const url = versionUrl(created.songId, created.id);
+        const result = { title, label, status: 'created', url };
+        onResult?.(result);
+        return result;
+      } catch (error) {
+        const result = { title, label, status: 'failed', error: `Failed to create version: ${error instanceof Error ? error.message : 'unknown error'}` };
+        onResult?.(result);
+        return result;
+      }
     }
   } catch (error) {
     const result = { title, label, status: 'failed', error: error instanceof Error ? error.message : 'unknown error' };
@@ -454,8 +531,14 @@ export const importActivitiesFromList = async (
     }
 
     const fileName = path.basename(foundFile);
-    const result = await importTextFile(foundFile, fileName, 'activity', dryRun, onResult);
-    if (result) results.push(result);
+    try {
+      const result = await importTextFile(foundFile, fileName, 'activity', dryRun, onResult);
+      if (result) results.push(result);
+    } catch (error) {
+      const result = { title: normalizeTitle(activityName), label: activityName, status: 'failed', error: error instanceof Error ? error.message : 'unknown error' };
+      results.push(result);
+      onResult?.(result);
+    }
   }
 
   return results;
@@ -467,33 +550,57 @@ type ParsedProgramItem = { type: 'song' | 'section'; name: string };
 
 // Find or create a song with an empty version for a given title
 const findOrCreateEmptyVersion = async (title: string, dryRun: boolean, tags: string[]): Promise<string | null> => {
-  // First try to find existing
-  const existing = await getLatestVersionBySongTitle(title);
-  if (existing) {
-    // Add tags to existing song if we have any
-    if (tags.length > 0 && !dryRun) {
-      await addSongTags(existing.songId, tags);
+  try {
+    // First try to find existing
+    const existing = await getLatestVersionBySongTitle(title);
+    if (existing) {
+      // Add tags to existing song if we have any
+      if (tags.length > 0 && !dryRun) {
+        try {
+          await addSongTags(existing.songId, tags);
+        } catch (error) {
+          console.warn(`Failed to add tags to song ${existing.songId}:`, error);
+        }
+      }
+      return existing.id;
     }
-    return existing.id;
-  }
 
-  if (dryRun) return null;
+    if (dryRun) return null;
 
-  // Create song with empty version
-  const songId = await ensureSong(title, tags);
-  // Also add tags in case ensureSong found existing song without versions
-  if (tags.length > 0) {
-    await addSongTags(songId, tags);
+    // Create song with empty version
+    let songId: string;
+    try {
+      songId = await ensureSong(title, tags);
+    } catch (error) {
+      console.warn(`Failed to ensure song ${title}:`, error);
+      return null;
+    }
+    // Also add tags in case ensureSong found existing song without versions
+    if (tags.length > 0) {
+      try {
+        await addSongTags(songId, tags);
+      } catch (error) {
+        console.warn(`Failed to add tags to song ${songId}:`, error);
+      }
+    }
+    try {
+      const created = await createVersionWithLineage({
+        songId,
+        label: 'README.md',
+        content: `${title}\n\n(Imported from secularsolstice.github.io, empty version placeholder)`,
+        previousVersionId: null,
+        createdBy: IMPORT_USER,
+        dbCreatedAt: new Date(),
+      });
+      return created.id;
+    } catch (error) {
+      console.warn(`Failed to create empty version for song ${songId}:`, error);
+      return null;
+    }
+  } catch (error) {
+    console.warn(`Failed to find or create empty version for ${title}:`, error);
+    return null;
   }
-  const created = await createVersionWithLineage({
-    songId,
-    label: 'README.md',
-    content: `${title}\n\n(Imported from secularsolstice.github.io, empty version placeholder)`,
-    previousVersionId: null,
-    createdBy: IMPORT_USER,
-    dbCreatedAt: new Date(),
-  });
-  return created.id;
 };
 
 type ResolvedProgramItems = {
@@ -520,31 +627,59 @@ const resolveProgramItems = async (
 
   const flushSection = async () => {
     if (currentSectionName && currentSectionItems.length > 0) {
-      if (reuseSubprograms) {
-        // Check for existing subprogram first
-        const existingSubProgram = await getProgramByTitle(currentSectionName);
-        if (existingSubProgram) {
-          if (!dryRun) {
-            await updateProgramElementIds(existingSubProgram.id, currentSectionItems, [], IMPORT_USER);
+      try {
+        if (reuseSubprograms) {
+          // Check for existing subprogram first
+          try {
+            const existingSubProgram = await getProgramByTitle(currentSectionName);
+            if (existingSubProgram) {
+              if (!dryRun) {
+                try {
+                  await updateProgramElementIds(existingSubProgram.id, currentSectionItems, [], IMPORT_USER);
+                } catch (error) {
+                  console.warn(`Failed to update subprogram ${existingSubProgram.id}:`, error);
+                }
+              }
+              programIds.push(existingSubProgram.id);
+            } else if (!dryRun) {
+              try {
+                const subProgram = await createProgram(currentSectionName, IMPORT_USER, true, true, undefined, new Date());
+                try {
+                  await updateProgramElementIds(subProgram.id, currentSectionItems, [], IMPORT_USER);
+                } catch (error) {
+                  console.warn(`Failed to update subprogram ${subProgram.id}:`, error);
+                }
+                programIds.push(subProgram.id);
+              } catch (error) {
+                console.warn(`Failed to create subprogram ${currentSectionName}:`, error);
+              }
+            } else {
+              // dryRun + no existing subprogram: push placeholder for consistent counts
+              programIds.push(`subprogram:${currentSectionName}`);
+            }
+          } catch (error) {
+            console.warn(`Failed to check for existing subprogram ${currentSectionName}:`, error);
           }
-          programIds.push(existingSubProgram.id);
-        } else if (!dryRun) {
-          const subProgram = await createProgram(currentSectionName, IMPORT_USER, true, true, undefined, new Date());
-          await updateProgramElementIds(subProgram.id, currentSectionItems, [], IMPORT_USER);
-          programIds.push(subProgram.id);
         } else {
-          // dryRun + no existing subprogram: push placeholder for consistent counts
-          programIds.push(`subprogram:${currentSectionName}`);
+          // Create new subprogram (or placeholder in dryRun)
+          if (!dryRun) {
+            try {
+              const subProgram = await createProgram(currentSectionName, IMPORT_USER, true, true, undefined, new Date());
+              try {
+                await updateProgramElementIds(subProgram.id, currentSectionItems, [], IMPORT_USER);
+              } catch (error) {
+                console.warn(`Failed to update subprogram ${subProgram.id}:`, error);
+              }
+              programIds.push(subProgram.id);
+            } catch (error) {
+              console.warn(`Failed to create subprogram ${currentSectionName}:`, error);
+            }
+          } else {
+            programIds.push(`subprogram:${currentSectionName}`);
+          }
         }
-      } else {
-        // Create new subprogram (or placeholder in dryRun)
-        if (!dryRun) {
-          const subProgram = await createProgram(currentSectionName, IMPORT_USER, true, true, undefined, new Date());
-          await updateProgramElementIds(subProgram.id, currentSectionItems, [], IMPORT_USER);
-          programIds.push(subProgram.id);
-        } else {
-          programIds.push(`subprogram:${currentSectionName}`);
-        }
+      } catch (error) {
+        console.warn(`Failed to flush section ${currentSectionName}:`, error);
       }
       currentSectionItems = [];
     }
@@ -553,35 +688,53 @@ const resolveProgramItems = async (
 
   for (const item of items) {
     if (item.type === 'section') {
-      await flushSection();
+      try {
+        await flushSection();
+      } catch (error) {
+        console.warn(`Failed to flush section:`, error);
+      }
       currentSectionName = item.name;
       currentSectionNumber++;
     } else {
-      const version = await getLatestVersionBySongTitle(item.name);
-      const actTag = currentSectionNumber > 0 ? `act ${currentSectionNumber}` : null;
-      if (version) {
-        // Add act tag if we're in a section and not in dryRun
-        if (actTag && !dryRun) {
-          await addSongTags(version.songId, [actTag]);
-        }
-        if (currentSectionName) {
-          currentSectionItems.push(version.id);
-        } else {
-          elementIds.push(version.id);
-        }
-      } else {
-        // Create placeholder for missing item
-        const placeholderId = await findOrCreateEmptyVersion(item.name, dryRun, actTag ? [actTag] : []);
-        if (placeholderId) {
-          if (currentSectionName) {
-            currentSectionItems.push(placeholderId);
-          } else {
-            elementIds.push(placeholderId);
+      try {
+        const version = await getLatestVersionBySongTitle(item.name);
+        const actTag = currentSectionNumber > 0 ? `act ${currentSectionNumber}` : null;
+        if (version) {
+          // Add act tag if we're in a section and not in dryRun
+          if (actTag && !dryRun) {
+            try {
+              await addSongTags(version.songId, [actTag]);
+            } catch (error) {
+              console.warn(`Failed to add act tag to song ${version.songId}:`, error);
+            }
           }
-          createdPlaceholders.push(item.name);
+          if (currentSectionName) {
+            currentSectionItems.push(version.id);
+          } else {
+            elementIds.push(version.id);
+          }
         } else {
-          missingElements.push(item.name);
+          // Create placeholder for missing item
+          try {
+            const placeholderId = await findOrCreateEmptyVersion(item.name, dryRun, actTag ? [actTag] : []);
+            if (placeholderId) {
+              if (currentSectionName) {
+                currentSectionItems.push(placeholderId);
+              } else {
+                elementIds.push(placeholderId);
+              }
+              createdPlaceholders.push(item.name);
+            } else {
+              missingElements.push(item.name);
+            }
+          } catch (error) {
+            console.warn(`Failed to create placeholder for ${item.name}:`, error);
+            missingElements.push(item.name);
+          }
         }
+      } catch (error) {
+        console.warn(`Failed to resolve item ${item.name}:`, error);
+        missingElements.push(item.name);
       }
     }
   }
@@ -654,7 +807,14 @@ export const importProgramFile = async (
   const programTitle = getProgramTitleFromFile(fileName, parsed.title);
 
   // Check if program already exists
-  const existingProgram = await getProgramByTitle(programTitle);
+  let existingProgram;
+  try {
+    existingProgram = await getProgramByTitle(programTitle);
+  } catch (error) {
+    const result: ProgramImportResult = { title: programTitle, status: 'failed', error: `Failed to check existing program: ${error instanceof Error ? error.message : 'unknown error'}` };
+    onResult?.(result);
+    return result;
+  }
   if (existingProgram) {
     const url = `/programs/${existingProgram.id}`;
     const result = { title: programTitle, status: 'exists', url };
@@ -662,7 +822,18 @@ export const importProgramFile = async (
     return result;
   }
 
-  const { elementIds, programIds, missingElements, createdPlaceholders } = await resolveProgramItems(parsed.items, dryRun, false);
+  let elementIds: string[], programIds: string[], missingElements: string[], createdPlaceholders: string[];
+  try {
+    const resolved = await resolveProgramItems(parsed.items, dryRun, false);
+    elementIds = resolved.elementIds;
+    programIds = resolved.programIds;
+    missingElements = resolved.missingElements;
+    createdPlaceholders = resolved.createdPlaceholders;
+  } catch (error) {
+    const result: ProgramImportResult = { title: programTitle, status: 'failed', error: `Failed to resolve program items: ${error instanceof Error ? error.message : 'unknown error'}` };
+    onResult?.(result);
+    return result;
+  }
 
   try {
     if (dryRun) {
@@ -677,9 +848,29 @@ export const importProgramFile = async (
       return result;
     }
 
-    const fileCreatedAt = await getFileCreatedAt(filePath);
-    const program = await createProgram(programTitle, IMPORT_USER, false, true, fileCreatedAt, new Date());
-    await updateProgramElementIds(program.id, elementIds, programIds, IMPORT_USER);
+    let fileCreatedAt: string;
+    try {
+      fileCreatedAt = await getFileCreatedAt(filePath);
+    } catch (error) {
+      const result: ProgramImportResult = { title: programTitle, status: 'failed', error: `Failed to get file timestamp: ${error instanceof Error ? error.message : 'unknown error'}` };
+      onResult?.(result);
+      return result;
+    }
+    let program;
+    try {
+      program = await createProgram(programTitle, IMPORT_USER, false, true, fileCreatedAt, new Date());
+    } catch (error) {
+      const result: ProgramImportResult = { title: programTitle, status: 'failed', error: `Failed to create program: ${error instanceof Error ? error.message : 'unknown error'}` };
+      onResult?.(result);
+      return result;
+    }
+    try {
+      await updateProgramElementIds(program.id, elementIds, programIds, IMPORT_USER);
+    } catch (error) {
+      const result: ProgramImportResult = { title: programTitle, status: 'failed', error: `Failed to update program elements: ${error instanceof Error ? error.message : 'unknown error'}` };
+      onResult?.(result);
+      return result;
+    }
     const url = `/programs/${program.id}`;
     const result: ProgramImportResult = {
       title: programTitle,
@@ -737,12 +928,29 @@ export const resyncProgramsFromFiles = async (
       const programTitle = getProgramTitleFromFile(entry.name, parsed.title);
 
       // Check if program exists
-      const existingProgram = await getProgramByTitle(programTitle);
+      let existingProgram;
+      try {
+        existingProgram = await getProgramByTitle(programTitle);
+      } catch (error) {
+        console.warn(`Failed to check existing program ${programTitle}:`, error);
+        continue;
+      }
       if (!existingProgram) continue; // Only resync existing programs
 
       // Rebuild the full element list from the .list file using shared helper
       // reuseSubprograms=true so we update existing subprograms rather than creating new ones
-      const { elementIds, programIds, createdPlaceholders } = await resolveProgramItems(parsed.items, dryRun, true);
+      let elementIds: string[], programIds: string[], createdPlaceholders: string[];
+      try {
+        const resolved = await resolveProgramItems(parsed.items, dryRun, true);
+        elementIds = resolved.elementIds;
+        programIds = resolved.programIds;
+        createdPlaceholders = resolved.createdPlaceholders;
+      } catch (error) {
+        const result: ProgramResyncResult = { title: programTitle, status: 'failed', error: `Failed to resolve program items: ${error instanceof Error ? error.message : 'unknown error'}` };
+        results.push(result);
+        onResult?.(result);
+        continue;
+      }
 
       // Check if anything changed
       const oldElementCount = existingProgram.elementIds.length + existingProgram.programIds.length;
@@ -765,16 +973,22 @@ export const resyncProgramsFromFiles = async (
           results.push(result);
           onResult?.(result);
         } else {
-          await updateProgramElementIds(existingProgram.id, elementIds, programIds, IMPORT_USER);
-          const result: ProgramResyncResult = {
-            title: programTitle,
-            status: 'resynced',
-            url: `/programs/${existingProgram.id}`,
-            addedElements,
-            createdPlaceholders: createdPlaceholders.length > 0 ? createdPlaceholders : undefined,
-          };
-          results.push(result);
-          onResult?.(result);
+          try {
+            await updateProgramElementIds(existingProgram.id, elementIds, programIds, IMPORT_USER);
+            const result: ProgramResyncResult = {
+              title: programTitle,
+              status: 'resynced',
+              url: `/programs/${existingProgram.id}`,
+              addedElements,
+              createdPlaceholders: createdPlaceholders.length > 0 ? createdPlaceholders : undefined,
+            };
+            results.push(result);
+            onResult?.(result);
+          } catch (error) {
+            const result: ProgramResyncResult = { title: programTitle, status: 'failed', error: `Failed to update program: ${error instanceof Error ? error.message : 'unknown error'}` };
+            results.push(result);
+            onResult?.(result);
+          }
         }
       } catch (error) {
         const result: ProgramResyncResult = { title: programTitle, status: 'failed', error: error instanceof Error ? error.message : 'unknown error' };
@@ -813,13 +1027,19 @@ export const importFromDirectories = async (
     }
 
     await runWithLimit(entries.filter(e => e.isFile()), 8, async (entry) => {
-      const result = await importSpeechFile(
-        path.join(speechesDir, entry.name),
-        entry.name,
-        dryRun,
-        (r) => onResult?.('speech', r)
-      );
-      if (result) speechResults.push(result);
+      try {
+        const result = await importSpeechFile(
+          path.join(speechesDir, entry.name),
+          entry.name,
+          dryRun,
+          (r) => onResult?.('speech', r)
+        );
+        if (result) speechResults.push(result);
+      } catch (error) {
+        const result: ImportResult = { title: entry.name, label: entry.name, status: 'failed', error: error instanceof Error ? error.message : 'unknown error' };
+        speechResults.push(result);
+        onResult?.('speech', result);
+      }
     });
   }
 
@@ -845,14 +1065,20 @@ export const importFromDirectories = async (
     }
 
     await runWithLimit(entries.filter(e => e.isDirectory()), 4, async (dir) => {
-      const results = await importSongDirectory(
-        path.join(songsConfig.path, dir.name),
-        dir.name,
-        songsConfig.tags,
-        dryRun,
-        (r) => onResult?.('song', r)
-      );
-      songResults.push(...results);
+      try {
+        const results = await importSongDirectory(
+          path.join(songsConfig.path, dir.name),
+          dir.name,
+          songsConfig.tags,
+          dryRun,
+          (r) => onResult?.('song', r)
+        );
+        songResults.push(...results);
+      } catch (error) {
+        const result: ImportResult = { title: dir.name, label: '', status: 'failed', error: error instanceof Error ? error.message : 'unknown error' };
+        songResults.push(result);
+        onResult?.('song', result);
+      }
     });
   }
 
@@ -868,22 +1094,33 @@ export const importFromDirectories = async (
 
     // Process programs sequentially to avoid race conditions with subprogram creation
     for (const entry of entries.filter(e => e.isFile())) {
-      const result = await importProgramFile(
-        path.join(programsDir, entry.name),
-        entry.name,
-        dryRun,
-        (r) => onResult?.('program', r)
-      );
-      if (result) programResults.push(result);
+      try {
+        const result = await importProgramFile(
+          path.join(programsDir, entry.name),
+          entry.name,
+          dryRun,
+          (r) => onResult?.('program', r)
+        );
+        if (result) programResults.push(result);
+      } catch (error) {
+        const result: ProgramImportResult = { title: entry.name, status: 'failed', error: error instanceof Error ? error.message : 'unknown error' };
+        programResults.push(result);
+        onResult?.('program', result);
+      }
     }
   }
 
   // Resync existing programs to pick up newly-available items
-  const resyncResults = await resyncProgramsFromFiles(
-    config.programsDirs ?? [],
-    dryRun,
-    (r) => onResult?.('resync', r)
-  );
+  let resyncResults: ProgramResyncResult[] = [];
+  try {
+    resyncResults = await resyncProgramsFromFiles(
+      config.programsDirs ?? [],
+      dryRun,
+      (r) => onResult?.('resync', r)
+    );
+  } catch (error) {
+    console.warn('Failed to resync programs:', error);
+  }
 
   return { songResults, speechResults, activityResults, programResults, resyncResults };
 };
