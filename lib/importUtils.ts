@@ -58,6 +58,7 @@ const stripMarkdownFormatting = (line: string): string => {
 };
 
 // Process README.md content: remove first line if it matches the song title
+// Also convert "By " headers to italics
 const processReadmeContent = (content: string, songTitle: string): string => {
   if (!content) return content;
   const lines = content.split('\n');
@@ -65,14 +66,25 @@ const processReadmeContent = (content: string, songTitle: string): string => {
   const strippedFirstLine = stripMarkdownFormatting(firstLine);
   const normalizedSongTitle = normalizeTitle(songTitle);
   // strippedFirstLine is already trimmed; normalizedSongTitle handles underscore→space
+  let startIdx = 0;
   if (strippedFirstLine.toLowerCase() === normalizedSongTitle.toLowerCase()) {
-    let startIdx = 1;
+    startIdx = 1;
     while (startIdx < lines.length && lines[startIdx].trim() === '') {
       startIdx++;
     }
-    return lines.slice(startIdx).join('\n');
   }
-  return content;
+  // Check if the new first line is a header starting with "By "
+  if (startIdx < lines.length) {
+    const newFirstLine = lines[startIdx];
+    const headerMatch = newFirstLine.match(/^#+\s*/);
+    if (headerMatch) {
+      const headerContent = newFirstLine.slice(headerMatch[0].length);
+      if (headerContent.startsWith('By ')) {
+        lines[startIdx] = `*${headerContent}*`;
+      }
+    }
+  }
+  return lines.slice(startIdx).join('\n');
 };
 
 // Get text content from a file buffer, applying title stripping for .md files if applicable
