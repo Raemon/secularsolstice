@@ -1,2 +1,46 @@
 CRITICAL: Do not add trailing whitespace or extra newlines at the end of files. Preserve the exact whitespace formatting of files when editing. Do not insert final newlines unless the file already has one and you're maintaining that pattern.
 
+## AI Admin Testing Workflow
+
+When you need to test admin features, use the aiAdminLogin script.
+
+### Programmatic Login (creates user automatically)
+Run this script to create the admin user and login:
+```bash
+npx tsx scripts/aiAdminLogin.ts [PORT]
+```
+Default port is 3000. Check the terminal output for the actual port (often 3000 or 3002).
+
+### Cleanup (delete admin user when done)
+```bash
+npx tsx scripts/aiAdminLogin.ts delete
+```
+
+Or use curl directly:
+```bash
+curl -X POST http://localhost:PORT/api/admin/ai-login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "ai-test-admin", "password": "aiTestAdmin2026!"}'
+```
+Both return the user object with `id`, `username`, `is_admin`, etc.
+
+### Browser-Based Testing
+1. Navigate to the site (check terminal for port - often 3000 or 3002)
+2. Click "Sign in" button in the header
+3. Enter username: `ai-test-admin`, password: `aiTestAdmin2026!`
+4. Navigate to `/admin` to access admin dashboard
+
+### Testing Admin API Endpoints
+Most admin API endpoints require a `requestingUserId` query param. After logging in:
+```bash
+# Get the user ID from login response, then:
+curl "http://localhost:PORT/api/admin/users?requestingUserId=USER_ID_HERE"
+```
+
+### Key Admin Pages
+- `/admin` - Admin dashboard with tools and user management
+- `/db-backups` - Database backup management
+- `/blobs` - Blob storage viewer
+- `/users/all` - All users list
+- `/comments` - All comments
+- `/votes` - All votes
