@@ -182,7 +182,8 @@ const collectFiles = async (dirPath: string, baseDir: string): Promise<FileInfo[
 
     const buffer = await fs.readFile(fullPath);
     const relativePath = path.relative(baseDir, fullPath).replace(/\\/g, '/');
-    const isText = isValidTextContent(buffer);
+    // .mscx files are always blobs; files > 100KB are blobs even if valid text
+    const isText = ext !== '.mscx' && isValidTextContent(buffer) && buffer.length <= 100 * 1024;
     files.push({ fullPath, relativePath, buffer, isText });
   }
   return files;
