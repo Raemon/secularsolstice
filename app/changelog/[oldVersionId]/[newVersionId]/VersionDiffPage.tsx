@@ -90,8 +90,8 @@ const VersionDiffPage = ({ oldVersionId, newVersionId, oldText, newText, oldLabe
     const fetchVersions = async () => {
       try {
         const [oldRes, newRes] = await Promise.all([
-          fetch(`/api/songs/versions/${oldVersionId}`),
-          fetch(`/api/songs/versions/${newVersionId}`)
+          fetch(`/api/songs/versions/${oldVersionId}?includeContent=true`),
+          fetch(`/api/songs/versions/${newVersionId}?includeContent=true`)
         ]);
         if (!oldRes.ok) throw new Error('Failed to fetch old version');
         if (!newRes.ok) throw new Error('Failed to fetch new version');

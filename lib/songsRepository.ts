@@ -407,6 +407,51 @@ export const getVersionById = async (versionId: string): Promise<SongVersionReco
   return typedRows.length > 0 ? typedRows[0] : null;
 };
 
+// Get version metadata without the large content fields (for faster initial load)
+export const getVersionByIdWithoutContent = async (versionId: string): Promise<SongVersionRecord | null> => {
+  const rows = await sql`
+    select
+      v.id as "id",
+      v.song_id as "songId",
+      v.label,
+      null as "content",
+      v.audio_url as "audioUrl",
+      v.slides_movie_url as "slidesMovieUrl",
+      v.slide_movie_start as "slideMovieStart",
+      v.bpm,
+      v.transpose,
+      v.previous_version_id as "previousVersionId",
+      v.next_version_id as "nextVersionId",
+      v.original_version_id as "originalVersionId",
+      null as "renderedContent",
+      v.archived as "archived",
+      v.created_by as "createdBy",
+      v.created_at as "createdAt",
+      v.db_created_at as "dbCreatedAt",
+      v.slide_credits as "slideCredits",
+      v.program_credits as "programCredits",
+      v.blob_url as "blobUrl",
+      s.title as "songTitle"
+    from song_versions v
+    join songs s on v.song_id = s.id
+    where v.id = ${versionId} and v.archived = false
+  `;
+  const typedRows = rows as SongVersionResult[];
+  return typedRows.length > 0 ? typedRows[0] : null;
+};
+
+// Get just the content and renderedContent for a version (for lazy loading)
+export const getVersionContent = async (versionId: string): Promise<{ content: string | null; renderedContent: RenderedContent | null } | null> => {
+  const rows = await sql`
+    select content, rendered_content as "renderedContent"
+    from song_versions
+    where id = ${versionId} and archived = false
+  `;
+  if (rows.length === 0) return null;
+  const row = rows[0] as { content: string | null; renderedContent: RenderedContent | null };
+  return { content: row.content, renderedContent: row.renderedContent };
+};
+
 export const getVersionsByIds = async (versionIds: string[]): Promise<SongVersionRecord[]> => {
   if (versionIds.length === 0) return [];
   const rows = await sql`

@@ -27,7 +27,7 @@ const SongSlidesPage = () => {
   useEffect(() => {
     const fetchVersion = async () => {
       try {
-        const response = await fetch(`/api/songs/versions/${versionId}`);
+        const response = await fetch(`/api/songs/versions/${versionId}?includeContent=true`);
         if (!response.ok) {
           throw new Error('Failed to load version');
         }

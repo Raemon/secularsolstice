@@ -69,7 +69,7 @@ const SongsFileList = ({ initialSongId, initialVersionId }: SongsFileListProps =
     }
     const fetchVersion = async () => {
       try {
-        const res = await fetch(`/api/songs/versions/${initialVersionId}`);
+        const res = await fetch(`/api/songs/versions/${initialVersionId}?includeContent=true`);
         if (!res.ok) throw new Error('Failed to load version');
         const data = await res.json();
         setSelectedVersion(data.version);

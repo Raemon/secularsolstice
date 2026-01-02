@@ -1,10 +1,15 @@
 import { NextResponse } from 'next/server';
-import { getVersionById, getPreviousVersionsChain } from '@/lib/songsRepository';
+import { getVersionById, getVersionByIdWithoutContent, getPreviousVersionsChain } from '@/lib/songsRepository';
 
-export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const version = await getVersionById(id);
+    const url = new URL(request.url);
+    // By default, load without content for faster initial render (lazy=true or not specified)
+    const includeContent = url.searchParams.get('includeContent') === 'true';
+    const version = includeContent 
+      ? await getVersionById(id)
+      : await getVersionByIdWithoutContent(id);
     if (!version) {
       return NextResponse.json({ error: 'Version not found' }, { status: 404 });
     }

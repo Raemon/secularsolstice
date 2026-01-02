@@ -106,7 +106,7 @@ export const PrintProgramEditorWrapper = ({programId, selectedProgram, programs,
       const newVersionsData: VersionOption[] = [];
       if (versionUpdates.length > 0) {
         await Promise.all(versionUpdates.map(async (oldVersionId) => {
-          const versionResponse = await fetch(`/api/songs/versions/${oldVersionId}`);
+          const versionResponse = await fetch(`/api/songs/versions/${oldVersionId}?includeContent=true`);
           if (!versionResponse.ok) throw new Error(`Failed to fetch version ${oldVersionId}`);
           const { version } = await versionResponse.json();
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -222,4 +222,3 @@ export const PrintProgramEditorWrapper = ({programId, selectedProgram, programs,
 };
 
 export default PrintProgramEditor;
-
