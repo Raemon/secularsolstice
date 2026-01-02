@@ -5,6 +5,9 @@ import { generateFullExportBuffer } from '@/lib/exportUtils';
 import { requireAdmin } from '@/lib/adminAuth';
 import { validateBearerSecret } from '@/lib/authUtils';
 
+// Increase timeout for backup operation (fetches all songs + downloads blobs)
+export const maxDuration = 300; // 5 minutes
+
 export async function POST(request: NextRequest) {
   try {
     // Check for backup secret (for GitHub Actions) or admin auth
