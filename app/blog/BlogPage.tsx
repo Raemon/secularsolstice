@@ -1,11 +1,13 @@
 'use client';
 import { useEffect, useState } from 'react';
+import BlogPostPreview from './BlogPostPreview';
 
 interface BlogPost {
   title: string;
   link: string;
   pubDate: string;
   description: string;
+  htmlHighlight?: string;
   source: 'lesswrong' | 'secularsolstice';
   author?: string;
 }
@@ -14,6 +16,12 @@ const BlogPage = () => {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showLW, setShowLW] = useState(true);
+  const [showSS, setShowSS] = useState(true);
+
+  const filteredPosts = posts.filter(post => 
+    (post.source === 'lesswrong' && showLW) || (post.source === 'secularsolstice' && showSS)
+  );
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -32,12 +40,6 @@ const BlogPage = () => {
     fetchPosts();
   }, []);
 
-  const formatDate = (dateString: string) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-  };
-
   if (isLoading) {
     return <div className="p-8 text-gray-400">Loading blog posts...</div>;
   }
@@ -48,31 +50,21 @@ const BlogPage = () => {
 
   return (
     <div className="p-8 max-w-3xl mx-auto">
-      <h1 className="font-georgia text-5xl mb-6">Blog</h1>
-      <p className="text-gray-400 mb-8 text-sm">
-        Posts from <a href="https://www.lesswrong.com/tag/secular-solstice" className="text-link hover:underline" target="_blank" rel="noopener noreferrer">LessWrong</a> and <a href="https://secularsolstice.com/blog/" className="text-link hover:underline" target="_blank" rel="noopener noreferrer">secularsolstice.com</a>
-      </p>
-      {posts.length === 0 ? (
+      <h1 className="font-georgia text-6xl mt-10 mb-6">Blog</h1>
+      <div className="flex gap-2 mb-16 text-sm">
+        <button onClick={() => setShowLW(!showLW)} className={`text-black px-2 py-0.5 border border-link rounded-sm text-link hover:bg-link /80 ${showLW ? 'opacity-100' : 'opacity-50'}`}>
+          LW {showLW ? '✓' : '○'}
+        </button>
+        <button onClick={() => setShowSS(!showSS)} className={`text-black px-2 py-0.5 border border-gray-200 rounded-sm text-gray-200 ${showSS ? 'opacity-100' : 'opacity-50'}`}>
+          SecularSolstice {showSS ? '✓' : '○'}
+        </button>
+      </div>
+      {filteredPosts.length === 0 ? (
         <div className="text-gray-400">No posts found</div>
       ) : (
-        <div className="space-y-6">
-          {posts.map((post, i) => (
-            <div key={`${post.source}-${i}`} className="pb-6 border-b border-gray-800">
-              <div className="flex items-baseline gap-2 mb-1">
-                <a href={post.link} target="_blank" rel="noopener noreferrer" className=" font-medium text-2xl font-georgia">
-                  <span className="text-white hover:opacity-80">{post.title}</span>
-                </a>
-              </div>
-              <div className="text-xs text-gray-500 mb-2">
-                {post.author && <span className="text-white/80">{post.author}</span>}
-                <span className="text-gray-400"> · {formatDate(post.pubDate)}</span>
-
-                <span className="ml-2 px-1.5 py-0.5 text-[10px] uppercase" style={{ color: post.source === 'lesswrong' ? '#8fc98f' : '#c98fc9' }}>
-                  {post.source === 'lesswrong' ? 'LW' : ''}
-                </span>
-              </div>
-              {post.description && <p className="text-gray-400 text-sm line-clamp-2">{post.description}</p>}
-            </div>
+        <div className="space-y-12">
+          {filteredPosts.map((post, i) => (
+            <BlogPostPreview key={`${post.source}-${i}`} post={post} />
           ))}
         </div>
       )}

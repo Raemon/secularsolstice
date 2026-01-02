@@ -5,6 +5,7 @@ interface BlogPost {
   link: string;
   pubDate: string;
   description: string;
+  htmlHighlight?: string;
   source: 'lesswrong' | 'secularsolstice';
   author?: string;
 }
@@ -23,7 +24,6 @@ async function fetchLessWrongPosts(): Promise<BlogPost[]> {
             slug 
             postedAt 
             user { displayName } 
-            summary { text }
             contents {
               htmlHighlight
             }
@@ -45,6 +45,7 @@ async function fetchLessWrongPosts(): Promise<BlogPost[]> {
       link: `https://www.lesswrong.com/posts/${post._id}/${post.slug}`,
       pubDate: post.postedAt,
       description: stripHtml(post.contents?.htmlHighlight || ''),
+      htmlHighlight: post.contents?.htmlHighlight,
       source: 'lesswrong' as const,
       author: post.user?.displayName
     }));

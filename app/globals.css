@@ -10,7 +10,7 @@
 :root {
   --primary: rgb(255, 226, 64);
   --secondary: rgb(182, 82, 24);
-  --link: rgb(120, 206, 255);
+  --link: rgb(120, 174, 255);
 }
 
 .text-primary {
@@ -29,12 +29,21 @@
 .bg-primary {
   background-color: var(--primary) !important;
 }
+.bg-secondary {
+  background-color: var(--secondary) !important;
+}
+.bg-link {
+  background-color: var(--link) !important;
+}
 
 .border-primary {
   border-color: var(--primary) !important;
 }
 .border-primary\/50 {
   border-color: color-mix(in srgb, var(--primary) 50%, transparent) !important;
+}
+.border-link {
+  border-color: var(--link) !important;
 }
 
 .hover\:underline:hover {
@@ -122,6 +131,23 @@ body {
 .markdown-content p {
   margin-top: 1em;
   margin-bottom: 1em;
+}
+
+.markdown-content.preview {
+  font-size: 18px;
+}
+
+.markdown-content.preview p {
+  margin-top: 0.75em;
+  margin-bottom: 0.75em;
+}
+
+.markdown-content.preview h1 {
+  font-size: 1.75em;
+}
+
+.markdown-content.preview h2 {
+  font-size: 1.5em;
 }
 
 .markdown-content ul,
