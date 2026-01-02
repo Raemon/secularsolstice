@@ -1,16 +1,45 @@
 import path from 'path';
-import dotenv from 'dotenv';
-dotenv.config({ path: path.resolve(process.cwd(), '.env') });
-
-import { importFromDirectories, ProgramImportResult } from '../lib/importUtils';
-import { downloadSecularSolsticeRepo } from '../lib/githubDownloader';
+import { downloadSecularSolsticeRepo, DEFAULT_DOWNLOAD_DIR } from '../lib/githubDownloader';
 
 const run = async () => {
+  const args = process.argv.slice(2);
+  const downloadOnly = args.includes('--download-only');
+  const useCache = args.includes('--use-cache');
+  const forceDownload = args.includes('--force-download');
+
   console.log('Starting import...');
   console.log('Downloading SecularSolstice repo from GitHub...');
 
-  const repo = await downloadSecularSolsticeRepo();
+  const repo = await downloadSecularSolsticeRepo({
+    persistentDir: (downloadOnly || useCache) ? DEFAULT_DOWNLOAD_DIR : undefined,
+    skipIfExists: useCache && !forceDownload,
+    onProgress: (progress) => {
+      if (progress.phase === 'cloning') {
+        console.log('Cloning repository...');
+      } else if (progress.phase === 'pulling') {
+        console.log('Pulling latest changes...');
+      } else if (progress.phase === 'done') {
+        console.log('Repository ready.');
+      }
+    },
+  });
   console.log('Downloaded to:', repo.basePath);
+
+  if (downloadOnly) {
+    console.log('\n--download-only flag set, skipping import.');
+    console.log('Files are available at:', repo.basePath);
+    return;
+  }
+
+  // Only load DB-dependent modules when we actually need to import
+  const dotenv = await import('dotenv');
+  dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+
+  const { importFromDirectories, setFileCreatedAtFn } = await import('../lib/importUtils');
+  type ProgramImportResult = Awaited<ReturnType<typeof importFromDirectories>>['programResults'][number];
+
+  // Use git-based timestamps for files from the cloned repo
+  setFileCreatedAtFn(repo.getFileCommitDate);
 
   const config = {
     songsDirs: [{ path: repo.songsDir, tags: ['song'] }],
