@@ -23,6 +23,7 @@ async function fetchLessWrongPosts(): Promise<BlogPost[]> {
             title 
             slug 
             postedAt 
+            baseScore
             user { displayName } 
             contents {
               htmlHighlight
@@ -40,7 +41,9 @@ async function fetchLessWrongPosts(): Promise<BlogPost[]> {
     if (!gqlResponse.ok) throw new Error('Failed to fetch LessWrong posts via GraphQL');
     const data = await gqlResponse.json();
     const posts = data?.data?.posts?.results || [];
-    return posts.map((post: { _id: string; title: string; slug: string; postedAt: string; user?: { displayName: string }; contents?: { htmlHighlight?: string } }) => ({
+    return posts
+      .filter((post: { baseScore?: number }) => (post.baseScore ?? 0) >= 15)
+      .map((post: { _id: string; title: string; slug: string; postedAt: string; baseScore?: number; user?: { displayName: string }; contents?: { htmlHighlight?: string } }) => ({
       title: post.title.trim(),
       link: `https://www.lesswrong.com/posts/${post._id}/${post.slug}`,
       pubDate: post.postedAt,

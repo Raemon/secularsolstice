@@ -39,7 +39,7 @@ const ProgramElementItem = ({id, version, allVersions, onRemove, onChangeVersion
       <span className={`font-georgia text-base flex-1 min-w-0 truncate hover:text-blue-400 ${isSpeech ? 'italic' : ''} w-[130px] sm:w-auto`}>{version?.songTitle}</span>
       <div className={`text-gray-400 flex items-center gap-2 shrink-0 text-xs ${!isLatestVersion && 'opacity-50'}`}>
         <span className={`${selectedVersionId === id ? 'text-primary' : 'text-gray-400'} truncate w-[50px] sm:w-[200px] `}>{version?.label ?? id}</span>
-        <span className="text-gray-400">{formatRelativeTimestamp(version?.createdAt ?? '')}</span>
+        <span className="text-gray-400 w-[40px] text-right">{formatRelativeTimestamp(version?.createdAt ?? '')}</span>
         <ChevronDropdown
           value={id}
           options={dropdownOptions}

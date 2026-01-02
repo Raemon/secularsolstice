@@ -58,6 +58,7 @@ const stripMarkdownFormatting = (line: string): string => {
 };
 
 // Process README.md content: remove first line if it matches the song title
+// Also convert "By " headers to italics
 const processReadmeContent = (content: string, songTitle: string): string => {
   if (!content) return content;
   const lines = content.split('\n');
@@ -65,14 +66,25 @@ const processReadmeContent = (content: string, songTitle: string): string => {
   const strippedFirstLine = stripMarkdownFormatting(firstLine);
   const normalizedSongTitle = normalizeTitle(songTitle);
   // strippedFirstLine is already trimmed; normalizedSongTitle handles underscore→space
+  let startIdx = 0;
   if (strippedFirstLine.toLowerCase() === normalizedSongTitle.toLowerCase()) {
-    let startIdx = 1;
+    startIdx = 1;
     while (startIdx < lines.length && lines[startIdx].trim() === '') {
       startIdx++;
     }
-    return lines.slice(startIdx).join('\n');
   }
-  return content;
+  // Check if the new first line is a header starting with "By "
+  if (startIdx < lines.length) {
+    const newFirstLine = lines[startIdx];
+    const headerMatch = newFirstLine.match(/^#+\s*/);
+    if (headerMatch) {
+      const headerContent = newFirstLine.slice(headerMatch[0].length);
+      if (headerContent.startsWith('By ')) {
+        lines[startIdx] = `*${headerContent}*`;
+      }
+    }
+  }
+  return lines.slice(startIdx).join('\n');
 };
 
 // Get text content from a file buffer, applying title stripping for .md files if applicable
@@ -170,7 +182,8 @@ const collectFiles = async (dirPath: string, baseDir: string): Promise<FileInfo[
 
     const buffer = await fs.readFile(fullPath);
     const relativePath = path.relative(baseDir, fullPath).replace(/\\/g, '/');
-    const isText = isValidTextContent(buffer);
+    // .mscx files are always blobs; files > 100KB are blobs even if valid text
+    const isText = ext !== '.mscx' && isValidTextContent(buffer) && buffer.length <= 100 * 1024;
     files.push({ fullPath, relativePath, buffer, isText });
   }
   return files;
@@ -577,6 +590,18 @@ const resolveProgramItems = async (
   return { elementIds, programIds, missingElements, createdPlaceholders };
 };
 
+// Derive program title from filename and optional subtitle in { }
+// If subtitle differs from filename (after normalization), append it
+const getProgramTitleFromFile = (fileName: string, parsedSubtitle: string | null): string => {
+  const ext = path.extname(fileName).toLowerCase();
+  const baseTitle = normalizeTitle(path.basename(fileName, ext));
+  if (!parsedSubtitle) return baseTitle;
+  const normalizedBase = baseTitle.toLowerCase();
+  const normalizedSubtitle = parsedSubtitle.toLowerCase().replace(/_/g, ' ').trim();
+  if (normalizedBase === normalizedSubtitle) return baseTitle;
+  return `${baseTitle} - ${parsedSubtitle}`;
+};
+
 const parseProgramFile = (content: string): { title: string | null; items: ParsedProgramItem[] } => {
   const lines = content.split('\n');
   let title: string | null = null;
@@ -626,7 +651,7 @@ export const importProgramFile = async (
   if (!content) return null;
 
   const parsed = parseProgramFile(content);
-  const programTitle = parsed.title || normalizeTitle(path.basename(fileName, ext));
+  const programTitle = getProgramTitleFromFile(fileName, parsed.title);
 
   // Check if program already exists
   const existingProgram = await getProgramByTitle(programTitle);
@@ -709,7 +734,7 @@ export const resyncProgramsFromFiles = async (
       if (!content) continue;
 
       const parsed = parseProgramFile(content);
-      const programTitle = parsed.title || normalizeTitle(path.basename(entry.name, ext));
+      const programTitle = getProgramTitleFromFile(entry.name, parsed.title);
 
       // Check if program exists
       const existingProgram = await getProgramByTitle(programTitle);

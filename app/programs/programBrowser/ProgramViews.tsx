@@ -1,3 +1,5 @@
+import { useUser } from "@/app/contexts/UserContext";
+
 type ProgramViewsProps = {
   programId: string | null;
   canEdit?: boolean;
@@ -11,7 +13,8 @@ type ProgramViewsProps = {
 };
 
 const ProgramViews = ({programId, canEdit, isLocked, isEditing, hasPendingChanges, isSaving, onEditClick, onSaveClick, onCancelClick}: ProgramViewsProps) => {
-  const showEditControls = canEdit && !isLocked;
+  const { isAdmin } = useUser();
+  const showEditControls = canEdit && (!isLocked || isAdmin);
   return (
     <div className="flex items-center gap-4">
       <a href={`/programs/${programId}/program`} className="text-sm hover:opacity-50">
