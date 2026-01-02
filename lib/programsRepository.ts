@@ -1,5 +1,12 @@
 import sql from './db';
 
+// Reusable CTE for getting the latest version per program based on created_at
+export const latestProgramVersionCte = () => sql`
+  select distinct on (program_id) *
+  from program_versions
+  order by program_id, created_at desc
+`;
+
 type ProgramRow = {
   id: string;
   title: string;
@@ -47,11 +54,7 @@ const mapProgramRow = (row: ProgramRow): ProgramRecord => ({
 
 export const listPrograms = async (): Promise<ProgramRecord[]> => {
   const rows = await sql`
-    with latest_versions as (
-      select distinct on (program_id) *
-      from program_versions
-      order by program_id, created_at desc
-    )
+    with latest_versions as (${latestProgramVersionCte()})
     select p.id, lv.title, lv.element_ids, lv.program_ids, lv.created_by, lv.created_at, lv.archived, lv.is_subprogram, lv.video_url, lv.print_program_foreword, lv.print_program_epitaph, lv.locked
     from programs p
     join latest_versions lv on lv.program_id = p.id
@@ -62,27 +65,46 @@ export const listPrograms = async (): Promise<ProgramRecord[]> => {
 };
 
 export const createProgram = async (title: string, createdBy?: string | null, isSubprogram?: boolean, locked?: boolean, createdAt?: string): Promise<ProgramRecord> => {
-  const rows = createdAt
+  // Insert into programs table (minimal data)
+  const programRows = createdAt
     ? await sql`
-        insert into programs (title, created_by, is_subprogram, locked, created_at)
-        values (${title}, ${createdBy ?? null}, ${isSubprogram ?? false}, ${locked ?? false}, ${createdAt})
-        returning id, title, element_ids, program_ids, created_by, created_at, archived, is_subprogram, video_url, print_program_foreword, print_program_epitaph, locked
+        insert into programs (created_by, created_at)
+        values (${createdBy ?? null}, ${createdAt})
+        returning id, created_at
       `
     : await sql`
-        insert into programs (title, created_by, is_subprogram, locked)
-        values (${title}, ${createdBy ?? null}, ${isSubprogram ?? false}, ${locked ?? false})
-        returning id, title, element_ids, program_ids, created_by, created_at, archived, is_subprogram, video_url, print_program_foreword, print_program_epitaph, locked
+        insert into programs (created_by)
+        values (${createdBy ?? null})
+        returning id, created_at
       `;
-  return mapProgramRow((rows as ProgramRow[])[0]!);
+  const programId = (programRows as { id: string; created_at: string }[])[0].id;
+  const programCreatedAt = (programRows as { id: string; created_at: string }[])[0].created_at;
+  // Insert initial program_version
+  const versionCreatedAt = createdAt ?? programCreatedAt;
+  await sql`
+    insert into program_versions (program_id, title, element_ids, program_ids, archived, is_subprogram, locked, created_at, created_by)
+    values (${programId}, ${title}, ${[] as string[]}, ${[] as string[]}, false, ${isSubprogram ?? false}, ${locked ?? false}, ${versionCreatedAt}, ${createdBy ?? null})
+  `;
+  // Return the program with its version data
+  return {
+    id: programId,
+    title,
+    elementIds: [],
+    programIds: [],
+    createdBy: createdBy ?? null,
+    createdAt: versionCreatedAt,
+    archived: false,
+    isSubprogram: isSubprogram ?? false,
+    videoUrl: null,
+    printProgramForeword: null,
+    printProgramEpitaph: null,
+    locked: locked ?? false,
+  };
 };
 
 export const getProgramById = async (programId: string): Promise<ProgramRecord | null> => {
   const rows = await sql`
-    with latest_versions as (
-      select distinct on (program_id) *
-      from program_versions
-      order by program_id, created_at desc
-    )
+    with latest_versions as (${latestProgramVersionCte()})
     select p.id, lv.title, lv.element_ids, lv.program_ids, lv.created_by, lv.created_at, lv.archived, lv.is_subprogram, lv.video_url, lv.print_program_foreword, lv.print_program_epitaph, lv.locked
     from programs p
     join latest_versions lv on lv.program_id = p.id
@@ -97,11 +119,7 @@ export const getProgramById = async (programId: string): Promise<ProgramRecord |
 
 export const getProgramByTitle = async (title: string): Promise<ProgramRecord | null> => {
   const rows = await sql`
-    with latest_versions as (
-      select distinct on (program_id) *
-      from program_versions
-      order by program_id, created_at desc
-    )
+    with latest_versions as (${latestProgramVersionCte()})
     select p.id, lv.title, lv.element_ids, lv.program_ids, lv.created_by, lv.created_at, lv.archived, lv.is_subprogram, lv.video_url, lv.print_program_foreword, lv.print_program_epitaph, lv.locked
     from programs p
     join latest_versions lv on lv.program_id = p.id
@@ -115,56 +133,60 @@ export const getProgramByTitle = async (title: string): Promise<ProgramRecord | 
   return mapProgramRow(typedRows[0]);
 };
 
-export const updateProgramElementIds = async (programId: string, elementIds: string[], programIds: string[]): Promise<ProgramRecord> => {
+export const updateProgramElementIds = async (programId: string, elementIds: string[], programIds: string[], createdBy?: string | null): Promise<ProgramRecord> => {
+  // Single INSERT...SELECT to copy latest version with updated element_ids and program_ids
   const rows = await sql`
-    update programs
-    set element_ids = ${elementIds},
-        program_ids = ${programIds}
-    where id = ${programId} and archived = false
-    returning id, title, element_ids, program_ids, created_by, created_at, archived, is_subprogram, video_url, print_program_foreword, print_program_epitaph, locked
+    with latest_versions as (${latestProgramVersionCte()})
+    insert into program_versions (program_id, title, element_ids, program_ids, archived, is_subprogram, video_url, print_program_foreword, print_program_epitaph, locked, created_by)
+    select lv.program_id, lv.title, ${elementIds}::uuid[], ${programIds}::uuid[], lv.archived, lv.is_subprogram, lv.video_url, lv.print_program_foreword, lv.print_program_epitaph, lv.locked, ${createdBy ?? null}::text
+    from programs p
+    join latest_versions lv on lv.program_id = p.id
+    where p.id = ${programId} and lv.archived = false
+    returning program_id as id, title, ${elementIds}::uuid[] as element_ids, ${programIds}::uuid[] as program_ids, created_by, created_at, archived, is_subprogram, video_url, print_program_foreword, print_program_epitaph, locked
   `;
-  const typedRows = rows as ProgramRow[];
-  if (typedRows.length === 0) {
+  if ((rows as ProgramRow[]).length === 0) {
     throw new Error(`Program ${programId} not found or archived`);
   }
-  return mapProgramRow(typedRows[0]);
+  return mapProgramRow((rows as ProgramRow[])[0]);
 };
 
-export const archiveProgram = async (programId: string): Promise<ProgramRecord> => {
+export const archiveProgram = async (programId: string, createdBy?: string | null): Promise<ProgramRecord> => {
+  // Single INSERT...SELECT to copy latest version with archived = true
   const rows = await sql`
-    update programs
-    set archived = true
-    where id = ${programId} and archived = false
-    returning id, title, element_ids, program_ids, created_by, created_at, archived, is_subprogram, video_url, print_program_foreword, print_program_epitaph, locked
+    with latest_versions as (${latestProgramVersionCte()})
+    insert into program_versions (program_id, title, element_ids, program_ids, archived, is_subprogram, video_url, print_program_foreword, print_program_epitaph, locked, created_by)
+    select lv.program_id, lv.title, lv.element_ids, lv.program_ids, true, lv.is_subprogram, lv.video_url, lv.print_program_foreword, lv.print_program_epitaph, lv.locked, ${createdBy ?? null}::text
+    from programs p
+    join latest_versions lv on lv.program_id = p.id
+    where p.id = ${programId} and lv.archived = false
+    returning program_id as id, title, element_ids, program_ids, created_by, created_at, true as archived, is_subprogram, video_url, print_program_foreword, print_program_epitaph, locked
   `;
-  const typedRows = rows as ProgramRow[];
-  if (typedRows.length === 0) {
+  if ((rows as ProgramRow[]).length === 0) {
     throw new Error(`Program ${programId} not found or already archived`);
   }
-  return mapProgramRow(typedRows[0]);
+  return mapProgramRow((rows as ProgramRow[])[0]);
 };
 
-export const updateProgramVideoUrl = async (programId: string, videoUrl: string): Promise<ProgramRecord> => {
+export const updateProgramVideoUrl = async (programId: string, videoUrl: string, createdBy?: string | null): Promise<ProgramRecord> => {
+  // Single INSERT...SELECT to copy latest version with updated video_url
   const rows = await sql`
-    update programs
-    set video_url = ${videoUrl}
-    where id = ${programId} and archived = false
-    returning id, title, element_ids, program_ids, created_by, created_at, archived, is_subprogram, video_url, print_program_foreword, print_program_epitaph, locked
+    with latest_versions as (${latestProgramVersionCte()})
+    insert into program_versions (program_id, title, element_ids, program_ids, archived, is_subprogram, video_url, print_program_foreword, print_program_epitaph, locked, created_by)
+    select lv.program_id, lv.title, lv.element_ids, lv.program_ids, lv.archived, lv.is_subprogram, ${videoUrl}, lv.print_program_foreword, lv.print_program_epitaph, lv.locked, ${createdBy ?? null}::text
+    from programs p
+    join latest_versions lv on lv.program_id = p.id
+    where p.id = ${programId} and lv.archived = false
+    returning program_id as id, title, element_ids, program_ids, created_by, created_at, archived, is_subprogram, ${videoUrl} as video_url, print_program_foreword, print_program_epitaph, locked
   `;
-  const typedRows = rows as ProgramRow[];
-  if (typedRows.length === 0) {
+  if ((rows as ProgramRow[]).length === 0) {
     throw new Error(`Program ${programId} not found or archived`);
   }
-  return mapProgramRow(typedRows[0]);
+  return mapProgramRow((rows as ProgramRow[])[0]);
 };
 
 export const getProgramsContainingVersion = async (versionId: string): Promise<ProgramRecord[]> => {
   const rows = await sql`
-    with latest_versions as (
-      select distinct on (program_id) *
-      from program_versions
-      order by program_id, created_at desc
-    ),
+    with latest_versions as (${latestProgramVersionCte()}),
     programs_with_versions as (
       select p.id, lv.title, lv.element_ids, lv.program_ids, lv.created_by, lv.created_at, lv.archived, lv.is_subprogram, lv.video_url, lv.print_program_foreword, lv.print_program_epitaph, lv.locked
       from programs p
@@ -191,26 +213,35 @@ export const getProgramsContainingVersion = async (versionId: string): Promise<P
   return (rows as ProgramRow[]).map(mapProgramRow);
 };
 
-export const updateProgram = async (programId: string, updates: {title?: string; printProgramForeword?: string | null; printProgramEpitaph?: string | null; videoUrl?: string | null; isSubprogram?: boolean; locked?: boolean; createdBy?: string | null}): Promise<ProgramRecord> => {
-  const program = await getProgramById(programId);
-  if (!program) {
-    throw new Error(`Program ${programId} not found or archived`);
-  }
+export const updateProgram = async (programId: string, updates: {title?: string; printProgramForeword?: string | null; printProgramEpitaph?: string | null; videoUrl?: string | null; isSubprogram?: boolean; locked?: boolean; createdBy?: string | null}, versionCreatedBy?: string | null): Promise<ProgramRecord> => {
+  // Use undefined-aware update logic: undefined means "keep existing", null means "set to null"
+  const hasTitle = updates.title !== undefined;
+  const hasForeword = updates.printProgramForeword !== undefined;
+  const hasEpitaph = updates.printProgramEpitaph !== undefined;
+  const hasVideoUrl = updates.videoUrl !== undefined;
+  const hasIsSubprogram = updates.isSubprogram !== undefined;
+  const hasLocked = updates.locked !== undefined;
+  const hasCreatedBy = updates.createdBy !== undefined;
+  // Single INSERT...SELECT with conditional updates
   const rows = await sql`
-    update programs
-    set title = ${updates.title ?? program.title},
-        print_program_foreword = ${updates.printProgramForeword !== undefined ? updates.printProgramForeword : program.printProgramForeword},
-        print_program_epitaph = ${updates.printProgramEpitaph !== undefined ? updates.printProgramEpitaph : program.printProgramEpitaph},
-        video_url = ${updates.videoUrl !== undefined ? updates.videoUrl : program.videoUrl},
-        is_subprogram = ${updates.isSubprogram !== undefined ? updates.isSubprogram : program.isSubprogram},
-        locked = ${updates.locked !== undefined ? updates.locked : program.locked},
-        created_by = ${updates.createdBy !== undefined ? updates.createdBy : program.createdBy}
-    where id = ${programId} and archived = false
-    returning id, title, element_ids, program_ids, created_by, created_at, archived, is_subprogram, video_url, print_program_foreword, print_program_epitaph, locked
+    with latest_versions as (${latestProgramVersionCte()})
+    insert into program_versions (program_id, title, element_ids, program_ids, archived, is_subprogram, video_url, print_program_foreword, print_program_epitaph, locked, created_by)
+    select lv.program_id,
+      case when ${hasTitle} then ${updates.title ?? ''} else lv.title end,
+      lv.element_ids, lv.program_ids, lv.archived,
+      case when ${hasIsSubprogram} then ${updates.isSubprogram ?? false} else lv.is_subprogram end,
+      case when ${hasVideoUrl} then ${updates.videoUrl ?? null} else lv.video_url end,
+      case when ${hasForeword} then ${updates.printProgramForeword ?? null} else lv.print_program_foreword end,
+      case when ${hasEpitaph} then ${updates.printProgramEpitaph ?? null} else lv.print_program_epitaph end,
+      case when ${hasLocked} then ${updates.locked ?? false} else lv.locked end,
+      coalesce(${versionCreatedBy ?? null}::text, case when ${hasCreatedBy} then ${updates.createdBy ?? null} else lv.created_by end)
+    from programs p
+    join latest_versions lv on lv.program_id = p.id
+    where p.id = ${programId} and lv.archived = false
+    returning program_id as id, title, element_ids, program_ids, created_by, created_at, archived, is_subprogram, video_url, print_program_foreword, print_program_epitaph, locked
   `;
-  const typedRows = rows as ProgramRow[];
-  if (typedRows.length === 0) {
+  if ((rows as ProgramRow[]).length === 0) {
     throw new Error(`Program ${programId} not found or archived`);
   }
-  return mapProgramRow(typedRows[0])
+  return mapProgramRow((rows as ProgramRow[])[0]);
 };

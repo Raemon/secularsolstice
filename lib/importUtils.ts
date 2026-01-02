@@ -455,12 +455,12 @@ const resolveProgramItems = async (
         const existingSubProgram = await getProgramByTitle(currentSectionName);
         if (existingSubProgram) {
           if (!dryRun) {
-            await updateProgramElementIds(existingSubProgram.id, currentSectionItems, []);
+            await updateProgramElementIds(existingSubProgram.id, currentSectionItems, [], IMPORT_USER);
           }
           programIds.push(existingSubProgram.id);
         } else if (!dryRun) {
           const subProgram = await createProgram(currentSectionName, IMPORT_USER, true, true);
-          await updateProgramElementIds(subProgram.id, currentSectionItems, []);
+          await updateProgramElementIds(subProgram.id, currentSectionItems, [], IMPORT_USER);
           programIds.push(subProgram.id);
         } else {
           // dryRun + no existing subprogram: push placeholder for consistent counts
@@ -470,7 +470,7 @@ const resolveProgramItems = async (
         // Create new subprogram (or placeholder in dryRun)
         if (!dryRun) {
           const subProgram = await createProgram(currentSectionName, IMPORT_USER, true, true);
-          await updateProgramElementIds(subProgram.id, currentSectionItems, []);
+          await updateProgramElementIds(subProgram.id, currentSectionItems, [], IMPORT_USER);
           programIds.push(subProgram.id);
         } else {
           programIds.push(`subprogram:${currentSectionName}`);
@@ -596,7 +596,7 @@ export const importProgramFile = async (
     }
 
     const program = await createProgram(programTitle, IMPORT_USER, false, true);
-    await updateProgramElementIds(program.id, elementIds, programIds);
+    await updateProgramElementIds(program.id, elementIds, programIds, IMPORT_USER);
     const url = `/programs/${program.id}`;
     const result: ProgramImportResult = {
       title: programTitle,
@@ -682,7 +682,7 @@ export const resyncProgramsFromFiles = async (
           results.push(result);
           onResult?.(result);
         } else {
-          await updateProgramElementIds(existingProgram.id, elementIds, programIds);
+          await updateProgramElementIds(existingProgram.id, elementIds, programIds, IMPORT_USER);
           const result: ProgramResyncResult = {
             title: programTitle,
             status: 'resynced',

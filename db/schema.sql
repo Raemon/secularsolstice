@@ -38,12 +38,13 @@ create table if not exists program_versions (
 
 CREATE INDEX if not exists program_versions_archived_idx on program_versions USING btree (archived);
 CREATE INDEX if not exists program_versions_lower_title_idx on program_versions USING btree (lower(title));
+CREATE INDEX if not exists program_versions_program_id_created_at_idx on program_versions USING btree (program_id, created_at DESC);
 CREATE INDEX if not exists program_versions_program_id_idx on program_versions USING btree (program_id);
 CREATE INDEX if not exists program_versions_title_idx on program_versions USING btree (title);
 
 create table if not exists programs (
   id uuid not null default gen_random_uuid(),
-  title text not null,
+  title text,
   element_ids uuid[] not null default '{}'::uuid[],
   created_at timestamptz not null default now(),
   archived boolean not null default false,

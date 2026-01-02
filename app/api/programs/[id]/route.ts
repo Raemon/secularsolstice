@@ -56,7 +56,7 @@ export async function PATCH(request: NextRequest, {params}: {params: Promise<{id
       if (!Array.isArray(elementIds) || !Array.isArray(programIds)) {
         return NextResponse.json({error: 'elementIds and programIds must be arrays'}, {status: 400});
       }
-      const program = await updateProgramElementIds(id, elementIds, programIds);
+      const program = await updateProgramElementIds(id, elementIds, programIds, verifiedUser?.username);
       return NextResponse.json({program});
     }
 
@@ -90,7 +90,7 @@ export async function PATCH(request: NextRequest, {params}: {params: Promise<{id
     if ('isSubprogram' in body) updates.isSubprogram = body.isSubprogram === true;
     if ('locked' in body) updates.locked = body.locked === true;
     if ('createdBy' in body) updates.createdBy = body.createdBy;
-    const program = await updateProgram(id, updates);
+    const program = await updateProgram(id, updates, verifiedUser?.username);
     return NextResponse.json({program});
   } catch (error) {
     console.error('Failed to update program:', error);

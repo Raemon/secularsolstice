@@ -1,10 +1,18 @@
 import { NextResponse } from 'next/server';
 import { archiveProgram } from '@/lib/programsRepository';
+import { getUsernameById } from '@/lib/usersRepository';
 
-export async function POST(_: Request, context: { params: Promise<{ id: string }> }) {
+export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await context.params;
-    const program = await archiveProgram(id);
+    let username: string | null = null;
+    try {
+      const body = await request.json();
+      username = await getUsernameById(body.userId);
+    } catch {
+      // No body or invalid JSON is fine, username stays null
+    }
+    const program = await archiveProgram(id, username);
     return NextResponse.json({ program });
   } catch (error) {
     console.error('Failed to archive program:', error);
@@ -16,5 +24,3 @@ export async function POST(_: Request, context: { params: Promise<{ id: string }
     }, { status });
   }
 }
-
-

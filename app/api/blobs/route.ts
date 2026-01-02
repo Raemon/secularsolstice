@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { list } from '@vercel/blob';
 import sql from '@/lib/db';
+import { latestProgramVersionCte } from '@/lib/programsRepository';
 
 const parsePathname = (pathname: string): { type: 'song' | 'program' | null; id: string | null } => {
   // Old format: song-{uuid}/... or program-{uuid}/...
@@ -61,7 +62,12 @@ export async function GET() {
 
     if (programIds.size > 0) {
       const programIdsArray = Array.from(programIds);
-      const programs = await sql`SELECT id, title FROM programs WHERE id = ANY(${programIdsArray}::uuid[])`;
+      const programs = await sql`
+        with latest_versions as (${latestProgramVersionCte()})
+        SELECT p.id, lv.title FROM programs p
+        JOIN latest_versions lv ON lv.program_id = p.id
+        WHERE p.id = ANY(${programIdsArray}::uuid[])
+      `;
       for (const program of programs) programTitles[program.id] = program.title;
     }
 

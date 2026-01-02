@@ -70,5 +70,25 @@ jobs:
           psql "$DATABASE_URL" < "${SQL_FILE}"
           echo "Restore completed successfully"
 
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Run migrations
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          echo "Running database migrations..."
+          yarn migrate
+          echo "Migrations completed successfully"
+
       - name: Cleanup
         run: rm -f *.sql *.sql.gz

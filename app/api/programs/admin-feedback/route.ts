@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import sql from '@/lib/db';
 import { requireAdmin } from '@/lib/adminAuth';
+import { latestProgramVersionCte } from '@/lib/programsRepository';
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -16,9 +17,11 @@ export async function GET(request: NextRequest) {
 
     // Get the program and its element IDs (including from sub-programs)
     const programResult = await sql`
-      SELECT id, title, element_ids, program_ids
-      FROM programs
-      WHERE id = ${programId} AND archived = false
+      with latest_versions as (${latestProgramVersionCte()})
+      SELECT p.id, lv.title, lv.element_ids, lv.program_ids
+      FROM programs p
+      JOIN latest_versions lv ON lv.program_id = p.id
+      WHERE p.id = ${programId} AND lv.archived = false
     `;
 
     if (programResult.length === 0) {
@@ -31,9 +34,11 @@ export async function GET(request: NextRequest) {
     // Fetch sub-programs and their element IDs in order
     if (program.program_ids && program.program_ids.length > 0) {
       const subProgramsResult = await sql`
-        SELECT id, element_ids
-        FROM programs
-        WHERE id = ANY(${program.program_ids}) AND archived = false
+        with latest_versions as (${latestProgramVersionCte()})
+        SELECT p.id, lv.element_ids
+        FROM programs p
+        JOIN latest_versions lv ON lv.program_id = p.id
+        WHERE p.id = ANY(${program.program_ids}) AND lv.archived = false
       `;
       // Create a map for quick lookup
       const subProgramMap: Record<string, string[]> = {};

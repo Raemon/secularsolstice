@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import sql from '@/lib/db';
-import { getProgramById } from '@/lib/programsRepository';
+import { getProgramById, latestProgramVersionCte } from '@/lib/programsRepository';
 
 type ProgramRow = {
   id: string;
@@ -29,11 +29,13 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
       return NextResponse.json({ error: 'Program not found' }, { status: 404 });
     }
 
-    // Get all programs in one query
+    // Get all programs in one query (joined with latest versions)
     const allPrograms = await sql`
-      select id, title, element_ids, program_ids, is_subprogram
-      from programs
-      where archived = false
+      with latest_versions as (${latestProgramVersionCte()})
+      select p.id, lv.title, lv.element_ids, lv.program_ids, lv.is_subprogram
+      from programs p
+      join latest_versions lv on lv.program_id = p.id
+      where lv.archived = false
     ` as ProgramRow[];
 
     const programMap: Record<string, ProgramRow> = {};

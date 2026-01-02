@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import sql from '@/lib/db';
-import { getProgramById } from '@/lib/programsRepository';
+import { getProgramById, latestProgramVersionCte } from '@/lib/programsRepository';
 import { CHORDMARK_STYLES } from '@/app/chordmark-converter/chordmarkStyles';
 import { TableOfContents } from './TableOfContents';
 import { ScrollHandler } from './ScrollHandler';
@@ -47,9 +47,11 @@ async function loadProgramScriptData(programId: string) {
   };
   
   const allPrograms = await sql`
-    select id, title, element_ids, program_ids, is_subprogram
-    from programs
-    where archived = false
+    with latest_versions as (${latestProgramVersionCte()})
+    select p.id, lv.title, lv.element_ids, lv.program_ids, lv.is_subprogram
+    from programs p
+    join latest_versions lv on lv.program_id = p.id
+    where lv.archived = false
   ` as ProgramRow[];
   
   const programs: Program[] = allPrograms.map((p) => ({
@@ -286,4 +288,3 @@ const ProgramScript = async ({ programId }: ProgramScriptProps) => {
 };
 
 export default ProgramScript;
-

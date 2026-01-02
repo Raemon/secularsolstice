@@ -92,7 +92,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   }, [initialized, user, loading, pathname]);
 
   const canVoteAndComment = !!user;
-  const canEdit = user?.ever_set_username ?? false;
+  const canEdit = !!user?.id
   const isAdmin = user?.is_admin ?? false;
 
   const setUserFromAuth = (newUser: User) => {

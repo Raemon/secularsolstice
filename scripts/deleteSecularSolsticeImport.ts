@@ -45,23 +45,29 @@ const run = async () => {
   // Step 3: Delete programs created by secularsolstice-import that have no remaining song versions
   // (checking both direct element_ids and subprogram element_ids)
   const programsToDelete = await query<{ id: string; title: string }>`
-    SELECT p.id, p.title
+    WITH latest_versions AS (
+      SELECT DISTINCT ON (program_id) *
+      FROM program_versions
+      ORDER BY program_id, created_at DESC
+    )
+    SELECT p.id, lv.title
     FROM programs p
-    WHERE p.created_by = ${CREATED_BY}
-      AND p.archived = false
+    JOIN latest_versions lv ON lv.program_id = p.id
+    WHERE lv.created_by = ${CREATED_BY}
+      AND lv.archived = false
       -- No direct song versions exist
       AND NOT EXISTS (
         SELECT 1 FROM song_versions sv
-        WHERE sv.id = ANY(p.element_ids)
+        WHERE sv.id = ANY(lv.element_ids)
       )
       -- No subprograms with song versions exist
       AND NOT EXISTS (
-        SELECT 1 FROM programs subp
-        WHERE subp.id = ANY(p.program_ids)
-          AND subp.archived = false
+        SELECT 1 FROM latest_versions sublv
+        WHERE sublv.program_id = ANY(lv.program_ids)
+          AND sublv.archived = false
           AND EXISTS (
             SELECT 1 FROM song_versions sv
-            WHERE sv.id = ANY(subp.element_ids)
+            WHERE sv.id = ANY(sublv.element_ids)
           )
       )
   `;
@@ -72,22 +78,33 @@ const run = async () => {
   }
 
   const deletedPrograms = await query<{ id: string }>`
+    WITH latest_versions AS (
+      SELECT DISTINCT ON (program_id) *
+      FROM program_versions
+      ORDER BY program_id, created_at DESC
+    ),
+    programs_to_delete AS (
+      SELECT p.id
+      FROM programs p
+      JOIN latest_versions lv ON lv.program_id = p.id
+      WHERE lv.created_by = ${CREATED_BY}
+        AND lv.archived = false
+        AND NOT EXISTS (
+          SELECT 1 FROM song_versions sv
+          WHERE sv.id = ANY(lv.element_ids)
+        )
+        AND NOT EXISTS (
+          SELECT 1 FROM latest_versions sublv
+          WHERE sublv.program_id = ANY(lv.program_ids)
+            AND sublv.archived = false
+            AND EXISTS (
+              SELECT 1 FROM song_versions sv
+              WHERE sv.id = ANY(sublv.element_ids)
+            )
+        )
+    )
     DELETE FROM programs p
-    WHERE p.created_by = ${CREATED_BY}
-      AND p.archived = false
-      AND NOT EXISTS (
-        SELECT 1 FROM song_versions sv
-        WHERE sv.id = ANY(p.element_ids)
-      )
-      AND NOT EXISTS (
-        SELECT 1 FROM programs subp
-        WHERE subp.id = ANY(p.program_ids)
-          AND subp.archived = false
-          AND EXISTS (
-            SELECT 1 FROM song_versions sv
-            WHERE sv.id = ANY(subp.element_ids)
-          )
-      )
+    WHERE p.id IN (SELECT id FROM programs_to_delete)
     RETURNING id
   `;
   console.log(`Deleted ${deletedPrograms.length} programs\n`);
@@ -115,27 +132,33 @@ const run = async () => {
     console.log(`Cleaned up stale program references from ${usersCleanedUp.count} users' performed_program_ids`);
   }
 
-  // Step 5: Clean up orphaned subprogram references in programs.program_ids
-  // Remove any subprogram IDs that no longer exist or are archived
+  // Step 5: Clean up orphaned subprogram references in program_versions.program_ids
+  // Remove any subprogram IDs that no longer exist or are archived (in their latest version)
   const [programsCleanedUp] = await query<{ count: string }>`
-    WITH updated AS (
-      UPDATE programs
+    WITH latest_versions AS (
+      SELECT DISTINCT ON (program_id) *
+      FROM program_versions
+      ORDER BY program_id, created_at DESC
+    ),
+    updated AS (
+      UPDATE program_versions pv
       SET program_ids = (
         SELECT COALESCE(array_agg(pid), ARRAY[]::uuid[])
-        FROM unnest(program_ids) AS pid
-        WHERE EXISTS (SELECT 1 FROM programs p2 WHERE p2.id = pid AND p2.archived = false)
+        FROM unnest(pv.program_ids) AS pid
+        WHERE EXISTS (SELECT 1 FROM latest_versions lv2 WHERE lv2.program_id = pid AND lv2.archived = false)
       )
-      WHERE array_length(program_ids, 1) > 0
+      WHERE pv.id IN (SELECT id FROM latest_versions)
+        AND array_length(pv.program_ids, 1) > 0
         AND EXISTS (
-          SELECT 1 FROM unnest(program_ids) AS pid
-          WHERE NOT EXISTS (SELECT 1 FROM programs p2 WHERE p2.id = pid AND p2.archived = false)
+          SELECT 1 FROM unnest(pv.program_ids) AS pid
+          WHERE NOT EXISTS (SELECT 1 FROM latest_versions lv2 WHERE lv2.program_id = pid AND lv2.archived = false)
         )
       RETURNING 1
     )
     SELECT COUNT(*) as count FROM updated
   `;
   if (parseInt(programsCleanedUp.count) > 0) {
-    console.log(`Cleaned up orphaned subprogram references from ${programsCleanedUp.count} programs' program_ids`);
+    console.log(`Cleaned up orphaned subprogram references from ${programsCleanedUp.count} program versions' program_ids`);
   }
 
   // Summary of what remains
@@ -143,7 +166,14 @@ const run = async () => {
     SELECT COUNT(*) as count FROM songs WHERE created_by = ${CREATED_BY}
   `;
   const [remainingPrograms] = await query<{ count: string }>`
-    SELECT COUNT(*) as count FROM programs WHERE created_by = ${CREATED_BY} AND archived = false
+    WITH latest_versions AS (
+      SELECT DISTINCT ON (program_id) *
+      FROM program_versions
+      ORDER BY program_id, created_at DESC
+    )
+    SELECT COUNT(*) as count FROM programs p
+    JOIN latest_versions lv ON lv.program_id = p.id
+    WHERE lv.created_by = ${CREATED_BY} AND lv.archived = false
   `;
   console.log(`\nRemaining items by ${CREATED_BY} (have other versions/content):`);
   console.log(`  - ${remainingSongs.count} songs`);

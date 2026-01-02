@@ -57,6 +57,7 @@ type ProgramData = {
   videoUrl: string | null;
   printProgramForeword: string | null;
   printProgramEpitaph: string | null;
+  locked?: boolean;
 };
 
 export async function POST(request: NextRequest) {
@@ -152,6 +153,7 @@ export async function POST(request: NextRequest) {
         sendProgress({ step: 'Deleting existing data...', completed: false });
         await sql`DELETE FROM song_versions WHERE 1=1`;
         await sql`DELETE FROM songs WHERE 1=1`;
+        await sql`DELETE FROM program_versions WHERE 1=1`;
         await sql`DELETE FROM programs WHERE 1=1`;
 
         for (let i = 0; i < songs.length; i++) {
@@ -274,15 +276,22 @@ export async function POST(request: NextRequest) {
           if (i % 5 === 0 || i === programs.length - 1) {
             sendProgress({ step: `Inserting programs...`, completed: false, progress: { current: i + 1, total: programs.length } });
           }
+          // Insert into programs table (minimal data - id, created_by, created_at)
           await sql`
-            INSERT INTO programs (
-              id, title, element_ids, program_ids, created_by, created_at, archived,
-              is_subprogram, video_url, print_program_foreword, print_program_epitaph
+            INSERT INTO programs (id, created_by, created_at)
+            VALUES (${program.id}, ${program.createdBy}, ${program.createdAt})
+          `;
+          // Insert corresponding program_version with all the versioned data
+          await sql`
+            INSERT INTO program_versions (
+              program_id, title, element_ids, program_ids, archived,
+              is_subprogram, video_url, print_program_foreword, print_program_epitaph,
+              locked, created_at, created_by
             ) VALUES (
               ${program.id}, ${program.title}, ${program.elementIds}::uuid[],
-              ${program.programIds}::uuid[], ${program.createdBy}, ${program.createdAt},
-              ${program.archived}, ${program.isSubprogram}, ${program.videoUrl},
-              ${program.printProgramForeword}, ${program.printProgramEpitaph}
+              ${program.programIds}::uuid[], ${program.archived}, ${program.isSubprogram},
+              ${program.videoUrl}, ${program.printProgramForeword}, ${program.printProgramEpitaph},
+              ${program.locked ?? false}, ${program.createdAt}, ${program.createdBy}
             )
           `;
         }

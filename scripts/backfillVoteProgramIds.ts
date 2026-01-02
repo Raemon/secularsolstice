@@ -19,9 +19,15 @@ const run = async () => {
   `;
   console.log(`Found ${votes.length} votes without program_id`);
 
-  // Get all programs with their element_ids
+  // Get all programs with their element_ids from latest versions
   const programs = await query<Program>`
-    SELECT id, element_ids FROM programs
+    WITH latest_versions AS (
+      SELECT DISTINCT ON (program_id) *
+      FROM program_versions
+      ORDER BY program_id, created_at DESC
+    )
+    SELECT p.id, lv.element_ids FROM programs p
+    JOIN latest_versions lv ON lv.program_id = p.id
   `;
   console.log(`Found ${programs.length} programs`);
 
