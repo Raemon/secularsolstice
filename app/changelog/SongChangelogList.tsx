@@ -11,9 +11,9 @@ const SongChangelogList = ({songId, filename, compact = false}: {songId?: string
   if (compact && versions.length === 0) return null;
 
   return (
-    <div className={compact ? "overflow-hidden max-w-full" : "p-4 max-w-5xl mx-auto overflow-hidden"}>
+    <div className={compact ? "max-w-full" : "p-4 max-w-5xl mx-auto"}>
       {!compact && <h1 className="text-xl font-mono mb-4 text-gray-200">Changelog</h1>}
-      <div className="space-y-1 max-w-full overflow-x-auto">
+      <div className="space-y-1 max-w-full">
         {versions.map((version) => <SongChangelogItem key={version.id} version={version} compact={compact} />)}
         {loadingMore && <span className="text-xs text-gray-500">loading...</span>}
         {!compact && hasMore && !loadingMore && (

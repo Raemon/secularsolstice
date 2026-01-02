@@ -11,9 +11,9 @@ const ChangelogPage = () => {
   if (error) return <div className="p-4 text-red-500">Error: {error}</div>;
 
   return (
-    <div className="p-4 max-w-5xl mx-auto overflow-hidden">
+    <div className="p-4 max-w-5xl mx-auto">
       <h1 className="text-xl font-mono mb-4 text-gray-200">Changelog</h1>
-      <div className="space-y-1 max-w-full overflow-x-auto">
+      <div className="space-y-1 max-w-full">
         {items.map((item) => {
           if (item.type === 'song') {
             return <SongChangelogItem key={`s-${item.data.id}`} version={item.data} showType />;
