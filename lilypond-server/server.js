@@ -5,9 +5,13 @@ const { promisify } = require('util');
 const fs = require('fs').promises;
 const path = require('path');
 const os = require('os');
+const multer = require('multer');
 
 const execAsync = promisify(exec);
 const app = express();
+
+// Configure multer for file uploads (store in memory)
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
@@ -33,6 +37,52 @@ function preValidateLilypond(content) {
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'lilypond-converter' });
+});
+
+// Convert MuseScore (.mscz) to MusicXML
+app.post('/convert-mscz', upload.single('file'), async (req, res) => {
+  let tempDir = null;
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file provided' });
+    }
+    const originalName = req.file.originalname || 'input.mscz';
+    if (!originalName.toLowerCase().endsWith('.mscz')) {
+      return res.status(400).json({ error: 'File must be a .mscz file' });
+    }
+
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'musescore-'));
+    const inputPath = path.join(tempDir, 'input.mscz');
+    const outputPath = path.join(tempDir, 'output.musicxml');
+
+    await fs.writeFile(inputPath, req.file.buffer);
+
+    // Run MuseScore with xvfb for headless conversion
+    try {
+      await execAsync(`xvfb-run -a mscore3 -o "${outputPath}" "${inputPath}"`, {
+        cwd: tempDir,
+        timeout: 60000,
+      });
+    } catch (execError) {
+      console.error('MuseScore conversion error:', execError);
+      // MuseScore might output warnings to stderr but still succeed
+      try {
+        await fs.access(outputPath);
+      } catch {
+        return res.status(500).json({ error: 'MuseScore conversion failed', details: execError.message || 'Unknown error' });
+      }
+    }
+
+    const musicxml = await fs.readFile(outputPath, 'utf-8');
+    res.type('application/xml').send(musicxml);
+  } catch (error) {
+    console.error('Error converting MuseScore file:', error);
+    res.status(500).json({ error: 'Failed to convert MuseScore file', details: error.message || 'Unknown error' });
+  } finally {
+    if (tempDir) {
+      try { await fs.rm(tempDir, { recursive: true, force: true }); } catch {}
+    }
+  }
 });
 
 // Syntax check endpoint - validates without full rendering (faster than convert)
@@ -158,7 +208,29 @@ app.post('/convert', async (req, res) => {
   }
 });
 
+// Pre-warm MuseScore on startup to avoid cold-start delays
+async function warmupMuseScore() {
+  let tempDir = null;
+  try {
+    console.log('Warming up MuseScore...');
+    const start = Date.now();
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'warmup-'));
+    // Create a minimal valid .mscz file (it's a zip with a .mscx inside)
+    // Instead, just run mscore3 --help to load it into memory
+    await execAsync('xvfb-run -a mscore3 --help', { timeout: 60000 });
+    console.log(`MuseScore warmed up in ${Date.now() - start}ms`);
+  } catch (err) {
+    console.log('MuseScore warmup completed (with expected exit):', err.message?.slice(0, 100));
+  } finally {
+    if (tempDir) {
+      try { await fs.rm(tempDir, { recursive: true, force: true }); } catch {}
+    }
+  }
+}
+
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`LilyPond converter running on port ${PORT}`);
+  // Warm up MuseScore in the background after server starts
+  warmupMuseScore();
 });

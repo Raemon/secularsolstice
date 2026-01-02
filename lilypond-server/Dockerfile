@@ -1,8 +1,9 @@
 FROM node:20-slim
 
-# Install LilyPond and required fonts
+# Install LilyPond, MuseScore, and required dependencies
+# MuseScore needs xvfb for headless rendering
 RUN apt-get update && \
-    apt-get install -y lilypond fonts-freefont-ttf && \
+    apt-get install -y lilypond fonts-freefont-ttf musescore3 xvfb && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
