@@ -92,7 +92,7 @@ const ProgramChangelogItem = ({version, compact = false, showType = false}: {ver
           {formatRelativeTimestamp(version.createdAt)}
         </span>
       </Tooltip>
-      {version.createdBy 
+      {version.createdBy || version.userId 
         ? <Link href={`/users/${version.createdBy}`} className={`text-gray-500 hover:text-gray-300 text-nowrap w-[120px] flex-shrink-0 truncate ${compact ? 'hidden sm:inline-block' : ''}`}>
           {version.createdBy}
         </Link> 

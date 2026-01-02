@@ -346,7 +346,11 @@ const SongsFileList = ({ initialSongId, initialVersionId }: SongsFileListProps =
                 onClose={handleClose}
                 onArchive={fetchSongs}
               />
-              {selectedSong.versions.map(version => (
+              {[...selectedSong.versions].sort((a, b) => {
+                if (a.label === 'README.md' && b.label !== 'README.md') return -1;
+                if (a.label !== 'README.md' && b.label === 'README.md') return 1;
+                return 0;
+              }).map(version => (
                 <div key={version.id} className="mb-8 flex flex-col gap-2">
                   <VersionHeader version={version} />
                   <div className="border-b border-gray-500 pb-3">
