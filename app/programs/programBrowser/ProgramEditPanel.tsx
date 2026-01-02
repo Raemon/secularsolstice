@@ -89,9 +89,8 @@ const ProgramEditPanel = ({ programId, onClose, onProgramUpdated }: ProgramEditP
       setIsSubprogram(data.program.isSubprogram);
       setLocked(data.program.locked);
       setCreatedBy(data.program.createdBy || '');
-      setSaveSuccess(true);
       onProgramUpdated?.(data.program);
-      setTimeout(() => setSaveSuccess(false), 3000);
+      onClose();
     } catch (err) {
       console.error('Failed to save program:', err);
       setError(err instanceof Error ? err.message : 'Failed to save program');
