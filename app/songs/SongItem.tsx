@@ -59,7 +59,11 @@ const SongItem = ({song, selectedSongId, selectedVersionId, showTags = true, max
   const versionsByLabel = groupBy(song.versions, 'label');
   const mostRecentVersions = map(versionsByLabel, versions => 
     versions.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0]
-  );
+  ).sort((a, b) => {
+    if (a.label === 'README.md' && b.label !== 'README.md') return -1;
+    if (a.label !== 'README.md' && b.label === 'README.md') return 1;
+    return 0;
+  });
 
   return (
     <div className="flex bg-black/30" data-song-id={song.id}>

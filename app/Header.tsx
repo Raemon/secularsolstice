@@ -62,7 +62,7 @@ const Header = () => {
             <div className="absolute bg-black z-10 mt-1 border border-gray-500 shadow-lg min-w-[150px] top-full left-0">
               <Link href="/changelog" className="block px-2 py-1 text-sm hover:bg-gray-800 text-gray-200" onClick={() => setPoweruserOpen(false)}>Changelog</Link>
               <Link href="/public-backups" className="block px-2 py-1 text-sm hover:bg-gray-800 text-gray-200" onClick={() => setPoweruserOpen(false)}>Public Backups</Link>
-              <Link href="/bulk-create-versions" className="block px-2 py-1 text-sm hover:bg-gray-800 text-gray-200" onClick={() => setPoweruserOpen(false)}>Bulk Import from Doc</Link>
+              {/* <Link href="/bulk-create-versions" className="block px-2 py-1 text-sm hover:bg-gray-800 text-gray-200" onClick={() => setPoweruserOpen(false)}>Bulk Import from Doc</Link> */}
               <DownloadAllSongsButton />
             </div>
           )}

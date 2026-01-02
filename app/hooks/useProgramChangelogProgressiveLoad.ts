@@ -34,13 +34,14 @@ export type ProgramChangelogVersion = {
   createdAt: string;
 };
 
-type UseProgramChangelogProgressiveLoadResult = {
+export type UseProgramChangelogProgressiveLoadResult = {
   versions: ProgramChangelogVersion[];
   loading: boolean;
   loadingMore: boolean;
   error: string | null;
   hasMore: boolean;
   loadMore: () => Promise<void>;
+  refetch: () => Promise<void>;
 };
 
 type ProgramChangelogParams = {
@@ -61,14 +62,15 @@ const useProgramChangelogProgressiveLoad = ({ programId }: ProgramChangelogParam
 
   const getId = useMemo(() => (v: ProgramChangelogVersion) => v.id, []);
 
-  const { items, loading, loadingMore, error, hasMore, loadMore } = useProgressiveLoad<ProgramChangelogVersion>({
+  const { items, loading, loadingMore, error, hasMore, loadMore, refetch } = useProgressiveLoad<ProgramChangelogVersion>({
     initialLimit: INITIAL_BATCH_SIZE,
     expandedLimit: FULL_BATCH_SIZE,
     fetchItems,
+    fetchAll: !!programId,
     getId,
   });
 
-  return { versions: items, loading, loadingMore, error, hasMore, loadMore };
+  return { versions: items, loading, loadingMore, error, hasMore, loadMore, refetch };
 };
 
 export default useProgramChangelogProgressiveLoad;

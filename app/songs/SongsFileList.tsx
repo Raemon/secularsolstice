@@ -36,6 +36,7 @@ const SongsFileList = ({ initialSongId, initialVersionId }: SongsFileListProps =
   // Version detail state
   const [selectedVersion, setSelectedVersion] = useState<SongVersion | null>(null);
   const [previousVersions, setPreviousVersions] = useState<SongVersion[]>([]);
+  const [isLoadingVersion, setIsLoadingVersion] = useState(false);
   const [isCreatingVersion, setIsCreatingVersion] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
@@ -65,9 +66,11 @@ const SongsFileList = ({ initialSongId, initialVersionId }: SongsFileListProps =
     if (!initialVersionId) {
       setSelectedVersion(null);
       setPreviousVersions([]);
+      setIsLoadingVersion(false);
       return;
     }
     const fetchVersion = async () => {
+      setIsLoadingVersion(true);
       try {
         const res = await fetch(`/api/songs/versions/${initialVersionId}?includeContent=true`);
         if (!res.ok) throw new Error('Failed to load version');
@@ -76,6 +79,8 @@ const SongsFileList = ({ initialSongId, initialVersionId }: SongsFileListProps =
         setPreviousVersions(data.previousVersions || []);
       } catch (err) {
         console.error('Error fetching version:', err);
+      } finally {
+        setIsLoadingVersion(false);
       }
     };
     fetchVersion();
@@ -252,7 +257,7 @@ const SongsFileList = ({ initialSongId, initialVersionId }: SongsFileListProps =
     );
   }
 
-  const hasDetailPanel = selectedVersion || showSongOnly;
+  const hasDetailPanel = selectedVersion || showSongOnly || initialVersionId;
 
   return (
     <div className="min-h-[calc(100vh-100px)] pt-8 relative">
@@ -284,29 +289,49 @@ const SongsFileList = ({ initialSongId, initialVersionId }: SongsFileListProps =
         </div>
 
         {/* Version detail panel */}
-        {selectedVersion && selectedSong && (
+        {initialVersionId && !showSongOnly && (
           <div className="flex-1 h-[calc(100vh-120px)] overflow-y-auto">
-            <VersionDetailPanel
-              songTitle={selectedSong.title}
-              version={selectedVersion}
-              previousVersions={previousVersions}
-              isExpandedPreviousVersions={false}
-              isCreatingVersion={isCreatingVersion}
-              newVersionForm={newVersionForm}
-              isSubmitting={isSubmitting}
-              isArchiving={isArchiving}
-              error={panelError}
-              songId={selectedSong.id}
-              tags={selectedSong.tags}
-              onClose={handleClose}
-              onTogglePreviousVersions={() => {}}
-              onVersionClick={handleVersionClick}
-              onCreateVersionClick={handleCreateVersionClick}
-              onCancelCreateVersion={handleCancelCreateVersion}
-              onFormChange={handleFormChange}
-              onSubmitVersion={handleSubmitVersion}
-              onArchiveVersion={handleArchiveVersion}
-            />
+            {selectedVersion && selectedSong ? (
+              <VersionDetailPanel
+                songTitle={selectedSong.title}
+                version={selectedVersion}
+                previousVersions={previousVersions}
+                isExpandedPreviousVersions={false}
+                isCreatingVersion={isCreatingVersion}
+                newVersionForm={newVersionForm}
+                isSubmitting={isSubmitting}
+                isArchiving={isArchiving}
+                error={panelError}
+                songId={selectedSong.id}
+                tags={selectedSong.tags}
+                onClose={handleClose}
+                onTogglePreviousVersions={() => {}}
+                onVersionClick={handleVersionClick}
+                onCreateVersionClick={handleCreateVersionClick}
+                onCancelCreateVersion={handleCancelCreateVersion}
+                onFormChange={handleFormChange}
+                onSubmitVersion={handleSubmitVersion}
+                onArchiveVersion={handleArchiveVersion}
+              />
+            ) : (
+              <div className="md:pl-4 w-full lg:p-20 relative xl:max-w-4xl mx-auto">
+                <div className="flex items-start justify-between gap-2 mb-4">
+                  <div className="h-8 w-48 bg-gray-800 animate-pulse rounded" />
+                  <button onClick={handleClose} className="text-gray-400 text-xl hover:text-white">×</button>
+                </div>
+                <div className="flex items-end flex-wrap justify-start sm:justify-end gap-4 my-4 border-b border-gray-500 pb-2">
+                  <div className="lg:mr-auto w-full lg:w-auto">
+                    <div className="h-5 w-32 bg-gray-800 animate-pulse rounded mb-2" />
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div className="h-4 w-full bg-gray-800 animate-pulse rounded" />
+                  <div className="h-4 w-3/4 bg-gray-800 animate-pulse rounded" />
+                  <div className="h-4 w-5/6 bg-gray-800 animate-pulse rounded" />
+                  <div className="h-4 w-2/3 bg-gray-800 animate-pulse rounded" />
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -321,7 +346,11 @@ const SongsFileList = ({ initialSongId, initialVersionId }: SongsFileListProps =
                 onClose={handleClose}
                 onArchive={fetchSongs}
               />
-              {selectedSong.versions.map(version => (
+              {[...selectedSong.versions].sort((a, b) => {
+                if (a.label === 'README.md' && b.label !== 'README.md') return -1;
+                if (a.label !== 'README.md' && b.label === 'README.md') return 1;
+                return 0;
+              }).map(version => (
                 <div key={version.id} className="mb-8 flex flex-col gap-2">
                   <VersionHeader version={version} />
                   <div className="border-b border-gray-500 pb-3">

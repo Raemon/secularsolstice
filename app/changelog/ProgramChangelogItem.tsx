@@ -56,6 +56,9 @@ const SettingChangeBadge = ({ change }: { change: SettingChange }) => {
   if (change.field === 'created') {
     return <span className="text-blue-400 text-[11px]">created</span>;
   }
+  if (change.field === 'updated') {
+    return <span className="text-gray-500 text-[11px]">updated</span>;
+  }
   if (change.field === 'elements' || change.field === 'subprograms') {
     const isPositive = change.to.startsWith('+');
     return (
@@ -84,7 +87,11 @@ const SettingChangeBadge = ({ change }: { change: SettingChange }) => {
 
 const ProgramChangelogItem = ({version, compact = false, showType = false}: {version: ProgramChangelogVersion; compact?: boolean; showType?: boolean}) => {
   const changes = getSettingChanges(version);
-  if (changes.length === 0) return null;
+  const isFirstVersion = version.previousTitle === null;
+  // Show "updated" for versions with no detected field changes (e.g., element reordering)
+  if (changes.length === 0 && !isFirstVersion) {
+    changes.push({ field: 'updated', from: '', to: '' });
+  }
   return (
     <div key={version.id} className={`flex items-center gap-2 ${compact ? 'py-0.5 text-xs' : 'py-1 text-sm gap-4'} font-mono min-w-0`}>
       <span className="w-6 shrink-0"></span>
@@ -94,7 +101,7 @@ const ProgramChangelogItem = ({version, compact = false, showType = false}: {ver
           {formatRelativeTimestamp(version.createdAt)}
         </span>
       </Tooltip>
-      {version.createdBy 
+      {version.createdBy || version.userId 
         ? <Link href={`/users/${version.createdBy}`} className={`text-gray-500 hover:text-gray-300 text-nowrap w-[120px] flex-shrink-0 truncate ${compact ? 'hidden sm:inline-block' : ''}`}>
           {version.createdBy}
         </Link> 

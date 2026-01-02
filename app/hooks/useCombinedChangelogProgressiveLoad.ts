@@ -174,3 +174,4 @@ const useCombinedChangelogProgressiveLoad = (): UseCombinedChangelogResult => {
 };
 
 export default useCombinedChangelogProgressiveLoad;
+

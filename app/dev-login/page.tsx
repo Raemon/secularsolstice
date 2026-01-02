@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 
-const DevLoginPage = () => {
+const DevLoginContent = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
@@ -37,6 +37,14 @@ const DevLoginPage = () => {
       {status === 'success' && <p className="text-green-400">{message}</p>}
       {status === 'error' && <p className="text-red-400">{message}</p>}
     </div>
+  );
+};
+
+const DevLoginPage = () => {
+  return (
+    <Suspense fallback={<div className="p-8 max-w-xl mx-auto"><h1 className="text-2xl font-bold mb-4">Dev Login</h1><p className="text-gray-400">Loading...</p></div>}>
+      <DevLoginContent />
+    </Suspense>
   );
 };
 
