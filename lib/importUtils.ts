@@ -589,6 +589,18 @@ const resolveProgramItems = async (
   return { elementIds, programIds, missingElements, createdPlaceholders };
 };
 
+// Derive program title from filename and optional subtitle in { }
+// If subtitle differs from filename (after normalization), append it
+const getProgramTitleFromFile = (fileName: string, parsedSubtitle: string | null): string => {
+  const ext = path.extname(fileName).toLowerCase();
+  const baseTitle = normalizeTitle(path.basename(fileName, ext));
+  if (!parsedSubtitle) return baseTitle;
+  const normalizedBase = baseTitle.toLowerCase();
+  const normalizedSubtitle = parsedSubtitle.toLowerCase().replace(/_/g, ' ').trim();
+  if (normalizedBase === normalizedSubtitle) return baseTitle;
+  return `${baseTitle} - ${parsedSubtitle}`;
+};
+
 const parseProgramFile = (content: string): { title: string | null; items: ParsedProgramItem[] } => {
   const lines = content.split('\n');
   let title: string | null = null;
@@ -638,7 +650,7 @@ export const importProgramFile = async (
   if (!content) return null;
 
   const parsed = parseProgramFile(content);
-  const programTitle = parsed.title || normalizeTitle(path.basename(fileName, ext));
+  const programTitle = getProgramTitleFromFile(fileName, parsed.title);
 
   // Check if program already exists
   const existingProgram = await getProgramByTitle(programTitle);
@@ -721,7 +733,7 @@ export const resyncProgramsFromFiles = async (
       if (!content) continue;
 
       const parsed = parseProgramFile(content);
-      const programTitle = parsed.title || normalizeTitle(path.basename(entry.name, ext));
+      const programTitle = getProgramTitleFromFile(entry.name, parsed.title);
 
       // Check if program exists
       const existingProgram = await getProgramByTitle(programTitle);
