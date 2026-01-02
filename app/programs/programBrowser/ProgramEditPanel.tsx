@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import type { Program } from '../types';
 import VideoFrameUploader from '../components/VideoFrameUploader';
 import { useUser } from '../../contexts/UserContext';
+import ProgramChangelogList from './ProgramChangelogList';
 
 type ProgramEditPanelProps = {
   programId: string;
@@ -35,14 +36,15 @@ const ProgramEditPanel = ({ programId, onClose, onProgramUpdated }: ProgramEditP
           throw new Error('Failed to load program');
         }
         const data = await response.json();
-        setProgram(data.program);
-        setTitle(data.program.title);
-        setForeword(data.program.printProgramForeword || '');
-        setEpitaph(data.program.printProgramEpitaph || '');
-        setVideoUrl(data.program.videoUrl || '');
-        setIsSubprogram(data.program.isSubprogram);
-        setLocked(data.program.locked);
-        setCreatedBy(data.program.createdBy || '');
+        const programData = data.program;
+        setProgram(programData);
+        setTitle(programData.title);
+        setForeword(programData.printProgramForeword || '');
+        setEpitaph(programData.printProgramEpitaph || '');
+        setVideoUrl(programData.videoUrl || '');
+        setIsSubprogram(programData.isSubprogram);
+        setLocked(programData.locked);
+        setCreatedBy(programData.createdBy || '');
         setError(null);
       } catch (err) {
         console.error('Failed to load program:', err);
@@ -85,11 +87,12 @@ const ProgramEditPanel = ({ programId, onClose, onProgramUpdated }: ProgramEditP
         throw new Error('Failed to save program');
       }
       const data = await response.json();
-      setProgram(data.program);
-      setIsSubprogram(data.program.isSubprogram);
-      setLocked(data.program.locked);
-      setCreatedBy(data.program.createdBy || '');
-      onProgramUpdated?.(data.program);
+      const programData = data.program;
+      setProgram(programData);
+      setIsSubprogram(programData.isSubprogram);
+      setLocked(programData.locked);
+      setCreatedBy(programData.createdBy || '');
+      onProgramUpdated?.(programData);
       onClose();
     } catch (err) {
       console.error('Failed to save program:', err);
@@ -188,6 +191,7 @@ const ProgramEditPanel = ({ programId, onClose, onProgramUpdated }: ProgramEditP
           {saveSuccess && <span className="text-green-600">Saved!</span>}
         </div>
       </div>
+      <ProgramChangelogList programId={programId} />
     </div>
   );
 };
