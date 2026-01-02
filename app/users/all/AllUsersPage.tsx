@@ -18,6 +18,7 @@ const AllUsersPage = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     if (!userId || !isAdmin) return;
@@ -73,11 +74,25 @@ const AllUsersPage = () => {
     return <div className="p-8 text-gray-400">No users yet</div>;
   }
 
+  const filteredUsers = users.filter(user => 
+    !searchQuery || (user.username && user.username.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
   return (
     <div className="p-8 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">All Users ({users.length})</h1>
+      <div className="flex items-center gap-4 mb-6">
+        <h1 className="text-2xl font-bold">All Users ({users.length})</h1>
+        <input
+          type="text"
+          placeholder="Search users..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="px-2 py-1 bg-gray-800 text-gray-200 placeholder-gray-500 outline-none flex-1 max-w-xs"
+        />
+        {searchQuery && <span className="text-gray-500 text-sm">{filteredUsers.length} match{filteredUsers.length !== 1 ? 'es' : ''}</span>}
+      </div>
       <div className="space-y-2">
-        {users.map((user) => (
+        {filteredUsers.map((user) => (
           <div key={user.id} className="border border-gray-700 p-3 bg-gray-900 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <span className="text-gray-300">{user.username || <span className="text-gray-500 italic">No username</span>}</span>
