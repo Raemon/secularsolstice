@@ -10,7 +10,7 @@
 :root {
   --primary: rgb(255, 226, 64);
   --secondary: rgb(182, 82, 24);
-  --link: rgb(103, 171, 255);
+  --link: rgb(120, 206, 255);
 }
 
 .text-primary {
@@ -18,6 +18,9 @@
 }
 .text-secondary {
   color: var(--secondary) !important;
+}
+.text-link {
+  color: var(--link) !important;
 }
 
 .bg-color {
@@ -27,6 +30,24 @@
   background-color: var(--primary) !important;
 }
 
+.border-primary {
+  border-color: var(--primary) !important;
+}
+.border-primary\/50 {
+  border-color: color-mix(in srgb, var(--primary) 50%, transparent) !important;
+}
+
+.hover\:underline:hover {
+  text-decoration: underline !important;
+  text-decoration-thickness: 1px !important;
+  text-underline-offset: 3px !important;
+}
+
+.underline {
+  text-decoration: underline !important;
+  text-decoration-thickness: 1px !important;
+  text-underline-offset: 3px !important;
+}
 
 @media (prefers-color-scheme: dark) {
   :root {
