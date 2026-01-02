@@ -26,6 +26,11 @@ const getSqlClient = async () => {
   return module.default;
 };
 
+const ensureSchema = async (sql: Awaited<ReturnType<typeof getSqlClient>>) => {
+  await sql`create schema if not exists public;`;
+  await sql`set search_path to public;`;
+};
+
 const ensureMigrationsTable = async (sql: Awaited<ReturnType<typeof getSqlClient>>) => {
   await sql`create table if not exists schema_migrations (
     filename text primary key,
@@ -181,6 +186,7 @@ const runMigrations = async () => {
   loadEnvFiles();
   assertDatabaseUrl();
   const sql = await getSqlClient();
+  await ensureSchema(sql);
   await ensureMigrationsTable(sql);
   const applied = await getAppliedMigrations(sql);
   const migrationsDir = path.resolve(process.cwd(), 'db/migrations');
@@ -228,5 +234,3 @@ runMigrations().catch((error) => {
   console.error('Migration failed:', error);
   process.exit(1);
 });
-
-

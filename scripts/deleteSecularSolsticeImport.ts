@@ -11,10 +11,17 @@ const query = async <T>(strings: TemplateStringsArray, ...values: unknown[]): Pr
 
 const CREATED_BY = 'secularsolstice-import';
 
-const run = async () => {
-  console.log(`Deleting records created by "${CREATED_BY}" (preserving items edited by others)...\n`);
+// Cluster 1: Bulk import on Nov 23, 2025 - 290 versions created in ~1 minute with null created_by
+const CLUSTER1_START = '2025-11-23T22:23:33.163Z';
+const CLUSTER1_END = '2025-11-23T22:24:24.986Z';
 
-  // Step 1: Count and delete song_versions created by secularsolstice-import
+// Song ID to preserve (exclude from deletion logic)
+const PRESERVE_SONG_ID = '18554efd-f62b-4498-8c38-66b054c20ca9';
+
+const run = async () => {
+  console.log(`Deleting records created by "${CREATED_BY}" and anonymous bulk import (preserving items edited by others)...\n`);
+
+  // Step 1a: Count and delete song_versions created by secularsolstice-import
   const [versionCountBefore] = await query<{ count: string }>`
     SELECT COUNT(*) as count FROM song_versions WHERE created_by = ${CREATED_BY}
   `;
@@ -23,9 +30,27 @@ const run = async () => {
   const deletedVersions = await query<{ id: string }>`
     DELETE FROM song_versions WHERE created_by = ${CREATED_BY} RETURNING id
   `;
-  console.log(`Deleted ${deletedVersions.length} song_versions\n`);
+  console.log(`Deleted ${deletedVersions.length} song_versions`);
 
-  // Step 2: Delete songs created by secularsolstice-import that have no remaining versions
+  // Step 1b: Delete anonymous bulk import versions (Cluster 1)
+  const [anonVersionCountBefore] = await query<{ count: string }>`
+    SELECT COUNT(*) as count FROM song_versions
+    WHERE created_by IS NULL
+      AND db_created_at >= ${CLUSTER1_START}::timestamptz
+      AND db_created_at <= ${CLUSTER1_END}::timestamptz
+  `;
+  console.log(`Found ${anonVersionCountBefore.count} anonymous bulk import song_versions`);
+
+  const deletedAnonVersions = await query<{ id: string }>`
+    DELETE FROM song_versions
+    WHERE created_by IS NULL
+      AND db_created_at >= ${CLUSTER1_START}::timestamptz
+      AND db_created_at <= ${CLUSTER1_END}::timestamptz
+    RETURNING id
+  `;
+  console.log(`Deleted ${deletedAnonVersions.length} anonymous bulk import song_versions\n`);
+
+  // Step 2a: Delete songs created by secularsolstice-import that have no remaining versions
   const songsWithNoVersions = await query<{ id: string; title: string }>`
     SELECT s.id, s.title
     FROM songs s
@@ -40,38 +65,85 @@ const run = async () => {
       AND NOT EXISTS (SELECT 1 FROM song_versions sv WHERE sv.song_id = s.id)
     RETURNING id
   `;
-  console.log(`Deleted ${deletedSongs.length} songs\n`);
+  console.log(`Deleted ${deletedSongs.length} songs`);
 
-  // Step 3: Delete programs created by secularsolstice-import that have no remaining song versions
-  // (checking both direct element_ids and subprogram element_ids)
+  // Step 2b: Delete songs with created_by = NULL that have no versions OR were created during Cluster 1 time period
+  // (these are songs from the anonymous bulk import that have no remaining versions,
+  // or only have versions created by the import or Cluster 1)
+  
+  // First, delete songs with no versions (orphaned songs)
+  const anonSongsWithNoVersions = await query<{ id: string; title: string }>`
+    SELECT s.id, s.title
+    FROM songs s
+    WHERE s.created_by IS NULL
+      AND NOT EXISTS (SELECT 1 FROM song_versions sv WHERE sv.song_id = s.id)
+  `;
+  console.log(`Found ${anonSongsWithNoVersions.length} songs with NULL created_by and no versions (orphaned songs)`);
+
+  const deletedAnonSongsNoVersions = await query<{ id: string }>`
+    DELETE FROM songs s
+    WHERE s.created_by IS NULL
+      AND NOT EXISTS (SELECT 1 FROM song_versions sv WHERE sv.song_id = s.id)
+    RETURNING id
+  `;
+  console.log(`Deleted ${deletedAnonSongsNoVersions.length} orphaned songs with no versions\n`);
+
+  // Then, delete songs created during Cluster 1 that only have versions from import/Cluster 1
+  const anonSongsInCluster1 = await query<{ id: string; title: string }>`
+    SELECT s.id, s.title
+    FROM songs s
+    WHERE s.created_by IS NULL
+      AND s.created_at >= ${CLUSTER1_START}::timestamptz
+      AND s.created_at <= ${CLUSTER1_END}::timestamptz
+      AND EXISTS (SELECT 1 FROM song_versions sv WHERE sv.song_id = s.id)
+      AND NOT EXISTS (
+        SELECT 1 FROM song_versions sv
+        WHERE sv.song_id = s.id
+          AND sv.created_by IS DISTINCT FROM ${CREATED_BY}
+          AND NOT (sv.created_by IS NULL
+            AND sv.db_created_at >= ${CLUSTER1_START}::timestamptz
+            AND sv.db_created_at <= ${CLUSTER1_END}::timestamptz)
+      )
+  `;
+  console.log(`Found ${anonSongsInCluster1.length} songs with NULL created_by from Cluster 1 with only import/Cluster 1 versions`);
+
+  const deletedAnonSongsInCluster1 = await query<{ id: string }>`
+    DELETE FROM songs s
+    WHERE s.created_by IS NULL
+      AND s.created_at >= ${CLUSTER1_START}::timestamptz
+      AND s.created_at <= ${CLUSTER1_END}::timestamptz
+      AND EXISTS (SELECT 1 FROM song_versions sv WHERE sv.song_id = s.id)
+      AND NOT EXISTS (
+        SELECT 1 FROM song_versions sv
+        WHERE sv.song_id = s.id
+          AND sv.created_by IS DISTINCT FROM ${CREATED_BY}
+          AND NOT (sv.created_by IS NULL
+            AND sv.db_created_at >= ${CLUSTER1_START}::timestamptz
+            AND sv.db_created_at <= ${CLUSTER1_END}::timestamptz)
+      )
+    RETURNING id
+  `;
+  console.log(`Deleted ${deletedAnonSongsInCluster1.length} anonymous bulk import songs from Cluster 1\n`);
+
+  // Step 3: Delete programs created by secularsolstice-import or with NULL created_by in Cluster 1
   const programsToDelete = await query<{ id: string; title: string }>`
     WITH latest_versions AS (
-      SELECT DISTINCT ON (program_id) *
+      SELECT DISTINCT ON (program_id) program_id, created_by, created_at, archived, title
       FROM program_versions
       ORDER BY program_id, created_at DESC
     )
     SELECT p.id, lv.title
     FROM programs p
     JOIN latest_versions lv ON lv.program_id = p.id
-    WHERE lv.created_by = ${CREATED_BY}
-      AND lv.archived = false
-      -- No direct song versions exist
-      AND NOT EXISTS (
-        SELECT 1 FROM song_versions sv
-        WHERE sv.id = ANY(lv.element_ids)
-      )
-      -- No subprograms with song versions exist
-      AND NOT EXISTS (
-        SELECT 1 FROM latest_versions sublv
-        WHERE sublv.program_id = ANY(lv.program_ids)
-          AND sublv.archived = false
-          AND EXISTS (
-            SELECT 1 FROM song_versions sv
-            WHERE sv.id = ANY(sublv.element_ids)
-          )
+    WHERE lv.archived = false
+      AND (
+        lv.created_by = ${CREATED_BY}
+        OR (lv.created_by IS NULL
+          AND lv.created_at >= ${CLUSTER1_START}::timestamptz
+          AND lv.created_at <= ${CLUSTER1_END}::timestamptz)
       )
   `;
-  console.log(`Found ${programsToDelete.length} programs by ${CREATED_BY} with no remaining song versions`);
+  console.log(`Found ${programsToDelete.length} programs by ${CREATED_BY} or NULL created_by in Cluster 1`);
   if (programsToDelete.length > 0) {
     console.log('Programs to delete:');
     programsToDelete.forEach(p => console.log(`  - ${p.title}`));
@@ -79,32 +151,22 @@ const run = async () => {
 
   const deletedPrograms = await query<{ id: string }>`
     WITH latest_versions AS (
-      SELECT DISTINCT ON (program_id) *
+      SELECT DISTINCT ON (program_id) program_id, created_by, created_at, archived
       FROM program_versions
       ORDER BY program_id, created_at DESC
-    ),
-    programs_to_delete AS (
-      SELECT p.id
-      FROM programs p
-      JOIN latest_versions lv ON lv.program_id = p.id
-      WHERE lv.created_by = ${CREATED_BY}
-        AND lv.archived = false
-        AND NOT EXISTS (
-          SELECT 1 FROM song_versions sv
-          WHERE sv.id = ANY(lv.element_ids)
-        )
-        AND NOT EXISTS (
-          SELECT 1 FROM latest_versions sublv
-          WHERE sublv.program_id = ANY(lv.program_ids)
-            AND sublv.archived = false
-            AND EXISTS (
-              SELECT 1 FROM song_versions sv
-              WHERE sv.id = ANY(sublv.element_ids)
-            )
-        )
     )
     DELETE FROM programs p
-    WHERE p.id IN (SELECT id FROM programs_to_delete)
+    WHERE EXISTS (
+      SELECT 1 FROM latest_versions lv
+      WHERE lv.program_id = p.id
+        AND lv.archived = false
+        AND (
+          lv.created_by = ${CREATED_BY}
+          OR (lv.created_by IS NULL
+            AND lv.created_at >= ${CLUSTER1_START}::timestamptz
+            AND lv.created_at <= ${CLUSTER1_END}::timestamptz)
+        )
+    )
     RETURNING id
   `;
   console.log(`Deleted ${deletedPrograms.length} programs\n`);
@@ -167,15 +229,21 @@ const run = async () => {
   `;
   const [remainingPrograms] = await query<{ count: string }>`
     WITH latest_versions AS (
-      SELECT DISTINCT ON (program_id) *
+      SELECT DISTINCT ON (program_id) program_id, created_by, created_at, archived
       FROM program_versions
       ORDER BY program_id, created_at DESC
     )
     SELECT COUNT(*) as count FROM programs p
     JOIN latest_versions lv ON lv.program_id = p.id
-    WHERE lv.created_by = ${CREATED_BY} AND lv.archived = false
+    WHERE lv.archived = false
+      AND (
+        lv.created_by = ${CREATED_BY}
+        OR (lv.created_by IS NULL
+          AND lv.created_at >= ${CLUSTER1_START}::timestamptz
+          AND lv.created_at <= ${CLUSTER1_END}::timestamptz)
+      )
   `;
-  console.log(`\nRemaining items by ${CREATED_BY} (have other versions/content):`);
+  console.log(`\nRemaining items by ${CREATED_BY} or NULL created_by in Cluster 1:`);
   console.log(`  - ${remainingSongs.count} songs`);
   console.log(`  - ${remainingPrograms.count} programs`);
 
