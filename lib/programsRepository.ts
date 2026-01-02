@@ -281,6 +281,8 @@ export type ProgramChangelogVersionRecord = {
   previousLocked: boolean | null;
   archived: boolean;
   previousArchived: boolean | null;
+  elementsReordered: boolean;
+  programsReordered: boolean;
   createdBy: string | null;
   createdAt: string;
 };
@@ -299,6 +301,8 @@ export const listProgramVersionsForChangelog = async ({ programId, username, lim
         v.id,
         v.program_id,
         v.title,
+        v.element_ids,
+        v.program_ids,
         coalesce(array_length(v.element_ids, 1), 0) as element_count,
         coalesce(array_length(v.program_ids, 1), 0) as program_count,
         v.video_url,
@@ -310,6 +314,8 @@ export const listProgramVersionsForChangelog = async ({ programId, username, lim
         v.created_by,
         v.created_at,
         lag(v.title) over (partition by v.program_id order by v.created_at) as prev_title,
+        lag(v.element_ids) over (partition by v.program_id order by v.created_at) as prev_element_ids,
+        lag(v.program_ids) over (partition by v.program_id order by v.created_at) as prev_program_ids,
         lag(coalesce(array_length(v.element_ids, 1), 0)) over (partition by v.program_id order by v.created_at) as prev_element_count,
         lag(coalesce(array_length(v.program_ids, 1), 0)) over (partition by v.program_id order by v.created_at) as prev_program_count,
         lag(v.video_url) over (partition by v.program_id order by v.created_at) as prev_video_url,
@@ -343,6 +349,8 @@ export const listProgramVersionsForChangelog = async ({ programId, username, lim
       vp.prev_locked as "previousLocked",
       vp.archived,
       vp.prev_archived as "previousArchived",
+      (vp.element_ids != vp.prev_element_ids and vp.element_count = vp.prev_element_count and (select array_agg(x order by x) from unnest(vp.element_ids) x) = (select array_agg(x order by x) from unnest(vp.prev_element_ids) x)) as "elementsReordered",
+      (vp.program_ids != vp.prev_program_ids and vp.program_count = vp.prev_program_count and (select array_agg(x order by x) from unnest(vp.program_ids) x) = (select array_agg(x order by x) from unnest(vp.prev_program_ids) x)) as "programsReordered",
       vp.created_by as "createdBy",
       vp.created_at as "createdAt"
     from versions_with_prev vp

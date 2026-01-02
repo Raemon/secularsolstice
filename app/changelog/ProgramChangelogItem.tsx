@@ -43,6 +43,12 @@ const getSettingChanges = (version: ProgramChangelogVersion): SettingChange[] =>
   if (version.archived !== version.previousArchived) {
     changes.push({ field: 'archived', from: String(version.previousArchived), to: String(version.archived) });
   }
+  if (version.elementsReordered) {
+    changes.push({ field: 'reordered', from: '', to: 'elements' });
+  }
+  if (version.programsReordered) {
+    changes.push({ field: 'reordered', from: '', to: 'subprograms' });
+  }
   return changes;
 };
 
@@ -69,6 +75,9 @@ const SettingChangeBadge = ({ change }: { change: SettingChange }) => {
   }
   if (change.field === 'subprogram') {
     return <span className="text-purple-400 text-[11px]">{change.to === 'true' ? '→subprogram' : '→program'}</span>;
+  }
+  if (change.field === 'reordered') {
+    return <span className="text-cyan-400 text-[11px]">reordered</span>;
   }
   return <span className="text-gray-400 text-[11px]">{change.field}: {change.from}→{change.to}</span>;
 };

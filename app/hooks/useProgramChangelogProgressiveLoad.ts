@@ -28,6 +28,8 @@ export type ProgramChangelogVersion = {
   previousLocked: boolean | null;
   archived: boolean;
   previousArchived: boolean | null;
+  elementsReordered: boolean;
+  programsReordered: boolean;
   createdBy: string | null;
   createdAt: string;
 };
