@@ -12,8 +12,8 @@ const query = async <T>(strings: TemplateStringsArray, ...values: unknown[]): Pr
 const CREATED_BY = 'secularsolstice-import';
 
 // Cluster 1: Bulk import on Nov 23, 2025 - 290 versions created in ~1 minute with null created_by
-const CLUSTER1_START = '2025-11-23T22:23:33.163Z';
-const CLUSTER1_END = '2025-11-23T22:24:24.986Z';
+const CLUSTER1_START = '2025-12-22T09:40:25.821Z';
+const CLUSTER1_END = '2025-12-22T09:55:25.821Z';
 
 // Song ID to preserve (exclude from deletion logic)
 const PRESERVE_SONG_ID = '18554efd-f62b-4498-8c38-66b054c20ca9';
@@ -126,24 +126,48 @@ const run = async () => {
   console.log(`Deleted ${deletedAnonSongsInCluster1.length} anonymous bulk import songs from Cluster 1\n`);
 
   // Step 3: Delete programs created by secularsolstice-import or with NULL created_by in Cluster 1
+  // BUT preserve subprograms that are referenced by programs that are NOT being deleted
   const programsToDelete = await query<{ id: string; title: string }>`
     WITH latest_versions AS (
-      SELECT DISTINCT ON (program_id) program_id, created_by, created_at, archived, title
+      SELECT DISTINCT ON (program_id) program_id, created_by, created_at, archived, title, program_ids
       FROM program_versions
       ORDER BY program_id, created_at DESC
+    ),
+    candidates_to_delete AS (
+      SELECT p.id, lv.title
+      FROM programs p
+      JOIN latest_versions lv ON lv.program_id = p.id
+      WHERE lv.archived = false
+        AND (
+          lv.created_by = ${CREATED_BY}
+          OR (lv.created_by IS NULL
+            AND lv.created_at >= ${CLUSTER1_START}::timestamptz
+            AND lv.created_at <= ${CLUSTER1_END}::timestamptz)
+        )
+    ),
+    programs_not_being_deleted AS (
+      SELECT lv.program_id, lv.program_ids
+      FROM latest_versions lv
+      WHERE lv.archived = false
+        AND NOT (
+          lv.created_by = ${CREATED_BY}
+          OR (lv.created_by IS NULL
+            AND lv.created_at >= ${CLUSTER1_START}::timestamptz
+            AND lv.created_at <= ${CLUSTER1_END}::timestamptz)
+        )
+    ),
+    referenced_subprograms AS (
+      SELECT DISTINCT unnest(pnd.program_ids) AS subprogram_id
+      FROM programs_not_being_deleted pnd
     )
-    SELECT p.id, lv.title
-    FROM programs p
-    JOIN latest_versions lv ON lv.program_id = p.id
-    WHERE lv.archived = false
-      AND (
-        lv.created_by = ${CREATED_BY}
-        OR (lv.created_by IS NULL
-          AND lv.created_at >= ${CLUSTER1_START}::timestamptz
-          AND lv.created_at <= ${CLUSTER1_END}::timestamptz)
-      )
+    SELECT ctd.id, ctd.title
+    FROM candidates_to_delete ctd
+    WHERE NOT EXISTS (
+      SELECT 1 FROM referenced_subprograms rs
+      WHERE rs.subprogram_id = ctd.id
+    )
   `;
-  console.log(`Found ${programsToDelete.length} programs by ${CREATED_BY} or NULL created_by in Cluster 1`);
+  console.log(`Found ${programsToDelete.length} programs by ${CREATED_BY} or NULL created_by in Cluster 1 (excluding subprograms of preserved programs)`);
   if (programsToDelete.length > 0) {
     console.log('Programs to delete:');
     programsToDelete.forEach(p => console.log(`  - ${p.title}`));
@@ -151,20 +175,44 @@ const run = async () => {
 
   const deletedPrograms = await query<{ id: string }>`
     WITH latest_versions AS (
-      SELECT DISTINCT ON (program_id) program_id, created_by, created_at, archived
+      SELECT DISTINCT ON (program_id) program_id, created_by, created_at, archived, program_ids
       FROM program_versions
       ORDER BY program_id, created_at DESC
-    )
-    DELETE FROM programs p
-    WHERE EXISTS (
-      SELECT 1 FROM latest_versions lv
-      WHERE lv.program_id = p.id
-        AND lv.archived = false
+    ),
+    candidates_to_delete AS (
+      SELECT p.id
+      FROM programs p
+      JOIN latest_versions lv ON lv.program_id = p.id
+      WHERE lv.archived = false
         AND (
           lv.created_by = ${CREATED_BY}
           OR (lv.created_by IS NULL
             AND lv.created_at >= ${CLUSTER1_START}::timestamptz
             AND lv.created_at <= ${CLUSTER1_END}::timestamptz)
+        )
+    ),
+    programs_not_being_deleted AS (
+      SELECT lv.program_id, lv.program_ids
+      FROM latest_versions lv
+      WHERE lv.archived = false
+        AND NOT (
+          lv.created_by = ${CREATED_BY}
+          OR (lv.created_by IS NULL
+            AND lv.created_at >= ${CLUSTER1_START}::timestamptz
+            AND lv.created_at <= ${CLUSTER1_END}::timestamptz)
+        )
+    ),
+    referenced_subprograms AS (
+      SELECT DISTINCT unnest(pnd.program_ids) AS subprogram_id
+      FROM programs_not_being_deleted pnd
+    )
+    DELETE FROM programs p
+    WHERE EXISTS (
+      SELECT 1 FROM candidates_to_delete ctd
+      WHERE ctd.id = p.id
+        AND NOT EXISTS (
+          SELECT 1 FROM referenced_subprograms rs
+          WHERE rs.subprogram_id = p.id
         )
     )
     RETURNING id
