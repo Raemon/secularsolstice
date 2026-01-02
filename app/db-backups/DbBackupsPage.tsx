@@ -37,12 +37,12 @@ const DbBackupsPage = () => {
     if (!userId) return;
     try {
       const response = await fetch(`/api/db-backup?requestingUserId=${userId}`);
-      if (!response.ok) throw new Error('Failed to fetch backups');
       const data = await response.json();
+      if (!response.ok) throw new Error(data.details || data.error || 'Failed to fetch backups');
       setBackups(data.backups);
     } catch (err) {
       console.error('Error fetching backups:', err);
-      setStatus({ type: 'error', message: 'Failed to load backups' });
+      setStatus({ type: 'error', message: err instanceof Error ? err.message : 'Failed to load backups' });
     } finally {
       setIsLoading(false);
     }
