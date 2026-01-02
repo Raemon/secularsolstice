@@ -43,6 +43,7 @@ next-env.d.ts
 SecularSolstice.github.io-master/*
 songs/*
 .env*.local
+.secular-solstice-cache/
 
 tmp/*
 

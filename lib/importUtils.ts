@@ -104,9 +104,25 @@ const ensureSong = async (title: string, tags: string[]) => {
   }
 };
 
-const getFileCreatedAt = async (filePath: string) => {
+// Default: use file mtime (works for local files, but not for git repos downloaded as ZIP)
+const getFileCreatedAtDefault = async (filePath: string) => {
   const stats = await fs.stat(filePath);
   return stats.mtime.toISOString();
+};
+
+// Module-level override for git-based timestamp lookup
+let getFileCreatedAtOverride: ((filePath: string) => Promise<string | null>) | null = null;
+
+export const setFileCreatedAtFn = (fn: ((filePath: string) => Promise<string | null>) | null) => {
+  getFileCreatedAtOverride = fn;
+};
+
+const getFileCreatedAt = async (filePath: string): Promise<string> => {
+  if (getFileCreatedAtOverride) {
+    const result = await getFileCreatedAtOverride(filePath);
+    if (result) return result;
+  }
+  return getFileCreatedAtDefault(filePath);
 };
 
 const timestampsMatch = (existing: string, candidate: string) => new Date(existing).toISOString() === new Date(candidate).toISOString();
@@ -500,7 +516,7 @@ const resolveProgramItems = async (
           }
           programIds.push(existingSubProgram.id);
         } else if (!dryRun) {
-          const subProgram = await createProgram(currentSectionName, IMPORT_USER, true, true);
+          const subProgram = await createProgram(currentSectionName, IMPORT_USER, true, true, undefined, new Date());
           await updateProgramElementIds(subProgram.id, currentSectionItems, [], IMPORT_USER);
           programIds.push(subProgram.id);
         } else {
@@ -510,7 +526,7 @@ const resolveProgramItems = async (
       } else {
         // Create new subprogram (or placeholder in dryRun)
         if (!dryRun) {
-          const subProgram = await createProgram(currentSectionName, IMPORT_USER, true, true);
+          const subProgram = await createProgram(currentSectionName, IMPORT_USER, true, true, undefined, new Date());
           await updateProgramElementIds(subProgram.id, currentSectionItems, [], IMPORT_USER);
           programIds.push(subProgram.id);
         } else {
@@ -636,7 +652,8 @@ export const importProgramFile = async (
       return result;
     }
 
-    const program = await createProgram(programTitle, IMPORT_USER, false, true);
+    const fileCreatedAt = await getFileCreatedAt(filePath);
+    const program = await createProgram(programTitle, IMPORT_USER, false, true, fileCreatedAt, new Date());
     await updateProgramElementIds(program.id, elementIds, programIds, IMPORT_USER);
     const url = `/programs/${program.id}`;
     const result: ProgramImportResult = {

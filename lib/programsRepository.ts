@@ -55,23 +55,29 @@ const mapProgramRow = (row: ProgramRow): ProgramRecord => ({
 export const listPrograms = async (): Promise<ProgramRecord[]> => {
   const rows = await sql`
     with latest_versions as (${latestProgramVersionCte()})
-    select p.id, lv.title, lv.element_ids, lv.program_ids, lv.created_by, lv.created_at, lv.archived, lv.is_subprogram, lv.video_url, lv.print_program_foreword, lv.print_program_epitaph, lv.locked
+    select p.id, lv.title, lv.element_ids, lv.program_ids, lv.created_by, p.created_at, lv.archived, lv.is_subprogram, lv.video_url, lv.print_program_foreword, lv.print_program_epitaph, lv.locked
     from programs p
     join latest_versions lv on lv.program_id = p.id
     where lv.archived = false
-    order by lv.created_at desc
+    order by p.created_at desc
   `;
   return (rows as ProgramRow[]).map(mapProgramRow);
 };
 
-export const createProgram = async (title: string, createdBy?: string | null, isSubprogram?: boolean, locked?: boolean, createdAt?: string): Promise<ProgramRecord> => {
+export const createProgram = async (title: string, createdBy?: string | null, isSubprogram?: boolean, locked?: boolean, createdAt?: string, dbCreatedAt?: Date): Promise<ProgramRecord> => {
   // Insert into programs table (minimal data)
   const programRows = createdAt
-    ? await sql`
-        insert into programs (created_by, created_at)
-        values (${createdBy ?? null}, ${createdAt})
-        returning id, created_at
-      `
+    ? dbCreatedAt
+      ? await sql`
+          insert into programs (created_by, created_at, db_created_at)
+          values (${createdBy ?? null}, ${createdAt}, ${dbCreatedAt})
+          returning id, created_at
+        `
+      : await sql`
+          insert into programs (created_by, created_at)
+          values (${createdBy ?? null}, ${createdAt})
+          returning id, created_at
+        `
     : await sql`
         insert into programs (created_by)
         values (${createdBy ?? null})
@@ -81,10 +87,17 @@ export const createProgram = async (title: string, createdBy?: string | null, is
   const programCreatedAt = (programRows as { id: string; created_at: string }[])[0].created_at;
   // Insert initial program_version
   const versionCreatedAt = createdAt ?? programCreatedAt;
-  await sql`
-    insert into program_versions (program_id, title, element_ids, program_ids, archived, is_subprogram, locked, created_at, created_by)
-    values (${programId}, ${title}, ${[] as string[]}, ${[] as string[]}, false, ${isSubprogram ?? false}, ${locked ?? false}, ${versionCreatedAt}, ${createdBy ?? null})
-  `;
+  if (dbCreatedAt) {
+    await sql`
+      insert into program_versions (program_id, title, element_ids, program_ids, archived, is_subprogram, locked, created_at, created_by, db_created_at)
+      values (${programId}, ${title}, ${[] as string[]}, ${[] as string[]}, false, ${isSubprogram ?? false}, ${locked ?? false}, ${versionCreatedAt}, ${createdBy ?? null}, ${dbCreatedAt})
+    `;
+  } else {
+    await sql`
+      insert into program_versions (program_id, title, element_ids, program_ids, archived, is_subprogram, locked, created_at, created_by)
+      values (${programId}, ${title}, ${[] as string[]}, ${[] as string[]}, false, ${isSubprogram ?? false}, ${locked ?? false}, ${versionCreatedAt}, ${createdBy ?? null})
+    `;
+  }
   // Return the program with its version data
   return {
     id: programId,
@@ -105,7 +118,7 @@ export const createProgram = async (title: string, createdBy?: string | null, is
 export const getProgramById = async (programId: string): Promise<ProgramRecord | null> => {
   const rows = await sql`
     with latest_versions as (${latestProgramVersionCte()})
-    select p.id, lv.title, lv.element_ids, lv.program_ids, lv.created_by, lv.created_at, lv.archived, lv.is_subprogram, lv.video_url, lv.print_program_foreword, lv.print_program_epitaph, lv.locked
+    select p.id, lv.title, lv.element_ids, lv.program_ids, lv.created_by, p.created_at, lv.archived, lv.is_subprogram, lv.video_url, lv.print_program_foreword, lv.print_program_epitaph, lv.locked
     from programs p
     join latest_versions lv on lv.program_id = p.id
     where p.id = ${programId} and lv.archived = false
@@ -120,7 +133,7 @@ export const getProgramById = async (programId: string): Promise<ProgramRecord |
 export const getProgramByTitle = async (title: string): Promise<ProgramRecord | null> => {
   const rows = await sql`
     with latest_versions as (${latestProgramVersionCte()})
-    select p.id, lv.title, lv.element_ids, lv.program_ids, lv.created_by, lv.created_at, lv.archived, lv.is_subprogram, lv.video_url, lv.print_program_foreword, lv.print_program_epitaph, lv.locked
+    select p.id, lv.title, lv.element_ids, lv.program_ids, lv.created_by, p.created_at, lv.archived, lv.is_subprogram, lv.video_url, lv.print_program_foreword, lv.print_program_epitaph, lv.locked
     from programs p
     join latest_versions lv on lv.program_id = p.id
     where LOWER(lv.title) = LOWER(${title}) and lv.archived = false
@@ -188,7 +201,7 @@ export const getProgramsContainingVersion = async (versionId: string): Promise<P
   const rows = await sql`
     with latest_versions as (${latestProgramVersionCte()}),
     programs_with_versions as (
-      select p.id, lv.title, lv.element_ids, lv.program_ids, lv.created_by, lv.created_at, lv.archived, lv.is_subprogram, lv.video_url, lv.print_program_foreword, lv.print_program_epitaph, lv.locked
+      select p.id, lv.title, lv.element_ids, lv.program_ids, lv.created_by, p.created_at, lv.archived, lv.is_subprogram, lv.video_url, lv.print_program_foreword, lv.print_program_epitaph, lv.locked
       from programs p
       join latest_versions lv on lv.program_id = p.id
       where lv.archived = false

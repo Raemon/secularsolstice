@@ -32,6 +32,7 @@ create table if not exists program_versions (
   locked boolean not null default false,
   created_at timestamptz not null default now(),
   created_by text,
+  db_created_at timestamptz not null default now(),
   constraint program_versions_pkey PRIMARY KEY (id),
   constraint program_versions_program_id_fkey FOREIGN KEY (program_id) REFERENCES programs(id) ON DELETE CASCADE
 );
@@ -55,6 +56,7 @@ create table if not exists programs (
   print_program_epitaph text,
   is_subprogram boolean not null default false,
   locked boolean not null default false,
+  db_created_at timestamptz not null default now(),
   constraint programs_pkey PRIMARY KEY (id)
 );
 
@@ -82,12 +84,12 @@ create table if not exists song_versions (
   bpm integer,
   archived boolean not null default false,
   created_by text,
+  rendered_content jsonb,
   transpose integer default 0,
   slide_credits text,
   program_credits text,
   slides_movie_url text,
   slide_movie_start integer,
-  rendered_content jsonb,
   blob_url text,
   db_created_at timestamptz not null default now(),
   constraint song_versions_next_version_id_fkey FOREIGN KEY (next_version_id) REFERENCES song_versions(id) ON DELETE SET NULL,
