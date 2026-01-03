@@ -110,28 +110,6 @@ const ChordmarkPlayer = ({
         ) : (
           <span className="text-gray-500">BPM: {bpm}</span>
         )}
-        <div className="items-center gap-1 hidden lg:flex">
-          <span className="text-gray-500">Start line:</span>
-          <select
-            value={String(startLine)}
-            onChange={(e) => {
-              const newLine = Number(e.target.value);
-              if (onStartLineChange) {
-                onStartLineChange(newLine);
-              } else {
-                setInternalStartLine(newLine);
-              }
-            }}
-            className="p-1 rounded-sm border border-gray-500 text-gray-200 bg-black max-w-xs"
-            disabled={lineOptions.length === 0}
-          >
-            {lineOptions.map(option => (
-              <option key={option.value} value={String(option.value)}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
         <div className="flex items-center gap-1">
           <span className="text-gray-500">Tick:</span>
           <select
