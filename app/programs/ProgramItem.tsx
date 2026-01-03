@@ -16,13 +16,9 @@ type ProgramItemProps = {
 };
 
 const ProgramItem = ({program, linkPrefix = '/programs'}: ProgramItemProps) => {
-  const firstVersionId = program.elementIds[0];
-  const href = firstVersionId
-    ? `${linkPrefix}/${program.id}/${firstVersionId}`
-    : `${linkPrefix}/${program.id}/script`;
   return (
     <div className="flex items-center bg-black/30 gap-3 px-2 py-2 border-b border-gray-800">
-      <Link href={href} className="flex-1 text-2xl font-georgia text-white hover:text-gray-300">
+      <Link href={`/programs/${program.id}/script`} className="flex-1 text-2xl font-georgia text-white hover:text-gray-300">
         {program.title}
       </Link>
       {program.createdAt && (

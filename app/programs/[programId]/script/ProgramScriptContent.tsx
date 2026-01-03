@@ -168,7 +168,7 @@ const ProgramScriptContent = ({ programId, contentEntries, tocEntries }: Program
             return (
               <h1
                 key={`program-${entry.program.id}`}
-                className="text-5xl mt-8 mb-4 font-semibold print-top-level-program-title"
+                className="text-5xl mt-8 mb-4 print-top-level-program-title"
                 id={`program-${entry.program.id}`}
               >
                 <Link href={`/programs/${entry.program.id}`} className="hover:underline">
@@ -182,7 +182,7 @@ const ProgramScriptContent = ({ programId, contentEntries, tocEntries }: Program
             return (
               <h2
                 key={`heading-${entry.program.id}`}
-                className="text-4xl mt-8 mb-4 font-semibold print-subprogram-title"
+                className="text-[42px] underline mt-8 mb-4 print-subprogram-title"
                 id={`program-${entry.program.id}`}
               >
                 <Link href={`/programs/${entry.program.id}`} className="hover:underline">
@@ -202,7 +202,7 @@ const ProgramScriptContent = ({ programId, contentEntries, tocEntries }: Program
                 id={`song-${version.id}`}
               >
                 <div className="print-song-content">
-                  <h3 className="text-xl mb-2 font-semibold">
+                  <h3 className="text-3xl mb-2">
                     <Link href={`/programs/${programId}/${version.id}`} className="hover:underline">
                       {version.songTitle}
                     </Link>
