@@ -39,18 +39,15 @@ const Header = () => {
   const isBlogPage = pathname?.includes('/blog');
   const isChangelogPage = pathname?.includes('/changelog');
   const isAdminPage = pathname?.includes('/admin');
-  const isScriptPage = pathname?.match(/\/programs\/[^/]+\/script/);
 
-  const headerClasses = isScriptPage
-    ? "px-4 pt-3 pb-2 flex flex-wrap items-center justify-between print:hidden bg-white"
-    : "px-4 pt-3 pb-2 flex flex-wrap items-center justify-between print:hidden ";
+  const headerClasses = "px-4 pt-3 pb-2 flex flex-wrap items-center justify-between print:hidden";
 
-  const activeTextClass = isScriptPage ? 'text-black' : 'text-white';
-  const inactiveTextClass = isScriptPage ? 'text-gray-600 hover:text-black' : 'text-gray-400 hover:text-white';
+  const activeTextClass = 'text-white';
+  const inactiveTextClass = 'text-gray-400 hover:text-white';
 
   return (
     <header className={headerClasses}>
-      <h1 className={`font-georgia text-2xl text-nowrap mr-auto lg:mr-0 ${isScriptPage ? 'text-black' : ''}`}><Link href="/">Secular Solstice</Link></h1>
+      <h1 className="font-georgia text-2xl text-nowrap mr-auto lg:mr-0"><Link href="/">Secular Solstice</Link></h1>
       <nav className="flex gap-3 lg:gap-6 items-center w-full lg:w-auto justify-between lg:ml-auto lg:justify-start order-2 lg:order-1 px-1 lg:pr-8 mt-3 sm:mt-0">
         <Link href="/songs" className={`hover:underline text-sm ${isSongsPage ? activeTextClass : inactiveTextClass}`}>Songs/Speeches</Link>
         <Link href="/programs" className={`hover:underline text-sm ${isProgramsPage ? activeTextClass : inactiveTextClass}`}>Programs</Link>
@@ -86,7 +83,7 @@ const Header = () => {
         )}
       </nav>
       <div className="order-1 lg:order-3">
-        <UsernameInput lightMode={!!isScriptPage} />
+        <UsernameInput />
       </div>
     </header>
   );

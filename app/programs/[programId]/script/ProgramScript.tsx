@@ -241,7 +241,7 @@ const ProgramScript = async ({ programId }: ProgramScriptProps) => {
     data = await loadProgramScriptData(programId);
   } catch (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center print:bg-white print:text-black">
+      <div className="min-h-screen bg-[#11101b] text-gray-100 flex items-center justify-center print:bg-white print:text-black">
         <div>Error: {error instanceof Error ? error.message : 'Failed to load program'}</div>
       </div>
     );
@@ -255,7 +255,7 @@ const ProgramScript = async ({ programId }: ProgramScriptProps) => {
 
   if (!selectedProgram) {
     return (
-      <div className="min-h-screen flex items-center justify-center print:bg-white print:text-black">
+      <div className="min-h-screen bg-[#11101b] text-gray-100 flex items-center justify-center print:bg-white print:text-black">
         <div>Program not found</div>
       </div>
     );
@@ -265,7 +265,7 @@ const ProgramScript = async ({ programId }: ProgramScriptProps) => {
   const contentEntries = buildProgramEntries(selectedProgram, versions, programMap, true);
 
   return (
-    <div className="min-h-screen flex mx-auto justify-center print:block print:bg-white print:text-black">
+    <div className="min-h-screen bg-[#11101b] text-gray-100 flex mx-auto justify-center print:block print:bg-white print:text-black">
       <style dangerouslySetInnerHTML={{ __html: CHORDMARK_STYLES }} />
       <ScrollHandler />
       <ProgramScriptContent 

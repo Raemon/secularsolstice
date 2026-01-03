@@ -146,13 +146,13 @@ const ProgramScriptContent = ({ programId, contentEntries, tocEntries }: Program
           <ProgramViews programId={programId} currentView="script" />
         </div>
         <div className="flex gap-2 mb-4 text-sm print:hidden mt-4 print:hidden">
-          <button onClick={() => setShowSongs(!showSongs)} className={`px-2 py-0.5 border border-black rounded-sm ${showSongs ? 'opacity-100' : 'opacity-50'}`}>
+          <button onClick={() => setShowSongs(!showSongs)} className={`px-2 py-0.5 border border-gray-500 rounded-sm ${showSongs ? 'opacity-100' : 'opacity-50'}`}>
             Songs
           </button>
-          <button onClick={() => setShowSpeeches(!showSpeeches)} className={`px-2 py-0.5 border border-black rounded-sm ${showSpeeches ? 'opacity-100' : 'opacity-50'}`}>
+          <button onClick={() => setShowSpeeches(!showSpeeches)} className={`px-2 py-0.5 border border-gray-500 rounded-sm ${showSpeeches ? 'opacity-100' : 'opacity-50'}`}>
             Speeches
           </button>
-          <button onClick={() => setShowActivities(!showActivities)} className={`px-2 py-0.5 border border-black rounded-sm ${showActivities ? 'opacity-100' : 'opacity-50'}`}>
+          <button onClick={() => setShowActivities(!showActivities)} className={`px-2 py-0.5 border border-gray-500 rounded-sm ${showActivities ? 'opacity-100' : 'opacity-50'}`}>
             Activities
           </button>
         </div>
@@ -203,7 +203,7 @@ const ProgramScriptContent = ({ programId, contentEntries, tocEntries }: Program
               >
                 <div className="print-song-content">
                   <h3 className="text-xl mb-2 font-semibold">
-                    <Link href={`/programs/${programId}?songId=${version.id}`} className="hover:underline">
+                    <Link href={`/programs/${programId}/${version.id}`} className="hover:underline">
                       {version.songTitle}
                     </Link>
                   </h3>
