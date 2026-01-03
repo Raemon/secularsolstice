@@ -5,6 +5,7 @@ import RecentSongs from './RecentSongs';
 import RecentPrograms from './RecentPrograms';
 import Link from 'next/link';
 import { SolsticeSeasonBanner } from './solstice-banner';
+import useIsMobile from './hooks/useIsMobile';
 
 const HomePage = () => {
   const [content, setContent] = useState<string>('');
@@ -19,10 +20,12 @@ const HomePage = () => {
       .then(text => setFaqContent(text));
   }, []);
 
+  const isMobile = useIsMobile()
+
   return (
     <>
     <div className="bg-black fixed left-0 top-0 h-[100vh] w-[100vw] z-[-3]"/>
-    <div className="z-[0] flex flex-col items-center w-[50vw]">
+    <div className="z-[0] flex flex-col items-center p-10 xl:p-0 lg:w-[50vw]">
       <div className="max-w-xl pt-8 mx-auto ">
         <style>
           {`
@@ -47,7 +50,7 @@ const HomePage = () => {
         </div>
       </div>
     </div>
-    <SolsticeSeasonBanner />
+    {!isMobile && <SolsticeSeasonBanner />}
   </>
   );
 };

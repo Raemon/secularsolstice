@@ -76,7 +76,7 @@ export const useGlobeReadyEffects = (
           checkAllTexturesLoaded();
         },
         undefined,
-        (error: Error) => {
+        (error: unknown) => {
           console.error(`Failed to load texture ${url}:`, error);
           loadedCount++;
           checkAllTexturesLoaded();

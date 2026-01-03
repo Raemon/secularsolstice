@@ -106,7 +106,7 @@ function SolsticeSeasonBannerInner() {
         className="absolute top-0 right-0 h-full z-[1] pointer-events-none transition-opacity duration-300"
         style={{
           width: '50vw',
-          background: 'linear-gradient(to left, transparent 80%, black 100%)',
+          background: 'linear-gradient(to left, transparent 50%, black 100%)',
         }}
       />
       
@@ -119,7 +119,7 @@ function SolsticeSeasonBannerInner() {
       {/* Background */}
       <div 
         className="absolute top-0 right-0 w-[50vw] h-full pointer-events-none"
-        style={{ background: 'linear-gradient(to left, black 50%, transparent 100%)' }}
+        style={{ background: 'linear-gradient(to left, black 50%, transparent 70%)' }}
       />
       
       {/* Globe container */}
