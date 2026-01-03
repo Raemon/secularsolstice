@@ -56,7 +56,7 @@ const Header = () => {
         <Link href="/programs" className={`hover:underline text-sm ${isProgramsPage ? activeTextClass : inactiveTextClass}`}>Programs</Link>
         <Link href="/blog" className={`hover:underline text-sm ${isBlogPage ? activeTextClass : inactiveTextClass}`}>Blog</Link>
 
-        <div className="relative" ref={poweruserRef}>
+        <div className="relative -mt-[2px]" ref={poweruserRef}>
           <button onClick={() => setPoweruserOpen(!poweruserOpen)} className={`hover:underline text-sm ${inactiveTextClass}`}>Power User ▼</button>
           {poweruserOpen && (
             <div className="absolute bg-black z-10 mt-1 border border-gray-500 shadow-lg min-w-[150px] top-full left-0">
@@ -69,7 +69,7 @@ const Header = () => {
         </div>
 
         {isAdmin && (
-          <div className="relative" ref={adminRef}>
+          <div className="relative -mt-[2px]" ref={adminRef}>
             <button onClick={() => setAdminOpen(!adminOpen)} className={`hover:underline text-sm ${isAdminPage ? activeTextClass : inactiveTextClass}`}>Admin ▼</button>
             {adminOpen && (
               <div className="absolute bg-black z-10 mt-1 border border-gray-500 shadow-lg min-w-[150px] top-full left-0">
