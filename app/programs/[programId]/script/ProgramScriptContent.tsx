@@ -31,6 +31,8 @@ type ProgramScriptContentProps = {
 };
 
 const ProgramScriptContent = ({ programId, contentEntries, tocEntries }: ProgramScriptContentProps) => {
+  const programEntry = contentEntries.find(e => e.type === 'program');
+  const programTitle = programEntry?.program.title ?? '';
   const [showSongs, setShowSongs] = useState(true);
   const [showSpeeches, setShowSpeeches] = useState(true);
   const [showActivities, setShowActivities] = useState(true);
@@ -68,6 +70,16 @@ const ProgramScriptContent = ({ programId, contentEntries, tocEntries }: Program
             size: 8.5in 11in;
             margin: 1in;
           }
+          .print-title-page {
+            min-height: calc(11in - 2in);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            break-after: page;
+            page-break-after: always;
+            margin: 0 !important;
+            padding: 0;
+          }
           .print-toc-container {
             position: static !important;
             max-width: none !important;
@@ -90,15 +102,7 @@ const ProgramScriptContent = ({ programId, contentEntries, tocEntries }: Program
             display: block;
           }
           .print-top-level-program-title {
-            min-height: calc(11in - 2in);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            break-after: page;
-            page-break-after: always;
-            margin: 0 !important;
-            padding: 0;
-            font-size: 4rem;
+            display: none !important;
           }
           .print-subprogram-title {
             min-height: calc(11in - 2in);
@@ -131,6 +135,9 @@ const ProgramScriptContent = ({ programId, contentEntries, tocEntries }: Program
           }
         }
       `}} />
+      <div className="hidden print:block print-title-page font-georgia">
+        <h1 className="text-5xl font-semibold text-center">{programTitle}</h1>
+      </div>
       <div className="max-w-lg p-8 lg:fixed lg:top-[50px] lg:left-0 lg:max-h-[calc(100vh-50px)] lg:overflow-y-auto print-toc-container">
         <div className="print:hidden">
           <ProgramViews programId={programId} currentView="script" />
