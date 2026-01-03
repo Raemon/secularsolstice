@@ -275,7 +275,7 @@ const ChordmarkEditor = ({ value, onChange, showSyntaxHelp = false, bpm, autosav
           </div>
         </div>
 
-      <div className="flex gap-2 max-w-[calc(100vw-16px)] overflow-x-scroll">
+      <div className="flex gap-2 max-w-[calc(100vw-16px)] overflow-x-scroll scrollbar-hide">
         <div className="w-[300px] flex-none grow-1 shrink-0 sm:w-[calc(50vw-8px)]">
           <div className="flex flex-1 border relative" style={{ maxWidth: '800px' }}>
             <div className="flex flex-col bg-gray-900 border-r border-gray-700">

@@ -664,8 +664,8 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
   return (
     <div className="px-2 py-1 sm:p-4">
       <div className="flex flex-col gap-4">
-        <div className={`flex ${selectedVersion || isEditingProgram ? '' : 'mx-auto'} gap-4 overflow-x-scroll w-full sm:w-auto sm:overflow-x-visible`}>
-          <div className={`overflow-x-scroll sm:overflow-x-visible ${selectedVersion || isEditingProgram ? 'hidden xl:block' : ''} w-auto`}>
+        <div className={`flex ${selectedVersion || isEditingProgram ? '' : 'mx-auto'} gap-4 overflow-x-scroll scrollbar-hide w-full sm:w-auto sm:overflow-x-visible`}>
+          <div className={`overflow-x-scroll scrollbar-hide sm:overflow-x-visible ${selectedVersion || isEditingProgram ? 'hidden xl:block' : ''} w-auto`}>
             {parentProgram && (
               <div className="text-sm text-gray-400 mb-4">
                 Part of <Link href={`/programs/${parentProgram.id}`} className="text-white hover:underline">{parentProgram.title}</Link>
