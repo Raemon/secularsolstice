@@ -5,7 +5,8 @@ import { getProgramById, latestProgramVersionCte } from '@/lib/programsRepositor
 import { CHORDMARK_STYLES } from '@/app/chordmark-converter/chordmarkStyles';
 import { TableOfContents } from './TableOfContents';
 import { ScrollHandler } from './ScrollHandler';
-import ScriptSongRenderer from './ScriptSongRenderer';
+import VersionContent from '@/app/songs/VersionContent';
+import type { SongVersion } from '@/app/songs/types';
 
 type Program = {
   id: string;
@@ -15,16 +16,8 @@ type Program = {
   isSubprogram: boolean;
 };
 
-type SongVersion = {
-  id: string;
-  songId: string;
+type ScriptSongVersion = SongVersion & {
   songTitle: string;
-  label: string;
-  content: string | null;
-  renderedContent: {
-    htmlLyricsOnly?: string;
-    plainText?: string;
-  } | null;
   tags?: string[];
 };
 
@@ -105,8 +98,23 @@ async function loadProgramScriptData(programId: string) {
     song_title: string;
     label: string;
     content: string | null;
-    rendered_content: { htmlLyricsOnly?: string; plainText?: string } | null;
+    rendered_content: SongVersion['renderedContent'];
     tags: string[] | null;
+    audio_url: string | null;
+    slides_movie_url: string | null;
+    slide_movie_start: number | null;
+    previous_version_id: string | null;
+    next_version_id: string | null;
+    original_version_id: string | null;
+    bpm: number | null;
+    transpose: number | null;
+    archived: boolean;
+    created_at: string;
+    db_created_at: string;
+    created_by: string | null;
+    slide_credits: string | null;
+    program_credits: string | null;
+    blob_url: string | null;
   };
   
   const versions = await sql`
@@ -117,13 +125,28 @@ async function loadProgramScriptData(programId: string) {
       v.label,
       v.content,
       v.rendered_content,
-      s.tags
+      s.tags,
+      v.audio_url,
+      v.slides_movie_url,
+      v.slide_movie_start,
+      v.previous_version_id,
+      v.next_version_id,
+      v.original_version_id,
+      v.bpm,
+      v.transpose,
+      v.archived,
+      v.created_at,
+      v.db_created_at,
+      v.created_by,
+      v.slide_credits,
+      v.program_credits,
+      v.blob_url
     from song_versions v
     join songs s on v.song_id = s.id
     where v.id = ANY(${versionIds})
   ` as VersionRow[];
   
-  const versionsMap: Record<string, SongVersion> = {};
+  const versionsMap: Record<string, ScriptSongVersion> = {};
   versions.forEach((v) => {
     versionsMap[v.id] = {
       id: v.id,
@@ -133,6 +156,21 @@ async function loadProgramScriptData(programId: string) {
       content: v.content,
       renderedContent: v.rendered_content,
       tags: v.tags || [],
+      audioUrl: v.audio_url,
+      slidesMovieUrl: v.slides_movie_url,
+      slideMovieStart: v.slide_movie_start,
+      previousVersionId: v.previous_version_id,
+      nextVersionId: v.next_version_id,
+      originalVersionId: v.original_version_id,
+      bpm: v.bpm,
+      transpose: v.transpose,
+      archived: v.archived,
+      createdAt: v.created_at,
+      dbCreatedAt: v.db_created_at,
+      createdBy: v.created_by,
+      slideCredits: v.slide_credits,
+      programCredits: v.program_credits,
+      blobUrl: v.blob_url,
     };
   });
   
@@ -152,11 +190,11 @@ async function loadProgramScriptData(programId: string) {
 type Entry = 
   | { type: 'program'; program: Program; level: number }
   | { type: 'programHeading'; program: Program; level: number }
-  | { type: 'version'; version: SongVersion; level: number };
+  | { type: 'version'; version: ScriptSongVersion; level: number };
 
 function buildProgramEntries(
   selectedProgram: Program, 
-  versions: Record<string, SongVersion>,
+  versions: Record<string, ScriptSongVersion>,
   programMap: Record<string, Program>,
   includeTopLevel: boolean
 ): Entry[] {
@@ -236,7 +274,7 @@ const ProgramScript = async ({ programId }: ProgramScriptProps) => {
           <TableOfContents entries={tocEntries} programId={selectedProgram.id} />
         )}
       </div>
-      <div className="max-w-3xl p-8 font-georgia print:max-w-none print:w-full">
+      <div className="max-w-3xl p-8 font-georgia print:max-w-none print:w-full flex flex-col gap-8">
         {contentEntries.map((entry) => {
           if (entry.type === 'programHeading') {
             return (
@@ -255,8 +293,6 @@ const ProgramScript = async ({ programId }: ProgramScriptProps) => {
 
           if (entry.type === 'version') {
             const { version } = entry;
-            const isTextOrSpeech = version.tags?.some((tag: string) => ['text', 'speech'].includes(tag));
-            const content = version.content || '';
             
             return (
               <div 
@@ -271,11 +307,7 @@ const ProgramScript = async ({ programId }: ProgramScriptProps) => {
                   </Link>
                 </h3>
                 
-                {content ? (
-                  <ScriptSongRenderer content={content} />
-                ) : isTextOrSpeech ? (
-                  <div className="whitespace-pre-wrap">{content}</div>
-                ) : null}
+                <VersionContent version={version} print={true} />
               </div>
             );
           }
