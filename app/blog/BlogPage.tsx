@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import BlogPostPreview from './BlogPostPreview';
+import Tooltip from '../components/Tooltip';
 
 interface BlogPost {
   title: string;
@@ -49,15 +50,19 @@ const BlogPage = () => {
   }
 
   return (
-    <div className="p-8 max-w-3xl mx-auto">
-      <div className="font-georgia text-6xl mt-10 mb-6 text-center">Blog</div>
-      <div className="flex gap-2 mb-16 text-sm justify-center">
-        <button onClick={() => setShowLW(!showLW)} className={`text-black px-2 py-0.5 border border-link rounded-sm text-link hover:bg-link /80 ${showLW ? 'opacity-100' : 'opacity-50'}`}>
+    <div className="max-w-3xl mx-auto">
+      <div className="font-georgia text-5xl mt-10 mb-6 text-center">Blog</div>
+      <div className="flex gap-2 mt-12 mb-16 text-sm justify-center">
+        <Tooltip content="Show LessWrong posts" placement="bottom">
+          <button onClick={() => setShowLW(!showLW)} className={`text-black px-2 py-0.5 border border-white rounded-sm text-white hover:text-white hover:bg-link/80 ${showLW ? 'opacity-100' : 'opacity-50'}`}>
           LW {showLW ? '✓' : '○'}
         </button>
+        </Tooltip>
+        <Tooltip content="Show SecularSolstice.com posts" placement="bottom">
         <button onClick={() => setShowSS(!showSS)} className={`text-black px-2 py-0.5 border border-gray-200 rounded-sm text-gray-200 ${showSS ? 'opacity-100' : 'opacity-50'}`}>
-          SecularSolstice {showSS ? '✓' : '○'}
-        </button>
+            SecularSolstice {showSS ? '✓' : '○'}
+          </button>
+        </Tooltip>
       </div>
       {filteredPosts.length === 0 ? (
         <div className="text-gray-400">No posts found</div>

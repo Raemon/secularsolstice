@@ -53,8 +53,6 @@ const Comments = ({ songId, currentVersionId }: { songId: string; currentVersion
 
   return (
     <div className="mt-4 pt-4 border-t border-gray-200">
-      <h3 className="text-xs text-gray-400 mb-3">Comments</h3>
-      
       <CommentBox currentVersionId={currentVersionId} onCommentPosted={handleCommentPosted} />
 
       {/* Comments list */}
@@ -95,4 +93,3 @@ const Comments = ({ songId, currentVersionId }: { songId: string; currentVersion
 };
 
 export default Comments;
-

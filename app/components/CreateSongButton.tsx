@@ -39,26 +39,30 @@ const CreateSongButton = ({ onSongCreated, onError, defaultTags, buttonText = '+
         {buttonText}
       </button>
       {isCreatingSong && (
-        <div className="mb-3">
-          <div className="flex gap-2 items-center">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => { setIsCreatingSong(false); setNewSongTitle(''); resetError(); }}>
+          <div className="p-4 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-lg font-semibold mb-3">Create New {buttonText.replace('+ ', '')}</h2>
             <input
               type="text"
               value={newSongTitle}
               onChange={(e) => { setNewSongTitle(e.target.value); resetError(); }}
-              placeholder={`${buttonText} title`}
-              className="flex-1 px-2 py-1 text-sm bg-black border border-gray-300"
+              placeholder={`${buttonText.replace('+ ', '')} title`}
+              className="text-sm px-2 py-1 w-full mb-3"
               onKeyDown={(e) => e.key === 'Enter' && handleCreateSong()}
+              autoFocus
             />
-            <button onClick={handleCreateSong} disabled={isSubmittingSong} className="text-xs px-2 py-1 bg-green-600 text-white disabled:opacity-50">
-              {isSubmittingSong ? '...' : 'Create'}
-            </button>
-            <button onClick={() => { setIsCreatingSong(false); setNewSongTitle(''); resetError(); }} className="text-xs px-2 py-1 text-gray-400">
-              Cancel
-            </button>
+            {createSongError && (
+              <div className="text-red-600 text-xs mb-3">{createSongError}</div>
+            )}
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => { setIsCreatingSong(false); setNewSongTitle(''); resetError(); }} className="text-sm px-3 py-1">
+                Cancel
+              </button>
+              <button onClick={handleCreateSong} disabled={isSubmittingSong} className="text-sm px-3 py-1">
+                {isSubmittingSong ? '...' : 'Create'}
+              </button>
+            </div>
           </div>
-          {createSongError && (
-            <div className="text-red-600 text-xs mt-1">{createSongError}</div>
-          )}
         </div>
       )}
     </>

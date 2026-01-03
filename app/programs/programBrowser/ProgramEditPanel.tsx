@@ -130,7 +130,7 @@ const ProgramEditPanel = ({ programId, onClose, onProgramUpdated }: ProgramEditP
   const fieldsDisabled = isLocked;
 
   return (
-    <div className="md:pl-4 w-full lg:p-20 relative xl:max-w-4xl mx-auto overflow-x-hidden">
+    <div className="md:pl-4 w-full lg:p-20 relative xl:max-w-2xl mx-auto overflow-x-hidden">
       <h2 className="font-georgia sm:-ml-8 text-4xl my-8 sm:mt-0 flex items-center gap-3 text-balance">
         <button onClick={onClose} className="hidden sm:block text-gray-400 hover:text-gray-400">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -143,12 +143,12 @@ const ProgramEditPanel = ({ programId, onClose, onProgramUpdated }: ProgramEditP
       <div className="space-y-4">
         <div className={fieldsDisabled ? 'opacity-50' : ''}>
           <label className="block text-sm mb-1">Title</label>
-          <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} disabled={fieldsDisabled} className="w-full px-2 py-1 border border-gray-300 bg-white text-black disabled:cursor-not-allowed"/>
+          <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} disabled={fieldsDisabled} className="w-full px-2 py-1 border border-gray-300 disabled:cursor-not-allowed"/>
         </div>
         <div className={fieldsDisabled ? 'opacity-50' : ''}>
-          <label className="block text-sm mb-1">Video URL</label>
+          <label className="block text-sm mb-1">Video for Slide Backgrounds</label>
           <div className="flex items-center gap-2">
-            <input type="text" value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} disabled={fieldsDisabled} className="w-full px-2 py-1 border border-gray-300 bg-white text-black disabled:cursor-not-allowed"/>
+            <input type="text" value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} disabled={fieldsDisabled} className="w-full px-2 py-1 border border-gray-300 disabled:cursor-not-allowed"/>
             {!fieldsDisabled && <VideoFrameUploader programId={programId} onUploadComplete={(uploadedUrl) => {
               if (uploadedUrl) {
                 setVideoUrl(uploadedUrl);
@@ -159,11 +159,11 @@ const ProgramEditPanel = ({ programId, onClose, onProgramUpdated }: ProgramEditP
         </div>
         <div className={fieldsDisabled ? 'opacity-50' : ''}>
           <label className="block text-sm mb-1">Print Program Foreword (appears at the start of page 2)</label>
-          <textarea value={foreword} onChange={(e) => setForeword(e.target.value)} rows={6} disabled={fieldsDisabled} className="w-full px-2 py-1 border border-gray-300 bg-white text-black font-mono text-sm disabled:cursor-not-allowed"/>
+          <textarea value={foreword} onChange={(e) => setForeword(e.target.value)} rows={6} disabled={fieldsDisabled} className="w-full px-2 py-1 border border-gray-300  font-mono text-sm disabled:cursor-not-allowed bg-transparent"/>
         </div>
         <div className={fieldsDisabled ? 'opacity-50' : ''}>
           <label className="block text-sm mb-1">Print Program Epitaph (appears centered on page 4)</label>
-          <textarea value={epitaph} onChange={(e) => setEpitaph(e.target.value)} rows={6} disabled={fieldsDisabled} className="w-full px-2 py-1 border border-gray-300 bg-white text-black font-mono text-sm disabled:cursor-not-allowed"/>
+          <textarea value={epitaph} onChange={(e) => setEpitaph(e.target.value)} rows={6} disabled={fieldsDisabled} className="w-full px-2 py-1 bg-transparent border border-gray-300  font-mono text-sm disabled:cursor-not-allowed"/>
         </div>
         <div className={`flex items-center gap-2 text-sm text-gray-200 ${fieldsDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`} onClick={() => !fieldsDisabled && setIsSubprogram(!isSubprogram)}>
           <input type="checkbox" checked={isSubprogram} disabled={fieldsDisabled} />
@@ -183,7 +183,7 @@ const ProgramEditPanel = ({ programId, onClose, onProgramUpdated }: ProgramEditP
         {isAdmin && (
           <div className={fieldsDisabled ? 'opacity-50' : ''}>
             <label className="block text-sm mb-1">Created By (admin only)</label>
-            <input type="text" value={createdBy} onChange={(e) => setCreatedBy(e.target.value)} disabled={fieldsDisabled} className="w-full px-2 py-1 border border-gray-300 bg-white text-black disabled:cursor-not-allowed"/>
+            <input type="text" value={createdBy} onChange={(e) => setCreatedBy(e.target.value)} disabled={fieldsDisabled} className="w-full px-2 py-1 border border-gray-300  disabled:cursor-not-allowed"/>
           </div>
         )}
         <div className="flex items-center gap-2">

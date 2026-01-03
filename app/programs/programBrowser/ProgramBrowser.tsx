@@ -734,28 +734,29 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
               />
             </div>
           ) : (
-            <div className="flex-3 flex-grow min-w-0">
-              {isLoadingProgramVersions ? (
-                <div className="text-gray-400 text-sm">Loading versions...</div>
-              ) : programVersions.length > 0 ? (
-                <div className="space-y-8">
-                  {programVersions.map((version) => (
-                    <VersionDetailPanel
-                      key={version.id}
-                      songTitle={(versionMap[version.id]?.songTitle || version.label || '').replace(/_/g, ' ')}
-                      version={version}
-                      songId={version.songId}
-                      tags={versionMap[version.id]?.tags || []}
-                      hideComments
-                      hideHistory
-                      hidePastUsage
-                    />
-                  ))}
-                </div>
-              ) : selectedProgramId ? (
-                <div className="text-gray-400 text-sm">No versions in this program.</div>
-              ) : null}
-            </div>
+            null
+            // <div className="flex-3 flex-grow min-w-0">
+            //   {isLoadingProgramVersions ? (
+            //     <div className="text-gray-400 text-sm">Loading versions...</div>
+            //   ) : programVersions.length > 0 ? (
+            //     <div className="space-y-8">
+            //       {programVersions.map((version) => (
+            //         <VersionDetailPanel
+            //           key={version.id}
+            //           songTitle={(versionMap[version.id]?.songTitle || version.label || '').replace(/_/g, ' ')}
+            //           version={version}
+            //           songId={version.songId}
+            //           tags={versionMap[version.id]?.tags || []}
+            //           hideComments
+            //           hideHistory
+            //           hidePastUsage
+            //         />
+            //       ))}
+            //     </div>
+            //   ) : selectedProgramId ? (
+            //     <div className="text-gray-400 text-sm">No versions in this program.</div>
+            //   ) : null}
+            // </div>
           )}
         </div>
       </div>
