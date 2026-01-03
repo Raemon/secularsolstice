@@ -36,7 +36,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${ebGaramond.variable} antialiased bg-[#11101b] text-gray-100 pt-16`}
+        className={`${geistSans.variable} ${geistMono.variable} ${ebGaramond.variable} antialiased bg-[#11101b] text-gray-100 pt-[45px]`}
       >
         <UserProvider>
           <ConditionalHeader />
