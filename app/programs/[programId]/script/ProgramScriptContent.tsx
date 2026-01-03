@@ -115,7 +115,7 @@ const ProgramScriptContent = ({ programId, contentEntries, tocEntries }: Program
             break-after: page;
             page-break-after: always;
             margin: 0 !important;
-            padding: 0;
+            padding-top: .75in
           }
           .print-song-container {
             break-before: page;
@@ -126,7 +126,7 @@ const ProgramScriptContent = ({ programId, contentEntries, tocEntries }: Program
             display: flex;
             flex-direction: column;
             margin: 0 !important;
-            padding: 0;
+            padding-top: .75in
           }
           .print-song-content {
             flex-shrink: 0;

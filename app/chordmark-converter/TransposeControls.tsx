@@ -7,7 +7,7 @@ const TransposeControls = ({value, onChange, className}: {value: number; onChang
   };
 
   return (
-    <div className='flex items-center justify-center gap-1 text-xs text-gray-400 flex-wrap'>
+    <div className='flex items-center print:hidden justify-center gap-1 text-xs text-gray-400 flex-wrap'>
       <span>Transpose</span>
       <div className='flex items-center gap-1'>
         <button
@@ -31,5 +31,3 @@ const TransposeControls = ({value, onChange, className}: {value: number; onChang
 };
 
 export default TransposeControls;
-
-

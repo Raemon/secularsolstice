@@ -19,7 +19,7 @@ const LocalDbIndicator = () => {
   if (!isLocal || !dbId) return null;
 
   return (
-    <div style={{ position: 'fixed', bottom: 8, left: 8, fontSize: 11, color: '#666', zIndex: 9999, fontFamily: 'monospace' }}>
+    <div className="monospace text-xs text-gray-400 fixed bottom-2 left-2 z-50 print:hidden">
       db: {dbId}
     </div>
   );
