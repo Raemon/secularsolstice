@@ -11,6 +11,7 @@ type Program = {
 type SongVersion = {
   id: string;
   songTitle: string;
+  tags?: string[];
 };
 
 type Entry = 

@@ -68,7 +68,10 @@ const ProgramScriptContent = ({ programId, contentEntries, tocEntries }: Program
         @media print {
           @page {
             size: 8.5in 11in;
-            margin: 1in;
+            margin: 0;
+          }
+          body {
+            padding: 1in;
           }
           .print-title-page {
             min-height: calc(11in - 2in);
