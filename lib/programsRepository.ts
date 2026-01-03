@@ -55,11 +55,11 @@ const mapProgramRow = (row: ProgramRow): ProgramRecord => ({
 export const listPrograms = async (): Promise<ProgramRecord[]> => {
   const rows = await sql`
     with latest_versions as (${latestProgramVersionCte()})
-    select p.id, lv.title, lv.element_ids, lv.program_ids, lv.created_by, p.created_at, lv.archived, lv.is_subprogram, lv.video_url, lv.print_program_foreword, lv.print_program_epitaph, lv.locked
+    select p.id, lv.title, lv.element_ids, lv.program_ids, lv.created_by, lv.created_at, lv.archived, lv.is_subprogram, lv.video_url, lv.print_program_foreword, lv.print_program_epitaph, lv.locked
     from programs p
     join latest_versions lv on lv.program_id = p.id
     where lv.archived = false
-    order by p.created_at desc
+    order by lv.created_at desc
   `;
   return (rows as ProgramRow[]).map(mapProgramRow);
 };
