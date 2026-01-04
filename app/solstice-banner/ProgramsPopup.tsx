@@ -87,6 +87,7 @@ export const ProgramsPopup = ({programs, city, screenCoords, onClose}: {
             {program.title}
           </Link>
         ))}
+        <span className="text-[11px] text-gray-500">Click to read</span>
       </div>
     </div>
   );
