@@ -10,6 +10,7 @@ interface BlogPost {
   htmlHighlight?: string;
   source: 'lesswrong' | 'secularsolstice';
   author?: string;
+  karma?: number;
 }
 
 const formatDate = (dateString: string) => {
@@ -31,6 +32,7 @@ const BlogPostPreview = ({ post }: { post: BlogPost }) => {
       <div className="text-xs text-gray-500 mb-2">
         {post.author && <span className="text-white/80">{post.author}</span>}
         <span className="text-gray-400"> · {formatDate(post.pubDate)}</span>
+        {post.karma !== undefined && <span className="text-gray-400"> · {post.karma} karma</span>}
         <span className="ml-2 px-1.5 py-0.5 text-[10px] uppercase" style={{ color: post.source === 'lesswrong' ? '#8fc98f' : '#c98fc9' }}>
           {post.source === 'lesswrong' ? 'LW' : ''}
         </span>

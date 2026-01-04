@@ -274,8 +274,8 @@ const SongsFileList = ({ initialSongs, initialSongId, initialVersionId, initialV
     <div className="min-h-[calc(100vh-250px)] pt-8 relative">
       <div className="flex gap-4 justify-center px-2 md:px-0">
         {/* Song list - on small screens hide when detail is shown, on xl+ always show greyed */}
-        <div ref={listContainerRef} className={`h-[calc(100vh-250px)] px-4 overflow-y-auto shrink-0 max-w-[650px] ${hasDetailPanel ? `hidden xl:block w-[650px] ${isCreatingVersion ? 'opacity-50' : 'opacity-50 hover:opacity-100'}` : 'flex-1 w-full'}`}>
-          <div className="flex gap-2 items-center mb-4 sticky top-0 bg-[#11101b] pb-4 z-10 overflow-hidden">
+        <div ref={listContainerRef} className={`px-4 shrink-0 max-w-[650px] ${hasDetailPanel ? `hidden xl:block w-[650px] ${isCreatingVersion ? 'opacity-50' : 'opacity-50 hover:opacity-100'}` : 'flex-1 w-full'}`}>
+          <div className="flex gap-2 items-center sticky top-0 bg-[#11101b] py-4 z-10 overflow-hidden">
             <SearchInput ref={searchInputRef} searchTerm={searchTerm} onSearchChange={setSearchTerm} />
             <div className="flex gap-0">
               <button
@@ -302,7 +302,7 @@ const SongsFileList = ({ initialSongs, initialSongId, initialVersionId, initialV
 
         {/* Version detail panel */}
         {initialVersionId && !showSongOnly && (
-          <div className="flex-1 h-[calc(100vh-250px)] overflow-y-auto">
+          <div className="flex-1 h-[100vh] sticky top-0 overflow-y-auto">
             {selectedVersion && selectedSong ? (
               <VersionDetailPanel
                 songTitle={selectedSong.title}
@@ -349,7 +349,7 @@ const SongsFileList = ({ initialSongs, initialSongId, initialVersionId, initialV
 
         {/* Song-only view (all versions) */}
         {showSongOnly && selectedSong && !selectedVersion && (
-          <div className="flex-1 h-[calc(100vh-250px)] overflow-y-auto">
+          <div className="flex-1 h-[calc(100vh-250px)] overflow-y-auto sticky top-0">
             <div className="pl-4 w-full lg:p-20 relative max-w-4xl mx-auto">
               <SongInfoHeader
                 songId={selectedSong.id}
