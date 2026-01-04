@@ -90,7 +90,7 @@ export const GlobePopup = ({document, screenCoords, onClose}: {
         popupRef.current = node;
       }}
       style={floatingStyles}
-      className="bg-gray-200 rounded-md shadow-xl p-2.5 max-w-[250px] relative text-black"
+      className="bg-gray-200 z-[10000000000] relative rounded-md shadow-xl p-2.5 max-w-[250px] relative text-black"
     >
       <div className="absolute" style={triangleStyle} />
       <a 
@@ -99,23 +99,16 @@ export const GlobePopup = ({document, screenCoords, onClose}: {
         target="_blank" 
         rel="noopener noreferrer"
       >
-        <div className="text-black">{document.title}</div>
+        <div className="text-black font-georgia font-semibold tex-sm text-balance leading-tight mb-2">{document.title}</div>
         {(document.startTime || document.endTime) && (
           <div className="flex justify-start gap-1">
             {document.startTime && (
               <div className="font-normal text-sm opacity-80 leading-tight">
-                <em>{formatDate(document.startTime, "MMM D h:mm a")}</em>
-              </div>
-            )}
-            {document.startTime && document.endTime && ' - '}
-            {document.endTime && (
-              <div className="font-normal text-sm opacity-80 leading-tight">
-                <em>{formatDate(document.endTime, endTimeFormat)}</em>
+                <em>{startDate && startDate < new Date() ? "This event was on " : ""}{formatDate(document.startTime, "MMM D")}</em>
               </div>
             )}
           </div>
         )}
-        {document.location && <div className="font-normal text-sm opacity-80">{document.location}</div>}
       </a>
     </div>
   );

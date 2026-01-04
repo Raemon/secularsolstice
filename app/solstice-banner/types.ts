@@ -7,6 +7,17 @@ export type SolsticeEvent = {
   endTime?: string;
   location?: string;
   url?: string;
+  lat?: number;
+  lng?: number;
+  googleLocation?: {
+    geometry?: {
+      location?: {
+        lat: number;
+        lng: number;
+      };
+    };
+    formatted_address?: string;
+  };
 };
 
 export type SolsticeGlobePoint = {

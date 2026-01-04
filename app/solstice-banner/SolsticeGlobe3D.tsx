@@ -194,7 +194,8 @@ export const SolsticeGlobe3D = ({
 
   const markerData: GlobeMarkerData[] = mapPointsToMarkers(pointsData);
 
-  const renderHtmlElement = useCallback((d: GlobeMarkerData): HTMLElement => {
+  const renderHtmlElement = useCallback((obj: object): HTMLElement => {
+    const d = obj as GlobeMarkerData;
     const eventId = d.event && typeof d.event === 'object' && '_id' in d.event && typeof d.event._id === 'string' ? d.event._id : null;
     const isSpecialMarker = eventId === "FjHG3XcrhXkGWTDwf" || eventId === "YcKFwMLjCrr9hnerm";
     const markerSize = isSpecialMarker ? 45 : 30;
@@ -214,7 +215,8 @@ export const SolsticeGlobe3D = ({
     return el;
   }, []);
   
-  const htmlAltitude = useCallback((d: GlobeMarkerData): number => {
+  const htmlAltitude = useCallback((obj: object): number => {
+    const d = obj as GlobeMarkerData;
     return (typeof d.size === 'number' ? d.size : 1) * altitudeScale * 0.01;
   }, [altitudeScale]);
 
@@ -244,7 +246,7 @@ export const SolsticeGlobe3D = ({
           polygonsTransitionDuration={0}
           polygonAltitude={0.03}
           htmlElementsData={markerData}
-          htmlLat={(d: GlobeMarkerData) => d.lat}
+          htmlLat={(d) => (d as GlobeMarkerData).lat}
           htmlAltitude={htmlAltitude}
           htmlElement={renderHtmlElement}
           showAtmosphere={true}
