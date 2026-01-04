@@ -451,7 +451,7 @@ export const extractLyricsFromUltimateGuitar = (content: string): string => {
 /**
  * Detect file type from filename or content
  */
-export const detectFileType = (filename: string, content: string): 'lilypond' | 'chordmark' | 'ultimateguitar' | 'text' | 'markdown' | 'html' | 'unknown' => {
+export const detectFileType = (filename: string, content: string): 'lilypond' | 'chordmark' | 'ultimateguitar' | 'text' | 'markdown' | 'html' | 'csv' | 'unknown' => {
   const lowerFilename = filename.toLowerCase();
   
   // Check file extension first
@@ -477,6 +477,10 @@ export const detectFileType = (filename: string, content: string): 'lilypond' | 
 
   if (lowerFilename.endsWith('.html') || lowerFilename.endsWith('.htm')) {
     return 'html';
+  }
+
+  if (lowerFilename.endsWith('.csv')) {
+    return 'csv';
   }
   
   // Check content patterns for HTML

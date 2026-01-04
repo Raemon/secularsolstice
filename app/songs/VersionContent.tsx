@@ -7,6 +7,7 @@ import LilypondViewer from './LilypondViewer';
 import MarkdownRenderer from './MarkdownRenderer';
 import UgcRenderer from './UgcRenderer';
 import BlobAttachment from './BlobAttachment';
+import CsvRenderer from './CsvRenderer';
 import DeferredRender from '../components/DeferredRender';
 import { AUDIO_EXTENSIONS } from '../../lib/audioExtensions';
 import { detectFileType } from '../../lib/lyricsExtractor';
@@ -60,6 +61,7 @@ const LazyVersionContentLoader = ({versionId, label, bpm, transpose, print, hasB
   const isMarkdownFile = fileType === 'markdown';
   const isUltimateGuitarFile = fileType === 'ultimateguitar';
   const isHtmlFile = fileType === 'html';
+  const isCsvFile = fileType === 'csv';
   const isTxtFile = fileType === 'text' || fileType === 'unknown';
 
   return (
@@ -81,6 +83,9 @@ const LazyVersionContentLoader = ({versionId, label, bpm, transpose, print, hasB
       )}
       {content && isUltimateGuitarFile && (
         <UgcRenderer content={content} initialTranspose={transpose ?? 0} />
+      )}
+      {content && isCsvFile && (
+        <CsvRenderer content={content} />
       )}
       {hasBlob && blobUrl && (
         <BlobAttachment blobUrl={blobUrl} defaultExpanded={!content} />
@@ -105,6 +110,7 @@ const VersionContent = ({version, print}: {
   const isMarkdownFile = fileType === 'markdown';
   const isUltimateGuitarFile = fileType === 'ultimateguitar';
   const isHtmlFile = fileType === 'html';
+  const isCsvFile = fileType === 'csv';
   const isTxtFile = fileType === 'text' || fileType === 'unknown';
   const audioUrl = version.audioUrl || '';
   const normalizedAudioUrl = audioUrl.toLowerCase();
@@ -165,6 +171,9 @@ const VersionContent = ({version, print}: {
             )}
             {hasContent && isUltimateGuitarFile && (
               <UgcRenderer content={version.content || ''} initialTranspose={version.transpose ?? 0} />
+            )}
+            {hasContent && isCsvFile && (
+              <CsvRenderer content={version.content || ''} />
             )}
           </DeferredRender>
           {hasBlob && (
