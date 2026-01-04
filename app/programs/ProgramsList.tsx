@@ -49,7 +49,7 @@ const ProgramsList = ({ initialPrograms }: ProgramsListProps = {}) => {
   return (
     <div className="pt-8 px-4">
       <div className="mx-auto max-w-xl">
-        <div className="flex gap-2 items-center mb-4">
+        <div className="flex gap-2 items-center sticky top-0 bg-[#11101b] py-4 z-10 overflow-hidden">
           <input
             type="text"
             placeholder="Search programs..."
