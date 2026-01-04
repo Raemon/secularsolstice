@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import BlogPostPreview from './BlogPostPreview';
 import Tooltip from '../components/Tooltip';
 
-interface BlogPost {
+export interface BlogPost {
   title: string;
   link: string;
   pubDate: string;
@@ -13,9 +13,13 @@ interface BlogPost {
   author?: string;
 }
 
-const BlogPage = () => {
-  const [posts, setPosts] = useState<BlogPost[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+type BlogPageProps = {
+  initialPosts?: BlogPost[];
+};
+
+const BlogPage = ({ initialPosts }: BlogPageProps = {}) => {
+  const [posts, setPosts] = useState<BlogPost[]>(initialPosts || []);
+  const [isLoading, setIsLoading] = useState(!initialPosts);
   const [error, setError] = useState<string | null>(null);
   const [showLW, setShowLW] = useState(true);
   const [showSS, setShowSS] = useState(true);
@@ -25,6 +29,7 @@ const BlogPage = () => {
   );
 
   useEffect(() => {
+    if (initialPosts) return; // Skip fetch - we have server data
     const fetchPosts = async () => {
       try {
         const response = await fetch('/api/blog');
@@ -39,6 +44,7 @@ const BlogPage = () => {
       }
     };
     fetchPosts();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (isLoading) {

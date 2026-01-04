@@ -19,23 +19,29 @@ import { generateChordmarkRenderedContent } from '../chordmark-converter/clientR
 const getLatestVersion = (versions: SongVersion[]) => maxBy(versions, (version) => new Date(version.createdAt).getTime());
 
 type SongsFileListProps = {
+  initialSongs?: Song[];
   initialSongId?: string;
   initialVersionId?: string;
+  initialVersion?: SongVersion | null;
+  initialPreviousVersions?: SongVersion[];
 };
 
-const SongsFileList = ({ initialSongId, initialVersionId }: SongsFileListProps = {}) => {
+const SongsFileList = ({ initialSongs, initialSongId, initialVersionId, initialVersion, initialPreviousVersions = [] }: SongsFileListProps = {}) => {
   const router = useRouter();
   const { userName } = useUser();
-  const { songs, loading, loadingMore, error: listError, refetch: fetchSongs } = useSongsProgressiveLoad();
+  // Use server-provided data if available, otherwise fall back to client fetch
+  const { songs: clientSongs, loading: clientLoading, error: listError, refetch: fetchSongs } = useSongsProgressiveLoad();
+  const songs = initialSongs || clientSongs;
+  const loading = initialSongs ? false : clientLoading;
   const [localError, setLocalError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
   const listContainerRef = useRef<HTMLDivElement>(null);
   const [sortOption, setSortOption] = useState<'alphabetical' | 'recently-updated'>('recently-updated');
 
-  // Version detail state
-  const [selectedVersion, setSelectedVersion] = useState<SongVersion | null>(null);
-  const [previousVersions, setPreviousVersions] = useState<SongVersion[]>([]);
+  // Version detail state - initialize with server data if provided
+  const [selectedVersion, setSelectedVersion] = useState<SongVersion | null>(initialVersion || null);
+  const [previousVersions, setPreviousVersions] = useState<SongVersion[]>(initialPreviousVersions);
   const [isLoadingVersion, setIsLoadingVersion] = useState(false);
   const [isCreatingVersion, setIsCreatingVersion] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -61,13 +67,17 @@ const SongsFileList = ({ initialSongId, initialVersionId }: SongsFileListProps =
     return null;
   }, [initialSongId, selectedVersion, songs]);
 
-  // Fetch version details when initialVersionId changes
+  // Fetch version details when initialVersionId changes (skip if server-provided)
   useEffect(() => {
     if (!initialVersionId) {
       setSelectedVersion(null);
       setPreviousVersions([]);
       setIsLoadingVersion(false);
       return;
+    }
+    // Skip fetch if we already have server-provided version data matching this ID
+    if (initialVersion && initialVersion.id === initialVersionId) {
+      return; // Already initialized via useState defaults
     }
     const fetchVersion = async () => {
       setIsLoadingVersion(true);
@@ -84,6 +94,7 @@ const SongsFileList = ({ initialSongId, initialVersionId }: SongsFileListProps =
       }
     };
     fetchVersion();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialVersionId]);
 
   // Scroll to selected song/version in the list

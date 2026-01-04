@@ -4,8 +4,14 @@ import type { Program } from './programs/types';
 import Link from 'next/link';
 import useProgramsProgressiveLoad from './hooks/useProgramsProgressiveLoad';
 
-const RecentPrograms = () => {
-  const { programs, loading } = useProgramsProgressiveLoad();
+type RecentProgramsProps = {
+  initialPrograms?: Program[];
+};
+
+const RecentPrograms = ({ initialPrograms }: RecentProgramsProps = {}) => {
+  const { programs: clientPrograms, loading: clientLoading } = useProgramsProgressiveLoad();
+  const programs = initialPrograms || clientPrograms;
+  const loading = initialPrograms ? false : clientLoading;
   // Filter to top-level non-archived programs and take first 4
   const recentPrograms = programs
     .filter((p) => !p.isSubprogram && !p.archived)

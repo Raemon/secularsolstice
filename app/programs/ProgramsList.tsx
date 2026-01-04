@@ -6,8 +6,14 @@ import ProgramItem from './ProgramItem';
 import NewProgramButton from './programBrowser/components/NewProgramButton';
 import useProgramsProgressiveLoad from '../hooks/useProgramsProgressiveLoad';
 
-const ProgramsList = () => {
-  const { programs, loading: isLoading, error } = useProgramsProgressiveLoad();
+type ProgramsListProps = {
+  initialPrograms?: Program[];
+};
+
+const ProgramsList = ({ initialPrograms }: ProgramsListProps = {}) => {
+  const { programs: clientPrograms, loading: clientLoading, error } = useProgramsProgressiveLoad();
+  const programs = initialPrograms || clientPrograms;
+  const isLoading = initialPrograms ? false : clientLoading;
   const [search, setSearch] = useState('');
   const [sortOption, setSortOption] = useState<'alphabetical' | 'recently-updated'>('recently-updated');
 

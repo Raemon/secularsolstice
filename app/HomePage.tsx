@@ -5,11 +5,18 @@ import RecentPrograms from './RecentPrograms';
 import Link from 'next/link';
 import { SolsticeSeasonBanner } from './solstice-banner';
 import useIsMobile from './hooks/useIsMobile';
-import useStaticMarkdown from './hooks/useStaticMarkdown';
+import type { Song } from './songs/types';
+import type { Program } from './programs/types';
 
-const HomePage = () => {
-  const { content } = useStaticMarkdown('/home.md');
-  const { content: faqContent } = useStaticMarkdown('/faq.md');
+type HomePageProps = {
+  initialSongs?: Song[];
+  initialPrograms?: Program[];
+  homeContent?: string;
+  faqContent?: string;
+};
+
+const HomePage = ({ initialSongs, initialPrograms, homeContent = '', faqContent = '' }: HomePageProps) => {
+  const content = homeContent;
   const isMobile = useIsMobile()
 
   return (
@@ -40,11 +47,11 @@ const HomePage = () => {
       <div className="max-w-xl flex flex-col gap-6 pb-12 pt-8 w-full">
         <div>
           <Link href="/songs" className="font-georgia text-white hover:text-white/80 text-3xl mb-2 pb-2 block">Songs/Speeches</Link>
-          <RecentSongs />
+          <RecentSongs initialSongs={initialSongs} />
         </div>
         <div>
           <Link href="/programs" className="font-georgia text-white hover:text-white/80 text-3xl mb-2 pb-2 block">Programs</Link>
-          <RecentPrograms />
+          <RecentPrograms initialPrograms={initialPrograms} />
         </div>
       </div>
     </div>

@@ -1,3 +1,4 @@
+import { listSongsWithVersionsPaginated } from '@/lib/songsRepository';
 import SongsFileList from '../SongsFileList';
 
 type SongPageProps = {
@@ -8,7 +9,8 @@ type SongPageProps = {
 
 const SongPage = async ({ params }: SongPageProps) => {
   const { songId } = await params;
-  return <SongsFileList initialSongId={songId} />;
+  const { songs } = await listSongsWithVersionsPaginated({ limit: 50 });
+  return <SongsFileList initialSongs={songs} initialSongId={songId} />;
 };
 
 export default SongPage;
