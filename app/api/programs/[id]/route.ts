@@ -38,16 +38,19 @@ export async function PATCH(request: NextRequest, {params}: {params: Promise<{id
     const body = await request.json();
     const { userId } = body;
 
-    const existingProgram = await getProgramById(id);
-    if (!existingProgram) {
-      return NextResponse.json({error: 'Program not found'}, {status: 404});
-    }
-
     // Verify user from database - never trust client-sent isAdmin/userName
     const verifiedUser = await getVerifiedUser(userId);
     
     // Handle element/program ID updates (reordering)
     if ('elementIds' in body || 'programIds' in body) {
+      if (!verifiedUser) {
+        return NextResponse.json({error: 'Must be logged in to change version'}, {status: 401});
+      }
+
+      const existingProgram = await getProgramById(id);
+      if (!existingProgram) {
+        return NextResponse.json({error: 'Program not found'}, {status: 404});
+      }
       // If program is locked, no one can rearrange elements/programs
       if (existingProgram.locked) {
         return NextResponse.json({error: 'Cannot rearrange elements in a locked program'}, {status: 403});
@@ -56,8 +59,13 @@ export async function PATCH(request: NextRequest, {params}: {params: Promise<{id
       if (!Array.isArray(elementIds) || !Array.isArray(programIds)) {
         return NextResponse.json({error: 'elementIds and programIds must be arrays'}, {status: 400});
       }
-      const program = await updateProgramElementIds(id, elementIds, programIds, verifiedUser?.username);
+      const program = await updateProgramElementIds(id, elementIds, programIds, verifiedUser.username);
       return NextResponse.json({program});
+    }
+
+    const existingProgram = await getProgramById(id);
+    if (!existingProgram) {
+      return NextResponse.json({error: 'Program not found'}, {status: 404});
     }
 
     // Handle other field updates

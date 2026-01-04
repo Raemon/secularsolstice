@@ -22,7 +22,7 @@ type ProgramBrowserProps = {
 
 const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserProps) => {
   const pathname = usePathname();
-  const { userName, canEdit, isAdmin } = useUser();
+  const { userName, canEdit, isAdmin, userId } = useUser();
   const [programs, setPrograms] = useState<Program[]>([]);
   const [versions, setVersions] = useState<VersionOption[]>([]);
   const [isLoadingPrograms, setIsLoadingPrograms] = useState(true);
@@ -111,7 +111,7 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
         const response = await fetch(`/api/programs/${program.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ elementIds: nextElementIds, programIds: program.programIds }),
+          body: JSON.stringify({ elementIds: nextElementIds, programIds: program.programIds, userId }),
         });
         if (!response.ok) {
           console.error(`Failed to update program ${program.id}`);
@@ -132,7 +132,7 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
         return updated ?? p;
       }));
     }
-  }, [programs, selectedProgramId, collectProgramHierarchy]);
+  }, [programs, selectedProgramId, collectProgramHierarchy, userId]);
   
   const handleVersionCreated = useCallback(async (newVersion: SongVersion) => {
     const oldVersionId = newVersion.previousVersionId;
@@ -313,7 +313,7 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
       const response = await fetch(`/api/programs/${programId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ elementIds: nextElementIds, programIds: program.programIds }),
+        body: JSON.stringify({ elementIds: nextElementIds, programIds: program.programIds, userId }),
       });
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -326,7 +326,7 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
       console.error('Failed to change version:', err);
       setDataError(err instanceof Error ? err.message : 'Failed to change version');
     }
-  }, [effectiveProgramMap, isEditingProgram]);
+  }, [effectiveProgramMap, isEditingProgram, userId]);
 
   const handleAddElement = useCallback(async (programId: string, versionId: string) => {
     const program = effectiveProgramMap[programId];
