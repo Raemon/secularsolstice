@@ -8,11 +8,12 @@ interface BlogPost {
   htmlHighlight?: string;
   source: 'lesswrong' | 'secularsolstice';
   author?: string;
+  karma?: number;
 }
 
 async function fetchLessWrongPosts(): Promise<BlogPost[]> {
   try {
-    // Use view: "tagRelevance" with tagId to get posts actually tagged with secular-solstice
+    // Use view: "tagRelevance" with tagId to get posts tagged with secular-solstice
     // Tag ID for "secular-solstice" is stable: vtozKm5BZ8gf6zd45
     const SECULAR_SOLSTICE_TAG_ID = 'vtozKm5BZ8gf6zd45';
     const query = `
@@ -24,6 +25,7 @@ async function fetchLessWrongPosts(): Promise<BlogPost[]> {
             slug 
             postedAt 
             baseScore
+            tagRelevance
             user { displayName } 
             contents {
               htmlHighlight
@@ -41,16 +43,22 @@ async function fetchLessWrongPosts(): Promise<BlogPost[]> {
     if (!gqlResponse.ok) throw new Error('Failed to fetch LessWrong posts via GraphQL');
     const data = await gqlResponse.json();
     const posts = data?.data?.posts?.results || [];
+    // Filter to only posts that are actually tagged with secular-solstice (relevance >= 1)
+    // tagRelevance is an object like { "vtozKm5BZ8gf6zd45": 5 }
     return posts
-      .filter((post: { baseScore?: number }) => (post.baseScore ?? 0) >= 15)
-      .map((post: { _id: string; title: string; slug: string; postedAt: string; baseScore?: number; user?: { displayName: string }; contents?: { htmlHighlight?: string } }) => ({
+      .filter((post: { baseScore?: number; tagRelevance?: Record<string, number> }) => {
+        const relevance = post.tagRelevance?.[SECULAR_SOLSTICE_TAG_ID] ?? 0;
+        return (post.baseScore ?? 0) >= 15 && relevance >= 1;
+      })
+      .map((post: { _id: string; title: string; slug: string; postedAt: string; baseScore?: number; tagRelevance?: Record<string, number>; user?: { displayName: string }; contents?: { htmlHighlight?: string } }) => ({
       title: post.title.trim(),
       link: `https://www.lesswrong.com/posts/${post._id}/${post.slug}`,
       pubDate: post.postedAt,
       description: stripHtml(post.contents?.htmlHighlight || ''),
       htmlHighlight: post.contents?.htmlHighlight,
       source: 'lesswrong' as const,
-      author: post.user?.displayName
+      author: post.user?.displayName,
+      karma: post.baseScore
     }));
   } catch (error) {
     console.error('Error fetching LessWrong posts:', error);
@@ -58,28 +66,20 @@ async function fetchLessWrongPosts(): Promise<BlogPost[]> {
   }
 }
 
-async function parseRSSFeed(url: string, source: 'lesswrong' | 'secularsolstice'): Promise<BlogPost[]> {
+async function fetchSecularSolsticePosts(): Promise<BlogPost[]> {
   try {
-    const response = await fetch(url, { next: { revalidate: 3600 } }); // Cache for 1 hour
-    if (!response.ok) throw new Error(`Failed to fetch ${url}`);
-    const xml = await response.text();
-    const posts: BlogPost[] = [];
-    const itemRegex = /<item>([\s\S]*?)<\/item>/g;
-    let match;
-    while ((match = itemRegex.exec(xml)) !== null) {
-      const itemXml = match[1];
-      const title = itemXml.match(/<title>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/)?.[1]?.trim() || '';
-      const link = itemXml.match(/<link>([\s\S]*?)<\/link>/)?.[1]?.trim() || '';
-      const pubDate = itemXml.match(/<pubDate>([\s\S]*?)<\/pubDate>/)?.[1]?.trim() || '';
-      const description = itemXml.match(/<description>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/description>/)?.[1]?.trim() || '';
-      const author = itemXml.match(/<dc:creator>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/dc:creator>/)?.[1]?.trim() || undefined;
-      if (title && link) {
-        posts.push({ title: decodeHtmlEntities(title), link, pubDate, description: decodeHtmlEntities(stripHtml(description)), source, author: author ? decodeHtmlEntities(author) : undefined });
-      }
-    }
-    return posts;
+    const response = await fetch('https://secularsolstice.com/wp-json/wp/v2/posts?per_page=100', { next: { revalidate: 3600 } });
+    if (!response.ok) throw new Error('Failed to fetch SecularSolstice posts');
+    const posts = await response.json();
+    return posts.map((post: { title: { rendered: string }; link: string; date: string; excerpt: { rendered: string } }) => ({
+      title: decodeHtmlEntities(post.title.rendered),
+      link: post.link,
+      pubDate: post.date,
+      description: decodeHtmlEntities(stripHtml(post.excerpt.rendered)),
+      source: 'secularsolstice' as const
+    }));
   } catch (error) {
-    console.error(`Error fetching RSS from ${url}:`, error);
+    console.error('Error fetching SecularSolstice posts:', error);
     return [];
   }
 }
@@ -107,7 +107,7 @@ export async function GET() {
   try {
     const [lesswrongPosts, secularsolsticePosts] = await Promise.all([
       fetchLessWrongPosts(),
-      parseRSSFeed('https://secularsolstice.com/blog/feed/', 'secularsolstice'),
+      fetchSecularSolsticePosts(),
     ]);
     const allPosts = [...lesswrongPosts, ...secularsolsticePosts].sort((a, b) => {
       const dateA = new Date(a.pubDate).getTime();
