@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.958.0",
+    "@floating-ui/react-dom": "^2.1.6",
     "@neondatabase/serverless": "^1.0.2",
     "@tiptap/core": "^2.10.3",
     "@tiptap/extension-placeholder": "^2.10.3",
@@ -44,7 +45,9 @@
     "pptxgenjs": "^4.0.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-globe.gl": "^2.37.0",
     "react-pdf": "^10.2.0",
+    "three": "^0.182.0",
     "tonal": "^6.4.2",
     "tone": "^15.1.22",
     "verovio": "^5.6.0"
