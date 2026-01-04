@@ -159,6 +159,16 @@ export const createLightBeams = (obj: object): THREE.Object3D => {
   });
   const baseSphere = new THREE.Mesh(baseSphereGeometry, baseSphereMaterial);
   group.add(baseSphere);
+  const hoverTargetGeometry = new THREE.CylinderGeometry(beamWidth * 12, beamWidth * 4, beamHeight, 8, segments, true);
+  hoverTargetGeometry.rotateX(Math.PI / 2);
+  hoverTargetGeometry.translate(0, 0, beamHeight / 2);
+  const hoverTargetMaterial = new THREE.MeshBasicMaterial({
+    transparent: true,
+    opacity: 0,
+    visible: false,
+  });
+  const hoverTarget = new THREE.Mesh(hoverTargetGeometry, hoverTargetMaterial);
+  group.add(hoverTarget);
   const pulsingBeam: PulsingBeam = {
     beam,
     glow,

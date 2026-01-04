@@ -209,12 +209,12 @@ function GlobeBannerInner({ dataSource = 'lesswrong-events' }: GlobeBannerProps)
         <SolsticeGlobe3D 
           pointsData={pointsData}
           defaultPointOfView={defaultPointOfView}
-          onPointClick={(point: SolsticeGlobePoint) => {
+          onPointClick={(point: SolsticeGlobePoint, screenCoords: { x: number; y: number }) => {
             if (dataSource === 'programs') {
               const group = point.event as { city: string } | undefined;
               if (group?.city) router.push(`/programs?city=${encodeURIComponent(group.city)}`);
             } else {
-              handleMarkerClick(undefined, point.eventId, { x: window.innerWidth / 2, y: window.innerHeight / 2 });
+              handleMarkerClick(undefined, point.eventId, screenCoords);
             }
           }}
           onPointHover={handleMarkerHover}

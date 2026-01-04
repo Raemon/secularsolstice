@@ -56,14 +56,13 @@ const HomePage = ({ initialSongs, initialPrograms, homeContent = '', faqContent 
           <RecentPrograms initialPrograms={initialPrograms} />
         </div>
         {/* Globe data source toggle (for testing) */}
-        <div className="flex gap-2 text-xs text-gray-500">
-          <span>Globe:</span>
-          <button onClick={() => setGlobeDataSource('programs')} className={globeDataSource === 'programs' ? 'underline' : 'opacity-50'}>Programs</button>
-          <button onClick={() => setGlobeDataSource('lesswrong-events')} className={globeDataSource === 'lesswrong-events' ? 'underline' : 'opacity-50'}>LW Events</button>
-        </div>
       </div>
     </div>
     {!isMobile && <GlobeBanner dataSource={globeDataSource} />}
+    <div className="fixed bottom-2 right-0 w-[50vw] z-[1] text-center text-gray-600">
+      <button onClick={() => setGlobeDataSource('programs')} className={`${globeDataSource === 'programs' ? 'underline' : 'opacity-50'} text-[10px] mr-2`}>PROGRAMS</button>
+      <button onClick={() => setGlobeDataSource('lesswrong-events')} className={`${globeDataSource === 'lesswrong-events' ? 'underline' : 'opacity-70'} text-[10px]`}>EVENTS</button>
+    </div>
   </>
   );
 };
