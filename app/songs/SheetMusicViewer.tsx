@@ -6,7 +6,7 @@ import type { SongVersion } from './types';
 import { convertMusicXmlToChordmark, detectFileType } from '../../lib/lyricsExtractor';
 import ChordmarkRenderer from '../chordmark-converter/ChordmarkRenderer';
 
-type TabType = 'sheet-music' | 'lyrics-chords';
+type TabType = 'sheet-music' | 'lyrics-chords' | 'raw-mxml';
 
 const SheetMusicViewer = ({musicXml, url, version}:{musicXml?: string; url?: string; version?: SongVersion | null}) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -16,6 +16,7 @@ const SheetMusicViewer = ({musicXml, url, version}:{musicXml?: string; url?: str
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('sheet-music');
   const [xmlChordmark, setXmlChordmark] = useState<string>('');
+  const [rawXml, setRawXml] = useState<string>('');
   const source = url || musicXml;
   const hasVersion = Boolean(version);
   const isChordmark = version ? detectFileType(version.label, version.content || '') === 'chordmark' : false;
@@ -26,16 +27,59 @@ const SheetMusicViewer = ({musicXml, url, version}:{musicXml?: string; url?: str
     if (!source || isChordmark) return; // Skip if already chordmark
     const lowerSource = source.toLowerCase();
     const isMusicXmlUrl = lowerSource.endsWith('.mxl') || lowerSource.endsWith('.musicxml') || lowerSource.endsWith('.xml') || lowerSource.endsWith('.mxml');
+    const isMsczUrl = lowerSource.endsWith('.mscz');
     // Check if it's already XML content passed as string (MusicXML or MuseScore format)
     const isXmlContent = typeof musicXml === 'string' && (
       musicXml.includes('<score-partwise') || musicXml.includes('<score-timewise') || musicXml.includes('<museScore')
     );
     if (isXmlContent && musicXml) {
+      setRawXml(musicXml);
       const chordmark = convertMusicXmlToChordmark(musicXml);
       setXmlChordmark(chordmark);
       return;
     }
-    if (!url || !isMusicXmlUrl) return;
+    if (!url) return;
+    // Handle .mscz files - need to convert via API
+    if (isMsczUrl) {
+      const convertMscz = async () => {
+        try {
+          // Get the lilypond server URL from config
+          let serverUrl = process.env.NEXT_PUBLIC_LILYPOND_SERVER_URL;
+          if (!serverUrl) {
+            try {
+              const configRes = await fetch('/api/config');
+              if (configRes.ok) {
+                const config = await configRes.json();
+                serverUrl = config.lilypondServerUrl;
+              }
+            } catch (e) {
+              console.warn('Failed to fetch config:', e);
+            }
+          }
+          // Fetch the .mscz file
+          const response = await fetch(url);
+          if (!response.ok) return;
+          const blob = await response.blob();
+          const filename = url.split('/').pop() || 'file.mscz';
+          const file = new File([blob], filename, { type: 'application/x-musescore' });
+          const formData = new FormData();
+          formData.append('file', file);
+          // Use remote server if available, otherwise fall back to local API
+          const endpoint = serverUrl ? `${serverUrl}/convert-mscz` : '/api/convert';
+          const convertResponse = await fetch(endpoint, { method: 'POST', body: formData });
+          if (!convertResponse.ok) return;
+          const xmlContent = await convertResponse.text();
+          setRawXml(xmlContent);
+          const chordmark = convertMusicXmlToChordmark(xmlContent);
+          setXmlChordmark(chordmark);
+        } catch (err) {
+          console.error('Failed to convert .mscz to MusicXML:', err);
+        }
+      };
+      convertMscz();
+      return;
+    }
+    if (!isMusicXmlUrl) return;
     const fetchAndConvert = async () => {
       try {
         const response = await fetch(url);
@@ -52,11 +96,13 @@ const SheetMusicViewer = ({musicXml, url, version}:{musicXml?: string; url?: str
             }
           }
           if (xmlContent) {
+            setRawXml(xmlContent);
             const chordmark = convertMusicXmlToChordmark(xmlContent);
             setXmlChordmark(chordmark);
           }
         } else {
           const xmlContent = await response.text();
+          setRawXml(xmlContent);
           const chordmark = convertMusicXmlToChordmark(xmlContent);
           setXmlChordmark(chordmark);
         }
@@ -124,6 +170,7 @@ const SheetMusicViewer = ({musicXml, url, version}:{musicXml?: string; url?: str
   const tabs: {id: TabType, label: string}[] = [
     { id: 'sheet-music', label: 'Sheet Music' },
     { id: 'lyrics-chords', label: 'Chordmark' },
+    { id: 'raw-mxml', label: 'Raw MusicXML' },
   ];
 
   return (
@@ -153,6 +200,12 @@ const SheetMusicViewer = ({musicXml, url, version}:{musicXml?: string; url?: str
       )}
       {activeTab === 'lyrics-chords' && hasVersion && !chordmarkContent && (
         <div className="text-xs text-gray-500">Lyrics + Chords view requires chordmark format content or MusicXML with lyrics</div>
+      )}
+      {activeTab === 'raw-mxml' && rawXml && (
+        <pre className="text-xs overflow-auto max-h-[600px] bg-gray-900 p-2 whitespace-pre-wrap">{rawXml}</pre>
+      )}
+      {activeTab === 'raw-mxml' && !rawXml && (
+        <div className="text-xs text-gray-500">No MusicXML content available</div>
       )}
     </div>
   );

@@ -578,6 +578,8 @@ export const convertMusicXmlToChordmark = (xmlContent: string): string => {
     const firstPart = parts[0];
     const measureElements = firstPart.querySelectorAll('measure');
     if (measureElements.length === 0) return '';
+    // Check if document has any explicit harmony elements - if so, don't infer chords
+    const hasExplicitHarmony = doc.querySelector('harmony') !== null;
     // Build measure data, collecting from ALL parts
     const measures: MeasureData[] = [];
     measureElements.forEach((_, idx) => {
@@ -647,8 +649,8 @@ export const convertMusicXmlToChordmark = (xmlContent: string): string => {
           });
         }
       }
-      // Infer chord from notes if no harmony found
-      if (measureData.chords.length === 0 && pitchClasses.size >= 2) {
+      // Infer chord from notes only if document has no explicit harmony elements
+      if (!hasExplicitHarmony && measureData.chords.length === 0 && pitchClasses.size >= 2) {
         const inferredChord = inferChordFromPitches(pitchClasses, bassNote);
         if (inferredChord) {
           measureData.chords.push(inferredChord);
