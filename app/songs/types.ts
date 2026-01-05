@@ -1,3 +1,19 @@
+// Supported file extensions by category
+export const SUPPORTED_EXTENSIONS: Record<string, string[]> = {
+  image: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'],
+  video: ['mp4', 'webm', 'mov', 'avi', 'mkv'],
+  audio: ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac', 'aiff', 'aif', 'wma', 'webm'],
+  pdf: ['pdf'],
+  musicxml: ['musicxml', 'xml', 'mxl', 'mxml'],
+  musescore: ['mscz', 'mscx'],
+  text: ['txt', 'md', 'json', 'csv'],
+  midi: ['midi', 'mid'],
+};
+
+export const ALL_SUPPORTED_EXTENSIONS = Object.values(SUPPORTED_EXTENSIONS).flat();
+
+export const BLOB_UPLOAD_ACCEPT = ALL_SUPPORTED_EXTENSIONS.map(ext => `.${ext}`).join(',');
+
 export type RenderedContent = {
   htmlFull?: string;
   htmlChordsOnly?: string;
@@ -64,4 +80,3 @@ export const createFallbackSongVersion = (partial: Pick<SongVersion, 'id' | 'son
   createdBy: null,
   blobUrl: null,
 });
-

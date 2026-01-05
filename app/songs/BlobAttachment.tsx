@@ -4,17 +4,19 @@ import { useState, useEffect } from 'react';
 import ChevronArrow from '@/app/components/ChevronArrow';
 import PDFViewer from './PDFViewer';
 import SheetMusicViewer from './SheetMusicViewer';
+import { SUPPORTED_EXTENSIONS } from './types';
+import type { SongVersion } from './types';
 
 const getFileType = (pathname: string): 'image' | 'video' | 'audio' | 'pdf' | 'text' | 'musicxml' | 'musescore' | null => {
   const ext = pathname.split('.').pop()?.toLowerCase();
   if (!ext) return null;
-  if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'].includes(ext)) return 'image';
-  if (['mp4', 'webm', 'mov', 'avi', 'mkv'].includes(ext)) return 'video';
-  if (['mp3', 'wav', 'ogg', 'aac', 'm4a', 'flac'].includes(ext)) return 'audio';
-  if (ext === 'pdf') return 'pdf';
-  if (['musicxml', 'mxl', 'mxml', 'xml'].includes(ext)) return 'musicxml';
-  if (['mscz', 'mscx'].includes(ext)) return 'musescore';
-  if (['txt', 'md', 'json', 'csv'].includes(ext)) return 'text';
+  if (SUPPORTED_EXTENSIONS.image.includes(ext)) return 'image';
+  if (SUPPORTED_EXTENSIONS.video.includes(ext)) return 'video';
+  if (SUPPORTED_EXTENSIONS.audio.includes(ext)) return 'audio';
+  if (SUPPORTED_EXTENSIONS.pdf.includes(ext)) return 'pdf';
+  if (SUPPORTED_EXTENSIONS.musicxml.includes(ext)) return 'musicxml';
+  if (SUPPORTED_EXTENSIONS.musescore.includes(ext)) return 'musescore';
+  if (SUPPORTED_EXTENSIONS.text.includes(ext)) return 'text';
   return null;
 };
 
@@ -32,16 +34,20 @@ const TextPreview = ({ url }: { url: string }) => {
   return <pre className="bg-gray-900 p-2 text-xs overflow-auto max-h-64 my-2 whitespace-pre-wrap">{content.slice(0, 5000)}</pre>;
 };
 
-const MusicXmlPreview = ({ url }: { url: string }) => {
-  return <SheetMusicViewer url={url} />;
+const MusicXmlPreview = ({ url, version }: { url: string; version?: SongVersion | null }) => {
+  return <SheetMusicViewer url={url} version={version} />;
 };
 
-const MuseScorePreview = ({ url, filename }: { url: string; filename: string }) => {
+const MuseScorePreview = ({ url, filename, version }: { url: string; filename: string; version?: SongVersion | null }) => {
+  const lowerFilename = filename.toLowerCase();
+  const isDirectXml = lowerFilename.endsWith('.mscx') || lowerFilename.endsWith('.mxml') || lowerFilename.endsWith('.mxl');
   const [musicXml, setMusicXml] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isConverting, setIsConverting] = useState(false);
 
   useEffect(() => {
+    // .mscx, .mxml, and .mxl files can be passed directly to SheetMusicViewer without conversion
+    if (isDirectXml) return;
     const convert = async () => {
       setIsConverting(true);
       setError(null);
@@ -84,15 +90,16 @@ const MuseScorePreview = ({ url, filename }: { url: string; filename: string }) 
       }
     };
     convert();
-  }, [url, filename]);
+  }, [url, filename, isDirectXml]);
 
+  if (isDirectXml) return <SheetMusicViewer url={url} version={version} />;
   if (isConverting) return <div className="text-gray-400 text-sm py-2">Converting MuseScore file...</div>;
   if (error) return <div className="text-red-400 text-sm py-2">Conversion error: {error}</div>;
   if (!musicXml) return null;
-  return <SheetMusicViewer musicXml={musicXml} />;
+  return <SheetMusicViewer musicXml={musicXml} version={version} />;
 };
 
-const FilePreview = ({ url, pathname }: { url: string; pathname: string }) => {
+const FilePreview = ({ url, pathname, version }: { url: string; pathname: string; version?: SongVersion | null }) => {
   const fileType = getFileType(pathname);
   if (!fileType) return <div className="text-gray-500 text-sm py-2">Cannot preview this file type</div>;
   switch (fileType) {
@@ -105,9 +112,9 @@ const FilePreview = ({ url, pathname }: { url: string; pathname: string }) => {
     case 'pdf':
       return <PDFViewer fileUrl={url} />;
     case 'musicxml':
-      return <MusicXmlPreview url={url} />;
+      return <MusicXmlPreview url={url} version={version} />;
     case 'musescore':
-      return <MuseScorePreview url={url} filename={pathname} />;
+      return <MuseScorePreview url={url} filename={pathname} version={version} />;
     case 'text':
       return <TextPreview url={url} />;
     default:
@@ -115,7 +122,7 @@ const FilePreview = ({ url, pathname }: { url: string; pathname: string }) => {
   }
 };
 
-const BlobAttachment = ({ blobUrl, defaultExpanded = false }: { blobUrl: string; defaultExpanded?: boolean }) => {
+const BlobAttachment = ({ blobUrl, defaultExpanded = false, version }: { blobUrl: string; defaultExpanded?: boolean; version?: SongVersion | null }) => {
   const [expanded, setExpanded] = useState(defaultExpanded);
   const [downloading, setDownloading] = useState(false);
   const filename = (() => {
@@ -166,7 +173,7 @@ const BlobAttachment = ({ blobUrl, defaultExpanded = false }: { blobUrl: string;
       </div>
       {expanded && canPreview && (
         <div className="ml-4 mt-4">
-          <FilePreview url={blobUrl} pathname={filename} />
+          <FilePreview url={blobUrl} pathname={filename} version={version} />
         </div>
       )}
     </div>

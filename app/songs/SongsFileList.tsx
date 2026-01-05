@@ -30,7 +30,7 @@ const SongsFileList = ({ initialSongs, initialSongId, initialVersionId, initialV
   const router = useRouter();
   const { userName } = useUser();
   // Use server-provided data if available, otherwise fall back to client fetch
-  const { songs: clientSongs, loading: clientLoading, error: listError, refetch: fetchSongs } = useSongsProgressiveLoad();
+  const { songs: clientSongs, loading: clientLoading, loadingMore, error: listError, refetch: fetchSongs } = useSongsProgressiveLoad();
   const songs = initialSongs || clientSongs;
   const loading = initialSongs ? false : clientLoading;
   const [localError, setLocalError] = useState<string | null>(null);
@@ -298,6 +298,7 @@ const SongsFileList = ({ initialSongs, initialSongId, initialVersionId, initialV
               selectedVersionId={initialVersionId}
             />
           ))}
+          {loadingMore && <span className="text-xs text-gray-500 block py-2">loading...</span>}
         </div>
 
         {/* Version detail panel */}

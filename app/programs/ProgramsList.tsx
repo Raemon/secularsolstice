@@ -12,7 +12,7 @@ type ProgramsListProps = {
 };
 
 const ProgramsList = ({ initialPrograms }: ProgramsListProps = {}) => {
-  const { programs: clientPrograms, loading: clientLoading, error } = useProgramsProgressiveLoad();
+  const { programs: clientPrograms, loading: clientLoading, loadingMore, error } = useProgramsProgressiveLoad();
   const programs = initialPrograms || clientPrograms;
   const isLoading = initialPrograms ? false : clientLoading;
   const searchParams = useSearchParams();
@@ -76,6 +76,7 @@ const ProgramsList = ({ initialPrograms }: ProgramsListProps = {}) => {
         {filteredPrograms.map((program) => (
           <ProgramItem key={program.id} program={program} />
         ))}
+        {loadingMore && <span className="text-xs text-gray-500 block py-2">loading...</span>}
         {search && !filteredPrograms.length && (
           <div className="text-gray-400">No programs match "{search}"</div>
         )}

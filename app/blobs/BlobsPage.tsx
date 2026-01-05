@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import ChevronArrow from '@/app/components/ChevronArrow';
+import { SUPPORTED_EXTENSIONS } from '@/app/songs/types';
 
 interface BlobItem {
   pathname: string;
@@ -22,11 +23,11 @@ const formatBytes = (bytes: number) => {
 const getFileType = (pathname: string): 'image' | 'video' | 'audio' | 'pdf' | 'text' | null => {
   const ext = pathname.split('.').pop()?.toLowerCase();
   if (!ext) return null;
-  if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'].includes(ext)) return 'image';
-  if (['mp4', 'webm', 'mov', 'avi', 'mkv'].includes(ext)) return 'video';
-  if (['mp3', 'wav', 'ogg', 'aac', 'm4a', 'flac'].includes(ext)) return 'audio';
-  if (ext === 'pdf') return 'pdf';
-  if (['txt', 'md', 'json', 'xml', 'csv'].includes(ext)) return 'text';
+  if (SUPPORTED_EXTENSIONS.image.includes(ext)) return 'image';
+  if (SUPPORTED_EXTENSIONS.video.includes(ext)) return 'video';
+  if (SUPPORTED_EXTENSIONS.audio.includes(ext)) return 'audio';
+  if (SUPPORTED_EXTENSIONS.pdf.includes(ext)) return 'pdf';
+  if (SUPPORTED_EXTENSIONS.text.includes(ext) || SUPPORTED_EXTENSIONS.musicxml.includes(ext)) return 'text';
   return null;
 };
 

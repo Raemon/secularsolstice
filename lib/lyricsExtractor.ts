@@ -448,10 +448,321 @@ export const extractLyricsFromUltimateGuitar = (content: string): string => {
   return lyrics.join('\n');
 };
 
+interface MeasureData {
+  number: number;
+  chords: string[];
+  lyrics: { text: string; syllabic: string | null }[];
+}
+
+interface SyllablePart { text: string; syllabic: string | null; }
+
+/**
+ * Combine syllables into words based on MusicXML syllabic values
+ * syllabic values: 'begin', 'middle', 'end', 'single', or null
+ */
+const combineSyllablesIntoWords = (parts: SyllablePart[]): string[] => {
+  const words: string[] = [];
+  let currentWord = '';
+  for (const part of parts) {
+    if (part.syllabic === 'begin' || part.syllabic === 'middle') {
+      currentWord += part.text;
+    } else if (part.syllabic === 'end') {
+      currentWord += part.text;
+      words.push(currentWord);
+      currentWord = '';
+    } else {
+      if (currentWord) { words.push(currentWord); currentWord = ''; }
+      words.push(part.text);
+    }
+  }
+  if (currentWord) words.push(currentWord);
+  return words;
+};
+
+// Pitch class values (C=0, C#=1, D=2, etc.)
+const pitchClassMap: Record<string, number> = {
+  'C': 0, 'D': 2, 'E': 4, 'F': 5, 'G': 7, 'A': 9, 'B': 11
+};
+
+// Chord templates: intervals from root (in semitones)
+const chordTemplates: { name: string; intervals: number[]; suffix: string }[] = [
+  { name: 'major', intervals: [0, 4, 7], suffix: '' },
+  { name: 'minor', intervals: [0, 3, 7], suffix: 'm' },
+  { name: 'diminished', intervals: [0, 3, 6], suffix: 'dim' },
+  { name: 'augmented', intervals: [0, 4, 8], suffix: 'aug' },
+  { name: 'sus4', intervals: [0, 5, 7], suffix: 'sus4' },
+  { name: 'sus2', intervals: [0, 2, 7], suffix: 'sus2' },
+  { name: 'major7', intervals: [0, 4, 7, 11], suffix: 'maj7' },
+  { name: 'dominant7', intervals: [0, 4, 7, 10], suffix: '7' },
+  { name: 'minor7', intervals: [0, 3, 7, 10], suffix: 'm7' },
+  { name: 'dim7', intervals: [0, 3, 6, 9], suffix: 'dim7' },
+  { name: 'halfDim7', intervals: [0, 3, 6, 10], suffix: 'm7b5' },
+];
+
+const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+/**
+ * Infer chord from a set of pitch classes
+ */
+const inferChordFromPitches = (pitchClasses: Set<number>, bassNote?: number): string | null => {
+  if (pitchClasses.size < 2) return null;
+  const pitches = Array.from(pitchClasses).sort((a, b) => a - b);
+  let bestMatch: { root: number; suffix: string; score: number } | null = null;
+  // Try each pitch as a potential root
+  for (const root of pitches) {
+    // Calculate intervals from this root
+    const intervals = pitches.map(p => (p - root + 12) % 12);
+    // Try to match against templates
+    for (const template of chordTemplates) {
+      const matchCount = template.intervals.filter(i => intervals.includes(i)).length;
+      const extraNotes = intervals.filter(i => !template.intervals.includes(i)).length;
+      const score = matchCount / template.intervals.length - extraNotes * 0.1;
+      if (matchCount >= Math.min(3, template.intervals.length) && (!bestMatch || score > bestMatch.score)) {
+        bestMatch = { root, suffix: template.suffix, score };
+      }
+    }
+  }
+  if (!bestMatch) {
+    // Fallback: use bass note as root, assume major/minor based on third
+    const root = bassNote !== undefined ? bassNote : pitches[0];
+    const intervals = pitches.map(p => (p - root + 12) % 12);
+    const hasMinorThird = intervals.includes(3);
+    const hasMajorThird = intervals.includes(4);
+    if (hasMajorThird) {
+      bestMatch = { root, suffix: '', score: 0.5 };
+    } else if (hasMinorThird) {
+      bestMatch = { root, suffix: 'm', score: 0.5 };
+    } else {
+      bestMatch = { root, suffix: '', score: 0.3 };
+    }
+  }
+  const rootName = noteNames[bestMatch.root];
+  // If bass note is different from root, add bass notation
+  if (bassNote !== undefined && bassNote !== bestMatch.root) {
+    return rootName + bestMatch.suffix + '/' + noteNames[bassNote];
+  }
+  return rootName + bestMatch.suffix;
+};
+
+/**
+ * Extract pitch class from a MusicXML note element
+ */
+const extractPitchClass = (noteEl: Element): { pitchClass: number; octave: number } | null => {
+  const pitchEl = noteEl.querySelector('pitch');
+  if (!pitchEl) return null;
+  const step = pitchEl.querySelector('step')?.textContent || '';
+  const alter = parseInt(pitchEl.querySelector('alter')?.textContent || '0', 10);
+  const octave = parseInt(pitchEl.querySelector('octave')?.textContent || '4', 10);
+  if (!step || !(step in pitchClassMap)) return null;
+  const pitchClass = (pitchClassMap[step] + alter + 12) % 12;
+  return { pitchClass, octave };
+};
+
+/**
+ * Convert MusicXML to chordmark format
+ * Extracts measures, chords (or infers them from notes), and lyrics
+ */
+export const convertMusicXmlToChordmark = (xmlContent: string): string => {
+  try {
+    if (typeof DOMParser === 'undefined') {
+      return ''; // Server-side not supported
+    }
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(xmlContent, 'application/xml');
+    const parseError = doc.querySelector('parsererror');
+    if (parseError) return '';
+    // Get all parts
+    const parts = doc.querySelectorAll('part');
+    if (parts.length === 0) return '';
+    // Get all unique measure numbers from the first part
+    const firstPart = parts[0];
+    const measureElements = firstPart.querySelectorAll('measure');
+    if (measureElements.length === 0) return '';
+    // Build measure data, collecting from ALL parts
+    const measures: MeasureData[] = [];
+    measureElements.forEach((_, idx) => {
+      const measureNum = parseInt(measureElements[idx].getAttribute('number') || String(idx + 1), 10);
+      const measureData: MeasureData = { number: measureNum, chords: [], lyrics: [] };
+      const pitchClasses = new Set<number>();
+      let bassNote: number | undefined;
+      let lowestOctave = Infinity;
+      // Collect data from ALL parts for this measure
+      for (const part of Array.from(parts)) {
+        const partMeasure = part.querySelector(`measure[number="${measureNum}"]`);
+        if (!partMeasure) continue;
+        // Extract chord symbols from <harmony> elements
+        const harmonyElements = partMeasure.querySelectorAll('harmony');
+        harmonyElements.forEach(harmony => {
+          const rootStep = harmony.querySelector('root-step')?.textContent || '';
+          const rootAlter = harmony.querySelector('root-alter')?.textContent || '';
+          const kind = harmony.querySelector('kind')?.textContent || '';
+          if (rootStep && measureData.chords.length === 0) { // Only take first harmony found
+            let chordSymbol = rootStep;
+            if (rootAlter === '-1') chordSymbol += 'b';
+            else if (rootAlter === '1') chordSymbol += '#';
+            const kindMap: Record<string, string> = {
+              'major': '', 'minor': 'm', 'dominant': '7', 'major-seventh': 'maj7',
+              'minor-seventh': 'm7', 'diminished': 'dim', 'augmented': 'aug',
+              'suspended-fourth': 'sus4', 'suspended-second': 'sus2',
+              'dominant-ninth': '9', 'major-sixth': '6', 'minor-sixth': 'm6',
+            };
+            chordSymbol += kindMap[kind] || '';
+            const bassStep = harmony.querySelector('bass-step')?.textContent;
+            const bassAlter = harmony.querySelector('bass-alter')?.textContent;
+            if (bassStep) {
+              chordSymbol += '/' + bassStep;
+              if (bassAlter === '-1') chordSymbol += 'b';
+              else if (bassAlter === '1') chordSymbol += '#';
+            }
+            measureData.chords.push(chordSymbol);
+          }
+        });
+        // Collect notes for chord inference
+        const notes = partMeasure.querySelectorAll('note');
+        notes.forEach(note => {
+          if (note.querySelector('rest')) return;
+          const pitchInfo = extractPitchClass(note);
+          if (pitchInfo) {
+            pitchClasses.add(pitchInfo.pitchClass);
+            if (pitchInfo.octave < lowestOctave) {
+              lowestOctave = pitchInfo.octave;
+              bassNote = pitchInfo.pitchClass;
+            }
+          }
+        });
+        // Extract lyrics (only if this measure doesn't already have lyrics)
+        if (measureData.lyrics.length === 0) {
+          notes.forEach(note => {
+            const lyricEl = note.querySelector('lyric');
+            if (lyricEl) {
+              const syllabicEl = lyricEl.querySelector('syllabic');
+              const textEl = lyricEl.querySelector('text');
+              if (textEl?.textContent) {
+                measureData.lyrics.push({
+                  text: textEl.textContent,
+                  syllabic: syllabicEl?.textContent || null
+                });
+              }
+            }
+          });
+        }
+      }
+      // Infer chord from notes if no harmony found
+      if (measureData.chords.length === 0 && pitchClasses.size >= 2) {
+        const inferredChord = inferChordFromPitches(pitchClasses, bassNote);
+        if (inferredChord) {
+          measureData.chords.push(inferredChord);
+        }
+      }
+      measures.push(measureData);
+    });
+    const combineLyrics = (lyrics: SyllablePart[]): string => combineSyllablesIntoWords(lyrics).join(' ').trim();
+    // Build chordmark output - 2 measures per line
+    const output: string[] = [];
+    const measuresPerLine = 2;
+    let lastChord = '';
+    for (let i = 0; i < measures.length; i += measuresPerLine) {
+      const lineMeasures = measures.slice(i, i + measuresPerLine);
+      // Build chord line - one chord per measure (repeat previous if same)
+      const chordParts: string[] = [];
+      for (const m of lineMeasures) {
+        const chord = m.chords.length > 0 ? m.chords[0] : lastChord;
+        chordParts.push(chord || '%');
+        if (chord) lastChord = chord;
+      }
+      // Only output chord line if we have chords
+      if (chordParts.some(c => c && c !== '%')) {
+        output.push(chordParts.join(' '));
+      }
+      // Build lyric line with _ markers at measure boundaries (including start)
+      const lyricParts: string[] = [];
+      for (let j = 0; j < lineMeasures.length; j++) {
+        const m = lineMeasures[j];
+        const lyricText = combineLyrics(m.lyrics);
+        if (lyricText) {
+          // Always prefix with _ to mark measure boundary
+          lyricParts.push('_' + lyricText);
+        } else if (lyricParts.length > 0) {
+          // Add just _ if this measure has no lyrics but previous did (shows measure break)
+          lyricParts.push('_');
+        }
+      }
+      if (lyricParts.length > 0) {
+        output.push(lyricParts.join(' '));
+      }
+    }
+    return output.join('\n');
+  } catch (error) {
+    console.error('Failed to convert MusicXML to chordmark:', error);
+    return '';
+  }
+};
+
+/**
+ * Extract lyrics from MusicXML content
+ * Parses <lyric> elements within <note> elements
+ */
+export const extractLyricsFromMusicXml = (xmlContent: string): string => {
+  try {
+    // Use DOMParser if available (browser), otherwise basic regex parsing
+    if (typeof DOMParser !== 'undefined') {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(xmlContent, 'application/xml');
+      // Check for parsing errors
+      const parseError = doc.querySelector('parsererror');
+      if (parseError) {
+        console.error('MusicXML parse error:', parseError.textContent);
+        return '';
+      }
+      // Get all lyric elements
+      const lyricElements = doc.querySelectorAll('lyric');
+      if (lyricElements.length === 0) return '';
+      // Build lyrics by tracking syllables and word boundaries
+      const parts: SyllablePart[] = [];
+      lyricElements.forEach(lyric => {
+        const syllabicEl = lyric.querySelector('syllabic');
+        const textEl = lyric.querySelector('text');
+        if (textEl?.textContent) {
+          parts.push({
+            syllabic: syllabicEl?.textContent || null,
+            text: textEl.textContent
+          });
+        }
+      });
+      const words = combineSyllablesIntoWords(parts);
+      // Format into lines (roughly 8 words per line for readability)
+      const lines: string[] = [];
+      for (let i = 0; i < words.length; i += 8) {
+        lines.push(words.slice(i, i + 8).join(' '));
+      }
+      return lines.join('\n');
+    }
+    // Fallback: regex-based extraction for server-side
+    const lyricRegex = /<lyric[^>]*>[\s\S]*?<text>([^<]+)<\/text>[\s\S]*?<\/lyric>/g;
+    const syllabicRegex = /<syllabic>([^<]+)<\/syllabic>/;
+    const matches = [...xmlContent.matchAll(lyricRegex)];
+    if (matches.length === 0) return '';
+    const parts: SyllablePart[] = matches.map(match => {
+      const lyricBlock = match[0];
+      const syllabicMatch = lyricBlock.match(syllabicRegex);
+      return { text: match[1], syllabic: syllabicMatch ? syllabicMatch[1] : null };
+    });
+    const words = combineSyllablesIntoWords(parts);
+    const lines: string[] = [];
+    for (let i = 0; i < words.length; i += 8) {
+      lines.push(words.slice(i, i + 8).join(' '));
+    }
+    return lines.join('\n');
+  } catch (error) {
+    console.error('Failed to extract lyrics from MusicXML:', error);
+    return '';
+  }
+};
+
 /**
  * Detect file type from filename or content
  */
-export const detectFileType = (filename: string, content: string): 'lilypond' | 'chordmark' | 'ultimateguitar' | 'text' | 'markdown' | 'html' | 'csv' | 'unknown' => {
+export const detectFileType = (filename: string, content: string): 'lilypond' | 'chordmark' | 'ultimateguitar' | 'text' | 'markdown' | 'html' | 'csv' | 'musicxml' | 'unknown' => {
   const lowerFilename = filename.toLowerCase();
   
   // Check file extension first
@@ -482,6 +793,10 @@ export const detectFileType = (filename: string, content: string): 'lilypond' | 
   if (lowerFilename.endsWith('.csv')) {
     return 'csv';
   }
+
+  if (lowerFilename.endsWith('.musicxml') || lowerFilename.endsWith('.mxl') || lowerFilename.endsWith('.xml') || lowerFilename.endsWith('.mxml')) {
+    return 'musicxml';
+  }
   
   // Check content patterns for HTML
   if (content.trim().startsWith('<!DOCTYPE html') || content.trim().startsWith('<html') || /<html[\s>]/i.test(content)) {
@@ -492,18 +807,25 @@ export const detectFileType = (filename: string, content: string): 'lilypond' | 
   if (content.includes('\\lyricmode') || content.includes('\\version') || content.includes('\\relative')) {
     return 'lilypond';
   }
+
+  // Check content patterns for MusicXML
+  if (content.includes('<score-partwise') || content.includes('<score-timewise') || content.includes('<!DOCTYPE score-partwise')) {
+    return 'musicxml';
+  }
   
-  // Try to parse as chordmark - if it parses successfully, it's chordmark
-  try {
-    parseSong(content);
-    // If parsing succeeded and content has bar notation or chord symbols, it's chordmark
-    if (content.includes('|') || /\[[A-G][#b]?(m|maj|min|sus|aug|dim)?[0-9]?\]/.test(content)) {
+  // Try to parse as chordmark - if it parses successfully and has content, it's chordmark
+  if (content.trim()) {
+    try {
+      parseSong(content);
+      // If parsing succeeded and content has bar notation or chord symbols, it's chordmark
+      if (content.includes('|') || /\[[A-G][#b]?(m|maj|min|sus|aug|dim)?[0-9]?\]/.test(content)) {
+        return 'chordmark';
+      }
+      // Even without bars, if it parsed and has some structure, assume chordmark
       return 'chordmark';
+    } catch {
+      // Not chordmark, fall through to ultimateguitar
     }
-    // Even without bars, if it parsed and has some structure, assume chordmark
-    return 'chordmark';
-  } catch {
-    // Not chordmark, fall through to ultimateguitar
   }
   
   // Default to ultimate guitar format for plain text
@@ -522,6 +844,8 @@ export const extractLyrics = (content: string, filename: string = ''): string =>
       return extractLyricsFromLilypond(content);
     case 'chordmark':
       return extractLyricsFromChordmark(content);
+    case 'musicxml':
+      return extractLyricsFromMusicXml(content);
     case 'ultimateguitar':
       return extractLyricsFromUltimateGuitar(content);
     default:

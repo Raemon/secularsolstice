@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { BLOB_UPLOAD_ACCEPT } from './types';
 
 const MAX_FILE_SIZE_MB = 4.5;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
@@ -63,7 +64,7 @@ const BlobUpload = ({blobUrl, onFormChange, songId}:{blobUrl: string; onFormChan
           placeholder="File URL"
         />
         <div className="flex items-center gap-1">
-          <input ref={fileInputRef} type="file" accept=".pdf,.midi,.mid,.mp3,.wav,.txt,.xml,.musicxml" onChange={handleFileSelect} style={{display: 'none'}} />
+          <input ref={fileInputRef} type="file" accept={BLOB_UPLOAD_ACCEPT} onChange={handleFileSelect} style={{display: 'none'}} />
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}

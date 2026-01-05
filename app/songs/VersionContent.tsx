@@ -11,6 +11,8 @@ import CsvRenderer from './CsvRenderer';
 import DeferredRender from '../components/DeferredRender';
 import { AUDIO_EXTENSIONS } from '../../lib/audioExtensions';
 import { detectFileType } from '../../lib/lyricsExtractor';
+import { SUPPORTED_EXTENSIONS } from './types';
+import { createFallbackSongVersion } from './types';
 import DOMPurify from 'isomorphic-dompurify';
 
 // Component to lazy-load version content
@@ -88,7 +90,10 @@ const LazyVersionContentLoader = ({versionId, label, bpm, transpose, print, hasB
         <CsvRenderer content={content} />
       )}
       {hasBlob && blobUrl && (
-        <BlobAttachment blobUrl={blobUrl} defaultExpanded={!content} />
+        <BlobAttachment blobUrl={blobUrl} defaultExpanded={!content} version={{
+          ...createFallbackSongVersion({ id: versionId, songId: '', label, createdAt: '' }),
+          content, renderedContent, bpm, transpose, blobUrl,
+        }} />
       )}
     </>
   );
@@ -117,8 +122,7 @@ const VersionContent = ({version, print}: {
   const isAudioFile = normalizedAudioUrl ? AUDIO_EXTENSIONS.some(ext => normalizedAudioUrl.endsWith(ext)) : false;
   const movieUrl = version.slidesMovieUrl || '';
   const normalizedMovieUrl = movieUrl.toLowerCase();
-  const videoExtensions = ['.mp4', '.mov', '.webm', '.m4v'];
-  const isVideoFile = normalizedMovieUrl ? videoExtensions.some(ext => normalizedMovieUrl.endsWith(ext)) : false;
+  const isVideoFile = normalizedMovieUrl ? SUPPORTED_EXTENSIONS.video.some(ext => normalizedMovieUrl.endsWith(`.${ext}`)) : false;
 
   if (!hasAudio && !hasSlidesMovie && !hasBlob && !hasContent && !needsLazyLoad) {
     return <p className="text-gray-500 text-xs">No stored content for this version.</p>;
@@ -178,7 +182,7 @@ const VersionContent = ({version, print}: {
           </DeferredRender>
           {hasBlob && (
             <DeferredRender fallback={loadingFallback}>
-              <BlobAttachment blobUrl={version.blobUrl!} defaultExpanded={!hasContent} />
+              <BlobAttachment blobUrl={version.blobUrl!} defaultExpanded={!hasContent} version={version} />
             </DeferredRender>
           )}
         </>
