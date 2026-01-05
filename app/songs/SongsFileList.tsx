@@ -299,6 +299,7 @@ const SongsFileList = ({ initialSongs, initialSongId, initialVersionId, initialV
               song={song}
               selectedSongId={initialSongId}
               selectedVersionId={initialVersionId}
+              searchTerm={searchTerm}
             />
           ))}
           {loadingMore && <span className="text-xs text-gray-500 block py-2">loading...</span>}

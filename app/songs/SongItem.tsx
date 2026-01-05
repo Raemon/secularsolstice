@@ -6,15 +6,27 @@ import MyTooltip from '@/app/components/Tooltip';
 import { formatRelativeTimestamp } from '@/lib/dateUtils';
 import { groupBy, map } from 'lodash';
 
+const HighlightMatch = ({text, searchTerm}: {text: string; searchTerm?: string}) => {
+  if (!searchTerm || searchTerm.trim() === '') return <>{text}</>;
+  const searchLower = searchTerm.toLowerCase();
+  const textLower = text.toLowerCase();
+  const index = textLower.indexOf(searchLower);
+  if (index === -1) return <>{text}</>;
+  const before = text.slice(0, index);
+  const match = text.slice(index, index + searchTerm.length);
+  const after = text.slice(index + searchTerm.length);
+  return <>{before}<span className="text-white underline">{match}</span>{after}</>;
+};
+
 const formatDate = (dateStr: string) => {
   const date = new Date(dateStr);
   return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) +
     ' ' + date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 };
 
-const TruncatedFilename = ({label, className}: {label: string; className?: string}) => {
+const TruncatedFilename = ({label, className, searchTerm}: {label: string; className?: string; searchTerm?: string}) => {
   const lastDot = label.lastIndexOf('.');
-  if (lastDot === -1) return <span className={`truncate ${className}`}>{label}</span>;
+  if (lastDot === -1) return <span className={`truncate ${className}`}><HighlightMatch text={label} searchTerm={searchTerm} /></span>;
   const name = label.slice(0, lastDot);
   const ext = label.slice(lastDot);
   const tailChars = 5;
@@ -22,13 +34,13 @@ const TruncatedFilename = ({label, className}: {label: string; className?: strin
   const nameHead = name.slice(0, -tailChars);
   return (
     <span className={`flex min-w-0 ${className}`}>
-      <span className="truncate">{nameHead}</span>
-      <span className="flex-shrink-0">{nameTail}{ext}</span>
+      <span className="truncate"><HighlightMatch text={nameHead} searchTerm={searchTerm} /></span>
+      <span className="flex-shrink-0"><HighlightMatch text={nameTail + ext} searchTerm={searchTerm} /></span>
     </span>
   );
 };
 
-const VersionRow = ({version, songId, isSelected}: {version: SongVersion; songId: string; isSelected: boolean}) => {
+const VersionRow = ({version, songId, isSelected, searchTerm}: {version: SongVersion; songId: string; isSelected: boolean; searchTerm?: string}) => {
   return (
     <Link 
       href={`/songs/${songId}/${version.id}`}
@@ -36,7 +48,7 @@ const VersionRow = ({version, songId, isSelected}: {version: SongVersion; songId
       className={`flex items-center gap-3 px-2 py-[2px] ${isSelected ? 'text-primary' : 'hover:bg-white/10'}`}
     >
       <span className={`flex-1 font-mono min-w-0 w-[100px] ${isSelected ? 'font-medium' : ''}`} style={{fontSize: '12px'}}>
-        <TruncatedFilename label={version.label} className={isSelected ? 'text-primary' : 'text-gray-400'} />
+        <TruncatedFilename label={version.label} className={isSelected ? 'text-primary' : 'text-gray-400'} searchTerm={searchTerm} />
       </span>
       <MyTooltip content={<div>{formatDate(version.createdAt)}{version.createdBy && ` - ${version.createdBy}`}</div>} placement="left">
         <span className="text-gray-600 text-xs">{formatRelativeTimestamp(version.createdAt)}</span>
@@ -45,13 +57,14 @@ const VersionRow = ({version, songId, isSelected}: {version: SongVersion; songId
   );
 };
 
-const SongItem = ({song, selectedSongId, selectedVersionId, showTags = true, maxVersions, sortReadmeFirst = true}: {
+const SongItem = ({song, selectedSongId, selectedVersionId, showTags = true, maxVersions, sortReadmeFirst = true, searchTerm}: {
   song: Song;
   selectedSongId?: string;
   selectedVersionId?: string;
   showTags?: boolean;
   maxVersions?: number;
   sortReadmeFirst?: boolean;
+  searchTerm?: string;
 }) => {
   const tagsMinusSong = song.tags.filter(tag => tag !== 'song');
   const isSongSelected = selectedSongId === song.id && !selectedVersionId;
@@ -74,9 +87,13 @@ const SongItem = ({song, selectedSongId, selectedVersionId, showTags = true, max
       <div className="group flex items-center w-1/2 justify-between pl-3 pr-2 py-1 text-lg font-medium border-b border-gray-800 font-georgia">
         <Link href={`/songs/${song.id}`} className="flex flex-col">
           <span className={isSongSelected ? 'text-primary' : 'hover:text-gray-300'}>
-            {song.title}
+            <HighlightMatch text={song.title} searchTerm={searchTerm} />
           </span>
-          {showTags && <span className="text-[10px] text-gray-400 font-mono">{tagsMinusSong.join(', ')}</span>}
+          {showTags && <span className="text-[10px] text-gray-400 font-mono">
+            {tagsMinusSong.map((tag, i) => (
+              <span key={tag}>{i > 0 && ', '}<HighlightMatch text={tag} searchTerm={searchTerm} /></span>
+            ))}
+          </span>}
         </Link>
       </div>
       <div className="border-b py-1 border-gray-800 w-1/2 flex flex-col justify-center pr-2">
@@ -89,6 +106,7 @@ const SongItem = ({song, selectedSongId, selectedVersionId, showTags = true, max
               version={version}
               songId={song.id}
               isSelected={selectedVersionId === version.id}
+              searchTerm={searchTerm}
             />
           ))
         )}
