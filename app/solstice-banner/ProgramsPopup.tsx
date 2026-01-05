@@ -73,7 +73,7 @@ export const ProgramsPopup = ({programs, city, screenCoords, onClose}: {
         popupRef.current = node;
       }}
       style={floatingStyles}
-      className="bg-[#11101b] text-white z-[10000000000] relative rounded-md shadow-xl p-2.5 max-w-[280px]"
+      className="bg-[#22212c] text-white z-[10000000000] relative rounded-md shadow-xl p-2.5 max-w-[280px]"
     >
       <div className="absolute" style={triangleStyle} />
       <div className="font-georgia font-semibold text-lg mb-2">{city} Solstice Programs</div>
@@ -87,7 +87,7 @@ export const ProgramsPopup = ({programs, city, screenCoords, onClose}: {
             {program.title}
           </Link>
         ))}
-        <span className="text-[11px] text-gray-400">Click to read</span>
+        <span className="text-[11px] text-gray-300 italic mt-2">Click to read</span>
       </div>
     </div>
   );
