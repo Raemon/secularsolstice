@@ -1,0 +1,18 @@
+# Large local data directories that should NOT be deployed
+# Use specific paths to avoid matching app/songs/
+/songs
+/.secular-solstice-cache
+/SecularSolstice.github.io-master
+/tmp
+
+# Development files
+/.vscode
+*.log
+
+# Test files
+/test-*.js
+/TEST_*.md
+/PDF_CONVERSION_DEBUG_REPORT.md
+
+# Lilypond server (deployed separately)
+/lilypond-server
