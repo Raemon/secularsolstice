@@ -452,6 +452,8 @@ interface MeasureData {
   number: number;
   chords: string[];
   lyrics: { text: string; syllabic: string | null }[];
+  restBeatsBeforeLyrics: number; // Beats of rest before first lyric in measure
+  hasOnlyRests: boolean; // True if measure has no sung notes (only rests)
 }
 
 interface SyllablePart { text: string; syllabic: string | null; }
@@ -559,6 +561,18 @@ const extractPitchClass = (noteEl: Element): { pitchClass: number; octave: numbe
 };
 
 /**
+ * Convert rest beats to ChordMark rest notation
+ * Each dot represents 1 beat, so r... = 3 beats
+ * Uses floor to ignore fractional beats (e.g., 3.5 → 3)
+ */
+const beatsToRestNotation = (beats: number): string => {
+  if (beats < 1) return ''; // Ignore rests less than 1 beat
+  const wholeBeats = Math.floor(beats);
+  if (wholeBeats <= 0) return '';
+  return 'r' + '.'.repeat(wholeBeats);
+};
+
+/**
  * Convert MusicXML to chordmark format
  * Extracts measures, chords (or infers them from notes), and lyrics
  */
@@ -580,11 +594,14 @@ export const convertMusicXmlToChordmark = (xmlContent: string): string => {
     if (measureElements.length === 0) return '';
     // Check if document has any explicit harmony elements - if so, don't infer chords
     const hasExplicitHarmony = doc.querySelector('harmony') !== null;
+    // Get divisions (divisions per quarter note) - default to 1 if not found
+    const divisionsEl = firstPart.querySelector('attributes divisions');
+    const divisions = divisionsEl ? parseInt(divisionsEl.textContent || '1', 10) : 1;
     // Build measure data, collecting from ALL parts
     const measures: MeasureData[] = [];
     measureElements.forEach((_, idx) => {
       const measureNum = parseInt(measureElements[idx].getAttribute('number') || String(idx + 1), 10);
-      const measureData: MeasureData = { number: measureNum, chords: [], lyrics: [] };
+      const measureData: MeasureData = { number: measureNum, chords: [], lyrics: [], restBeatsBeforeLyrics: 0, hasOnlyRests: true };
       const pitchClasses = new Set<number>();
       let bassNote: number | undefined;
       let lowestOctave = Infinity;
@@ -619,10 +636,24 @@ export const convertMusicXmlToChordmark = (xmlContent: string): string => {
             measureData.chords.push(chordSymbol);
           }
         });
-        // Collect notes for chord inference
+        // Process notes to collect chord inference data, lyrics, and track rests
         const notes = partMeasure.querySelectorAll('note');
+        let restDurationBeforeLyrics = 0;
+        let foundLyricInThisPart = false;
+        let hasSungNoteInThisPart = false;
         notes.forEach(note => {
-          if (note.querySelector('rest')) return;
+          const isRest = note.querySelector('rest') !== null;
+          const duration = parseInt(note.querySelector('duration')?.textContent || '0', 10);
+          const durationInBeats = duration / divisions; // Convert to beats (quarter notes)
+          if (isRest) {
+            // Track rest duration before first lyric
+            if (!foundLyricInThisPart) {
+              restDurationBeforeLyrics += durationInBeats;
+            }
+            return;
+          }
+          // It's a pitched note
+          hasSungNoteInThisPart = true;
           const pitchInfo = extractPitchClass(note);
           if (pitchInfo) {
             pitchClasses.add(pitchInfo.pitchClass);
@@ -631,22 +662,27 @@ export const convertMusicXmlToChordmark = (xmlContent: string): string => {
               bassNote = pitchInfo.pitchClass;
             }
           }
-        });
-        // Extract lyrics (only if this measure doesn't already have lyrics)
-        if (measureData.lyrics.length === 0) {
-          notes.forEach(note => {
-            const lyricEl = note.querySelector('lyric');
-            if (lyricEl) {
-              const syllabicEl = lyricEl.querySelector('syllabic');
-              const textEl = lyricEl.querySelector('text');
-              if (textEl?.textContent) {
-                measureData.lyrics.push({
-                  text: textEl.textContent,
-                  syllabic: syllabicEl?.textContent || null
-                });
+          // Extract lyrics
+          const lyricEl = note.querySelector('lyric');
+          if (lyricEl && (measureData.lyrics.length === 0 || foundLyricInThisPart)) {
+            const syllabicEl = lyricEl.querySelector('syllabic');
+            const textEl = lyricEl.querySelector('text');
+            if (textEl?.textContent) {
+              if (!foundLyricInThisPart) {
+                // First lyric in this part - record rest beats before it
+                measureData.restBeatsBeforeLyrics = restDurationBeforeLyrics;
+                foundLyricInThisPart = true;
               }
+              measureData.lyrics.push({
+                text: textEl.textContent,
+                syllabic: syllabicEl?.textContent || null
+              });
             }
-          });
+          }
+        });
+        // If this part has sung notes, the measure isn't only rests
+        if (hasSungNoteInThisPart) {
+          measureData.hasOnlyRests = false;
         }
       }
       // Infer chord from notes only if document has no explicit harmony elements
@@ -677,15 +713,18 @@ export const convertMusicXmlToChordmark = (xmlContent: string): string => {
         output.push(chordParts.join(' '));
       }
       // Build lyric line with _ markers at measure boundaries (including start)
+      // Also include rest notation for rests before lyrics
       const lyricParts: string[] = [];
       for (let j = 0; j < lineMeasures.length; j++) {
         const m = lineMeasures[j];
         const lyricText = combineLyrics(m.lyrics);
         if (lyricText) {
-          // Always prefix with _ to mark measure boundary
-          lyricParts.push('_' + lyricText);
-        } else if (lyricParts.length > 0) {
-          // Add just _ if this measure has no lyrics but previous did (shows measure break)
+          // Add rest notation if there are rests before the lyrics
+          const restNotation = beatsToRestNotation(m.restBeatsBeforeLyrics);
+          // Always prefix with _ to mark measure boundary, optionally with rest notation
+          lyricParts.push('_' + restNotation + (restNotation ? ' ' : '') + lyricText);
+        } else if (m.hasOnlyRests || lyricParts.length > 0) {
+          // Add just _ for empty measures (rests only) or if previous measure had lyrics
           lyricParts.push('_');
         }
       }
