@@ -57,9 +57,12 @@ export const createLightBeams = (obj: object): THREE.Object3D => {
   const widthScale = 1 + Math.log2(programCount + 1) * 0.3;
   const beamHeight = baseHeight * heightScale;
   const beamWidth = baseWidth * widthScale;
-  const beamColor = new THREE.Color(1.0, 0.95, 0.85);
+  const innerBeamColor = new THREE.Color(1.0, 1.0, 1.0);
+  const outerBeamColor = new THREE.Color(1.0, 0.8, 0.35);
   const segments = 16;
-  const beamGeometry = new THREE.CylinderGeometry(beamWidth * 3, beamWidth, beamHeight, 8, segments, true);
+  const innerWidthScale = 1 + Math.log2(programCount + 1) * 1;
+  const innerBeamWidth = baseWidth * innerWidthScale;
+  const beamGeometry = new THREE.CylinderGeometry(innerBeamWidth * 1.5, innerBeamWidth * 0.5, beamHeight, 8, segments, true);
   const alphas = new Float32Array(beamGeometry.attributes.position.count);
   const positions = beamGeometry.attributes.position.array;
   for (let v = 0; v < beamGeometry.attributes.position.count; v++) {
@@ -70,10 +73,10 @@ export const createLightBeams = (obj: object): THREE.Object3D => {
   }
   beamGeometry.setAttribute('alpha', new THREE.BufferAttribute(alphas, 1));
   beamGeometry.rotateX(Math.PI / 2);
-  beamGeometry.translate(0, 0, beamHeight / 2);
+  beamGeometry.translate(0, 0, beamHeight / 2 - 1);
   const beamMaterial = new THREE.ShaderMaterial({
     uniforms: {
-      color: { value: beamColor },
+      color: { value: innerBeamColor },
       opacity: { value: 0.85 },
     },
     vertexShader: `
@@ -109,10 +112,10 @@ export const createLightBeams = (obj: object): THREE.Object3D => {
   }
   glowGeometry.setAttribute('alpha', new THREE.BufferAttribute(glowAlphas, 1));
   glowGeometry.rotateX(Math.PI / 2);
-  glowGeometry.translate(0, 0, beamHeight / 2);
+  glowGeometry.translate(0, 0, beamHeight / 2 - 1);
   const glowMaterial = new THREE.ShaderMaterial({
     uniforms: {
-      color: { value: beamColor },
+      color: { value: outerBeamColor },
       opacity: { value: 0.15 },
     },
     vertexShader: `
@@ -139,7 +142,7 @@ export const createLightBeams = (obj: object): THREE.Object3D => {
   const baseSphereGeometry = new THREE.SphereGeometry(beamWidth * 2, segments, segments);
   const baseSphereMaterial = new THREE.ShaderMaterial({
     uniforms: {
-      color: { value: beamColor },
+      color: { value: innerBeamColor },
       opacity: { value: 0.6 },
     },
     vertexShader: `
@@ -158,10 +161,11 @@ export const createLightBeams = (obj: object): THREE.Object3D => {
     side: THREE.DoubleSide,
   });
   const baseSphere = new THREE.Mesh(baseSphereGeometry, baseSphereMaterial);
+  baseSphere.position.z = -beamWidth * 2;
   group.add(baseSphere);
   const hoverTargetGeometry = new THREE.CylinderGeometry(beamWidth * 12, beamWidth * 4, beamHeight, 8, segments, true);
   hoverTargetGeometry.rotateX(Math.PI / 2);
-  hoverTargetGeometry.translate(0, 0, beamHeight / 2);
+  hoverTargetGeometry.translate(0, 0, beamHeight / 2 - 1);
   const hoverTargetMaterial = new THREE.MeshBasicMaterial({
     transparent: true,
     opacity: 0,

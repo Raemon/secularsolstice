@@ -12,7 +12,7 @@ export const ProgramsPopup = ({programs, city, screenCoords, onClose}: {
 }) => {
   const popupRef = useRef<HTMLDivElement>(null);
   const [triangleStyle, setTriangleStyle] = useState<React.CSSProperties>({});
-  const bgColor = '#e5e7eb';
+  const bgColor = '#11101b';
 
   const { refs, floatingStyles, placement: actualPlacement } = useFloating({
     placement: 'right',
@@ -73,7 +73,7 @@ export const ProgramsPopup = ({programs, city, screenCoords, onClose}: {
         popupRef.current = node;
       }}
       style={floatingStyles}
-      className="bg-gray-200 z-[10000000000] relative rounded-md shadow-xl p-2.5 max-w-[280px] text-black"
+      className="bg-[#22212c] text-white z-[10000000000] relative rounded-md shadow-xl p-2.5 max-w-[280px]"
     >
       <div className="absolute" style={triangleStyle} />
       <div className="font-georgia font-semibold text-lg mb-2">{city} Solstice Programs</div>
@@ -82,12 +82,12 @@ export const ProgramsPopup = ({programs, city, screenCoords, onClose}: {
           <Link
             key={program.id}
             href={`/programs/${program.id}/script`}
-            className="text-sm text-black hover:text-blue-600 hover:underline"
+            className="text-sm text-white hover:text-blue-600 hover:underline"
           >
             {program.title}
           </Link>
         ))}
-        <span className="text-[11px] text-gray-500">Click to read</span>
+        <span className="text-[11px] text-gray-300 italic mt-2">Click to read</span>
       </div>
     </div>
   );

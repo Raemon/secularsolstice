@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Song } from '../songs/types';
 
-const INITIAL_BATCH_SIZE = 16;
+const INITIAL_BATCH_SIZE = 20;
 
 // Module-level cache to persist songs across navigations
 let cachedSongs: Song[] = [];

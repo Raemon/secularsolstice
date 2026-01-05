@@ -29,10 +29,13 @@ type SongsFileListProps = {
 const SongsFileList = ({ initialSongs, initialSongId, initialVersionId, initialVersion, initialPreviousVersions = [] }: SongsFileListProps = {}) => {
   const router = useRouter();
   const { userName } = useUser();
-  // Use server-provided data if available, otherwise fall back to client fetch
-  const { songs: clientSongs, loading: clientLoading, loadingMore, error: listError, refetch: fetchSongs } = useSongsProgressiveLoad();
-  const songs = initialSongs || clientSongs;
+  // Use server-provided data for initial render, then switch to client data once fully loaded
+  const { songs: clientSongs, loading: clientLoading, loadingMore: clientLoadingMore, error: listError, refetch: fetchSongs } = useSongsProgressiveLoad();
+  // Use client data if it's loaded and has more songs than server data, otherwise use server data for fast initial render
+  const useClientData = !clientLoading && clientSongs.length >= (initialSongs?.length || 0);
+  const songs = useClientData ? clientSongs : (initialSongs || clientSongs);
   const loading = initialSongs ? false : clientLoading;
+  const loadingMore = clientLoadingMore;
   const [localError, setLocalError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
