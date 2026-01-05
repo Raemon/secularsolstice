@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import JSZip from 'jszip';
 import type { SongVersion } from './types';
 import { convertMusicXmlToChordmark, detectFileType } from '../../lib/lyricsExtractor';
 import ChordmarkRenderer from '../chordmark-converter/ChordmarkRenderer';
+import { useSheetMusicPlayback } from './useSheetMusicPlayback';
+import { fetchMusicXmlContent, detectMusicXmlFormat } from '../../lib/musicXmlUtils';
 
 type TabType = 'sheet-music' | 'lyrics-chords';
 
@@ -17,6 +18,7 @@ const SheetMusicViewer = ({musicXml, url, version}:{musicXml?: string; url?: str
   const [activeTab, setActiveTab] = useState<TabType>('sheet-music');
   const [xmlChordmark, setXmlChordmark] = useState<string>('');
   const source = url || musicXml;
+  const { isPlaying, isLoading: isLoadingAudio, currentBeat, totalBeats, loadError, handlePlay, handleStop } = useSheetMusicPlayback(source);
   const hasVersion = Boolean(version);
   const isChordmark = version ? detectFileType(version.label, version.content || '') === 'chordmark' : false;
   const chordmarkContent = isChordmark && version?.content ? version.content : xmlChordmark;
@@ -27,9 +29,7 @@ const SheetMusicViewer = ({musicXml, url, version}:{musicXml?: string; url?: str
     const lowerSource = source.toLowerCase();
     const isMusicXmlUrl = lowerSource.endsWith('.mxl') || lowerSource.endsWith('.musicxml') || lowerSource.endsWith('.xml') || lowerSource.endsWith('.mxml');
     // Check if it's already XML content passed as string (MusicXML or MuseScore format)
-    const isXmlContent = typeof musicXml === 'string' && (
-      musicXml.includes('<score-partwise') || musicXml.includes('<score-timewise') || musicXml.includes('<museScore')
-    );
+    const isXmlContent = typeof musicXml === 'string' && detectMusicXmlFormat(musicXml) !== null;
     if (isXmlContent && musicXml) {
       const chordmark = convertMusicXmlToChordmark(musicXml);
       setXmlChordmark(chordmark);
@@ -38,25 +38,8 @@ const SheetMusicViewer = ({musicXml, url, version}:{musicXml?: string; url?: str
     if (!url || !isMusicXmlUrl) return;
     const fetchAndConvert = async () => {
       try {
-        const response = await fetch(url);
-        if (!response.ok) return;
-        if (lowerSource.endsWith('.mxl')) {
-          // MXL is a ZIP archive containing the XML
-          const arrayBuffer = await response.arrayBuffer();
-          const zip = await JSZip.loadAsync(arrayBuffer);
-          let xmlContent: string | null = null;
-          for (const [filename, file] of Object.entries(zip.files)) {
-            if (filename.endsWith('.xml') && !filename.startsWith('META-INF')) {
-              xmlContent = await file.async('string');
-              break;
-            }
-          }
-          if (xmlContent) {
-            const chordmark = convertMusicXmlToChordmark(xmlContent);
-            setXmlChordmark(chordmark);
-          }
-        } else {
-          const xmlContent = await response.text();
+        const xmlContent = await fetchMusicXmlContent(url);
+        if (xmlContent) {
           const chordmark = convertMusicXmlToChordmark(xmlContent);
           setXmlChordmark(chordmark);
         }
@@ -143,6 +126,19 @@ const SheetMusicViewer = ({musicXml, url, version}:{musicXml?: string; url?: str
       )}
       {activeTab === 'sheet-music' && (
         <>
+          <div className="flex items-center gap-2 text-xs mb-2">
+            <button
+              onClick={isPlaying ? handleStop : handlePlay}
+              disabled={isLoadingAudio}
+              className="px-2 py-0.5 bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-400"
+            >
+              {isLoadingAudio ? '...' : isPlaying ? '■ Stop' : '▶ Play'}
+            </button>
+            {isPlaying && totalBeats > 0 && (
+              <span className="text-gray-400">{currentBeat.toFixed(1)} / {totalBeats.toFixed(1)} beats</span>
+            )}
+            {loadError && <span className="text-red-600">{loadError}</span>}
+          </div>
           {error && <div className="text-red-600 text-xs">Error rendering sheet music: {error}</div>}
           {isLoading && <div className="text-gray-500 text-xs">Loading sheet music...</div>}
           <div ref={containerRef} className="w-full overflow-x-auto [&_svg]:invert" />
