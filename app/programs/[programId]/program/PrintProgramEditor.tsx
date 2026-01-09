@@ -72,7 +72,7 @@ type PrintProgramEditorWrapperProps = {
 };
 
 export const PrintProgramEditorWrapper = ({programId, selectedProgram, programs, setPrograms, versions, setVersions, versionMap, programMap, onExitEditMode, setError}: PrintProgramEditorWrapperProps) => {
-  const { userName } = useUser();
+  const { userName, userId } = useUser();
   const [editedProgram, setEditedProgram] = useState<Program>({...selectedProgram});
   const [editedVersions, setEditedVersions] = useState<Record<string, string>>(() => {
     const versionCreditsMap: Record<string, string> = {};
@@ -145,7 +145,7 @@ export const PrintProgramEditorWrapper = ({programId, selectedProgram, programs,
         const response = await fetch(`/api/programs/${programId}`, {
           method: 'PATCH',
           headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify(allProgramUpdates),
+          body: JSON.stringify({...allProgramUpdates, userId}),
         });
         if (!response.ok) throw new Error('Failed to update program');
         const data = await response.json();

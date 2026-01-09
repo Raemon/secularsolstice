@@ -5,6 +5,7 @@ import ProgramReferenceItem from './ProgramReferenceItem';
 import VersionSelector from './VersionSelector';
 import type { Program, VersionOption } from '../types';
 import useProgram from '../useProgram';
+import { useUser } from '@/app/contexts/UserContext';
 
 const noopRemove = () => {};
 const noopChangeVersion = () => {};
@@ -33,7 +34,8 @@ type ProgramElementsSectionProps = {
 };
 
 const ProgramElementsSection = ({selectedProgram, versions, versionMap, selectedVersionId, filteredVersions, searchTerm, onSearchChange, refreshProgram, onChangeVersion, onElementClick, onCreateVersion, onKeyDown, canEdit, programs, programMap, onAddProgram, onRemoveProgram, onReorderProgramIds, canReferenceProgram}: ProgramElementsSectionProps): ReactElement => {
-  const { handleReorder, handleAdd: handleAddBase, handleDelete } = useProgram(selectedProgram, refreshProgram);
+  const { userId } = useUser();
+  const { handleReorder, handleAdd: handleAddBase, handleDelete } = useProgram(selectedProgram, refreshProgram, undefined, userId);
   const handleAdd = useCallback(async (versionId: string) => {
     await handleAddBase(versionId, () => onSearchChange(''));
   }, [handleAddBase, onSearchChange]);
@@ -293,5 +295,3 @@ const ProgramElementsSection = ({selectedProgram, versions, versionMap, selected
 };
 
 export default ProgramElementsSection;
-
-

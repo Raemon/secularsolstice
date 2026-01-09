@@ -285,7 +285,7 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
       const response = await fetch(`/api/programs/${programId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ elementIds: reorderedElementIds, programIds: program.programIds }),
+        body: JSON.stringify({ elementIds: reorderedElementIds, programIds: program.programIds, userId }),
       });
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -345,7 +345,7 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
       const response = await fetch(`/api/programs/${programId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ elementIds: nextElementIds, programIds: program.programIds }),
+        body: JSON.stringify({ elementIds: nextElementIds, programIds: program.programIds, userId }),
       });
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -374,7 +374,7 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
       const response = await fetch(`/api/programs/${programId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ elementIds: nextElementIds, programIds: program.programIds }),
+        body: JSON.stringify({ elementIds: nextElementIds, programIds: program.programIds, userId }),
       });
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -418,7 +418,7 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
         const response = await fetch(`/api/programs/${programId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ elementIds, programIds: program.programIds }),
+          body: JSON.stringify({ elementIds, programIds: program.programIds, userId }),
         });
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
@@ -498,7 +498,7 @@ const ProgramBrowser = ({ initialProgramId, initialVersionId }: ProgramBrowserPr
       const patchResponse = await fetch(`/api/programs/${parentProgram.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ elementIds: parentProgram.elementIds, programIds: updatedProgramIds }),
+        body: JSON.stringify({ elementIds: parentProgram.elementIds, programIds: updatedProgramIds, userId }),
       });
       const patchData = await patchResponse.json().catch(() => ({}));
       if (!patchResponse.ok) {

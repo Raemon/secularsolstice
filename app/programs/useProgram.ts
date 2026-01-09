@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import type { Program } from './types';
 
-const useProgram = (program: Program | null, refreshProgram: (updatedProgram: Program) => void, setError?: (error: string | null) => void) => {
+const useProgram = (program: Program | null, refreshProgram: (updatedProgram: Program) => void, setError?: (error: string | null) => void, userId?: string | null) => {
   const handleReorder = useCallback(async (reorderedElementIds: string[]) => {
     if (!program) {
       return;
@@ -14,7 +14,7 @@ const useProgram = (program: Program | null, refreshProgram: (updatedProgram: Pr
       const response = await fetch(`/api/programs/${program.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ elementIds: reorderedElementIds, programIds: program.programIds }),
+        body: JSON.stringify({ elementIds: reorderedElementIds, programIds: program.programIds, userId }),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
@@ -26,7 +26,7 @@ const useProgram = (program: Program | null, refreshProgram: (updatedProgram: Pr
       refreshProgram({ ...program, elementIds: previousElementIds });
       if (setError) setError(err instanceof Error ? err.message : 'Failed to update program');
     }
-  }, [program, refreshProgram, setError]);
+  }, [program, refreshProgram, setError, userId]);
 
   const handleAdd = useCallback(async (versionId: string, onSuccess?: () => void) => {
     if (!program) {
@@ -43,7 +43,7 @@ const useProgram = (program: Program | null, refreshProgram: (updatedProgram: Pr
       const response = await fetch(`/api/programs/${program.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ elementIds: nextElementIds, programIds: program.programIds }),
+        body: JSON.stringify({ elementIds: nextElementIds, programIds: program.programIds, userId }),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
@@ -55,7 +55,7 @@ const useProgram = (program: Program | null, refreshProgram: (updatedProgram: Pr
     } catch (err) {
       if (setError) setError(err instanceof Error ? err.message : 'Failed to update program');
     }
-  }, [program, refreshProgram, setError]);
+  }, [program, refreshProgram, setError, userId]);
 
   const handleDelete = useCallback(async (versionId: string) => {
     if (!program) {
@@ -68,7 +68,7 @@ const useProgram = (program: Program | null, refreshProgram: (updatedProgram: Pr
       const response = await fetch(`/api/programs/${program.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ elementIds: nextElementIds, programIds: program.programIds }),
+        body: JSON.stringify({ elementIds: nextElementIds, programIds: program.programIds, userId }),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
@@ -79,10 +79,9 @@ const useProgram = (program: Program | null, refreshProgram: (updatedProgram: Pr
     } catch (err) {
       if (setError) setError(err instanceof Error ? err.message : 'Failed to update program');
     }
-  }, [program, refreshProgram, setError]);
+  }, [program, refreshProgram, setError, userId]);
 
   return { handleReorder, handleAdd, handleDelete };
 };
 
 export default useProgram;
-
