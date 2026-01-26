@@ -102,7 +102,7 @@ const BlogPage = ({ initialPosts }: BlogPageProps = {}) => {
           LW {showLW ? '✓' : '○'}
         </button>
         </Tooltip>
-        <Tooltip content="Show SecularSolstice.com posts" placement="bottom">
+        <Tooltip content="Show SecularSolstice.wordpress.com posts" placement="bottom">
         <button onClick={() => setShowSS(!showSS)} className={`text-xs px-2 py-0.5 border border-gray-200 rounded-sm text-gray-200 whitespace-nowrap ${showSS ? 'opacity-100' : 'opacity-50'}`}>
             SS {showSS ? '✓' : '○'}
           </button>

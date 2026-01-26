@@ -1,0 +1,17 @@
+{
+    "require": {
+        "google/analytics-admin": "^0.6.2",
+        "google/cloud": "^0.185.0",
+        "google/apiclient": "^2.0",
+        "guzzlehttp/guzzle": "^7.5",
+        "google/protobuf": "^3.25"
+    },
+    "scripts": {
+        "pre-autoload-dump": "Google\\Task\\Composer::cleanup"
+    },
+    "extra": {
+        "google/apiclient-services": [
+            "Analytics"
+        ]
+    }
+}
