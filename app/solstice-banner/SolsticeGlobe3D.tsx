@@ -59,6 +59,15 @@ export const SolsticeGlobe3D = ({
     setIsFullyLoaded(true);
     onFullyLoaded?.();
   });
+
+  // Disable zoom on the globe's orbit controls
+  useEffect(() => {
+    if (!isGlobeReady || !globeRef.current) return;
+    const controls = globeRef.current.controls?.();
+    if (controls) {
+      controls.enableZoom = false;
+    }
+  }, [isGlobeReady]);
   
   const findMarkerElement = useCallback((element: HTMLElement | null, clientX?: number, clientY?: number): HTMLElement | null => {
     const allMarkers = Array.from(document.querySelectorAll('div[data-globe-marker]'));

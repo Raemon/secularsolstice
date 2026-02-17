@@ -39,6 +39,7 @@ const Header = () => {
   const isBlogPage = pathname?.includes('/blog');
   const isChangelogPage = pathname?.includes('/changelog');
   const isAdminPage = pathname?.includes('/admin');
+  const isHomePage = pathname === '/';
 
   const headerClasses = "absolute top-0 left-0 right-0 z-[100] px-4 pt-3 pb-2 flex flex-wrap items-center justify-between print:hidden";
 
@@ -47,7 +48,7 @@ const Header = () => {
 
   return (
     <header className={headerClasses}>
-      <h1 className="font-georgia text-2xl text-nowrap mr-auto lg:mr-0"><Link href="/">Secular Solstice</Link></h1>
+      {!isHomePage && <h1 className="font-georgia text-2xl text-nowrap mr-auto lg:mr-0"><Link href="/">Secular Solstice</Link></h1>}
       <nav className="flex gap-3 lg:gap-6 items-center w-full lg:w-auto justify-between lg:ml-auto lg:justify-start order-2 lg:order-1 px-1 lg:pr-8 mt-3 sm:mt-0">
         <Link href="/songs" className={`hover:underline text-sm ${isSongsPage ? activeTextClass : inactiveTextClass}`}>Songs/Speeches</Link>
         <Link href="/programs" className={`hover:underline text-sm ${isProgramsPage ? activeTextClass : inactiveTextClass}`}>Programs</Link>

@@ -17,7 +17,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     const data = await downloadBackup(filename);
-    return new NextResponse(data, {
+    return new NextResponse(data.toString(), {
       status: 200,
       headers: {
         'Content-Type': 'application/gzip',
