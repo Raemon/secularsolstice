@@ -54,8 +54,7 @@ export const CHORDMARK_STYLES = `
     width: 300px;
     white-space: pre-wrap;
   }
+  .styled-chordmark .cmSong [data-line-active="true"] {
+    background-color: rgba(255, 213, 0, 0.25);
+  }
 `;
-
-
-
-
