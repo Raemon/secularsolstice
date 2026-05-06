@@ -4,6 +4,7 @@ import "./globals.css";
 import ConditionalHeader from "./ConditionalHeader";
 import { UserProvider } from "./contexts/UserContext";
 import LocalDbIndicator from "./components/LocalDbIndicator";
+import WebGPUPolyfill from "./WebGPUPolyfill";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -38,6 +39,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${ebGaramond.variable} antialiased bg-[#11101b] text-gray-100 pt-[45px]`}
       >
+        <WebGPUPolyfill />
         <UserProvider>
           <ConditionalHeader />
           {children}
