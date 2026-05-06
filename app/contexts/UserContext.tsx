@@ -18,7 +18,18 @@ type UserContextType = {
   togglePerformedProgram: (programId: string) => Promise<void>;
 };
 
-const UserContext = createContext<UserContextType | undefined>(undefined);
+const UserContext = createContext<UserContextType>({
+  user: null,
+  userId: null,
+  userName: '',
+  setUserFromAuth: () => {},
+  logout: () => {},
+  canVoteAndComment: false,
+  canEdit: false,
+  isAdmin: false,
+  loading: true,
+  togglePerformedProgram: async () => {},
+});
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -144,9 +155,5 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 };
 
 export const useUser = () => {
-  const context = useContext(UserContext);
-  if (context === undefined) {
-    throw new Error('useUser must be used within a UserProvider');
-  }
-  return context;
+  return useContext(UserContext);
 };
