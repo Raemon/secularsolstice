@@ -166,7 +166,7 @@ const ProgramEditPanel = ({ programId, onClose, onProgramUpdated }: ProgramEditP
           <textarea value={epitaph} onChange={(e) => setEpitaph(e.target.value)} rows={6} disabled={fieldsDisabled} className="w-full px-2 py-1 bg-transparent border border-gray-300  font-mono text-sm disabled:cursor-not-allowed"/>
         </div>
         <div className={`flex items-center gap-2 text-sm text-gray-200 ${fieldsDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`} onClick={() => !fieldsDisabled && setIsSubprogram(!isSubprogram)}>
-          <input type="checkbox" checked={isSubprogram} disabled={fieldsDisabled} />
+          <input type="checkbox" checked={isSubprogram} readOnly />
           <span>Mark as subprogram (hidden from main dropdown)</span>
         </div>
         {canToggleLock ? (
