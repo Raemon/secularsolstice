@@ -164,7 +164,7 @@ const ProgramSlides = ({ programId }: ProgramSlidesProps) => {
   }, [selectedProgram, programMap]);
 
   const loadedVersionsCount = Object.keys(fullVersions).length;
-  const isFullyLoaded = totalVersionsToLoad > 0 && loadedVersionsCount >= totalVersionsToLoad;
+  const isFullyLoaded = totalVersionsToLoad === 0 || loadedVersionsCount >= totalVersionsToLoad;
 
   const allSlides = useMemo<SongSlideDataWithMovie[]>(() => {
     if (!selectedProgram) return [];
@@ -278,7 +278,7 @@ const ProgramSlides = ({ programId }: ProgramSlidesProps) => {
       if (songData.versionId.startsWith('program-')) {
         indices.add(currentIndex);
       }
-      currentIndex += songData.slides.length;
+      currentIndex += songData.slides.length + 1;
     }
     return indices;
   }, [processedSlides]);
@@ -340,7 +340,7 @@ const ProgramSlides = ({ programId }: ProgramSlidesProps) => {
   }, [processedSlides]);
 
   useEffect(() => {
-    if (flattenedSlides.length === 0 || isExtractingFrames) return;
+    if (flattenedSlides.length === 0 || isExtractingFrames || !isFullyLoaded) return;
     const video = videoRef.current;
     if (!video) return;
 
@@ -372,7 +372,7 @@ const ProgramSlides = ({ programId }: ProgramSlidesProps) => {
     };
 
     extractFramesFromVideo();
-  }, [programIdsInSlides, programVideoMap, programFrames, flattenedSlides.length, isExtractingFrames, programSlideCounts]);
+  }, [programIdsInSlides, programVideoMap, programFrames, flattenedSlides.length, isExtractingFrames, isFullyLoaded, programSlideCounts]);
 
   const getBackgroundForSlide = (slideIndex: number): string | undefined => {
     const programIdForSlide = slideToProgramId[slideIndex] || selectedProgram?.id || null;
@@ -404,7 +404,7 @@ const ProgramSlides = ({ programId }: ProgramSlidesProps) => {
       
       if (!songData?.slidesMovieUrl || !range) continue;
       
-      if (newSlideIndex >= range.start) {
+      if (newSlideIndex >= range.start && newSlideIndex < range.start + range.length) {
         const positionInSong = newSlideIndex - range.start + 1;
         const startAt = songData.slideMovieStart ?? 1;
         
