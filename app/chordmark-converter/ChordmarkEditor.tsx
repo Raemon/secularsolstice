@@ -275,10 +275,10 @@ const ChordmarkEditor = ({ value, onChange, showSyntaxHelp = false, bpm, autosav
           </div>
         </div>
 
-      <div className="flex gap-2 max-w-[calc(100vw-16px)] overflow-x-scroll scrollbar-hide">
-        <div className="w-[300px] flex-none grow-1 shrink-0 sm:w-[calc(50vw-8px)]">
+      <div className="flex gap-2 max-w-[calc(100vw-16px)] overflow-hidden">
+        <div className="flex-1 min-w-0">
           <div className="flex flex-1 border relative" style={{ maxWidth: '800px' }}>
-            <div className="flex flex-col bg-gray-900 border-r border-gray-700">
+            <div className="flex flex-col bg-gray-900 border-r border-gray-700 pt-2">
               {lineNumbers}
             </div>
             <textarea
@@ -286,14 +286,14 @@ const ChordmarkEditor = ({ value, onChange, showSyntaxHelp = false, bpm, autosav
               value={value}
               onChange={(e) => onChange(e.target.value)}
               placeholder="Enter chordmark notation..."
-              className="flex-1 p-2 bg-black text-sm font-mono min-h-[300px] whitespace-pre flex-grow border-0 outline-none"
+              className="flex-1 pt-2 px-2 pb-0 bg-black text-sm font-mono min-h-[300px] whitespace-pre flex-grow border-0 outline-none"
               style={{ lineHeight: '16px', resize: 'none' }}
             />
           </div>
         </div>
 
-        <div className="w-[300px] flex-none shrink-0 sm:w-[calc(50%-8px)]">
-          <div ref={previewRef} className="flex-1 p-2 border overflow-auto text-xs font-mono">
+        <div className="flex-1 min-w-0">
+          <div ref={previewRef} className="flex-1 p-2 border overflow-auto text-xs font-mono h-full">
             {previewMode === 'slides' && <SlideDisplay slides={slides} />}
             {previewMode === 'side-by-side' && (
               renderedOutputs.htmlChordsOnly || renderedOutputs.htmlLyricsOnly ? (
