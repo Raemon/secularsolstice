@@ -286,14 +286,14 @@ const ChordmarkEditor = ({ value, onChange, showSyntaxHelp = false, bpm, autosav
               value={value}
               onChange={(e) => onChange(e.target.value)}
               placeholder="Enter chordmark notation..."
-              className="flex-1 pt-2 px-2 pb-0 bg-black text-sm font-mono min-h-[300px] whitespace-pre flex-grow border-0 outline-none"
+              className="flex-1 pt-2 px-2 pb-0 bg-black text-sm font-mono min-h-[300px] whitespace-pre flex-grow border-0 outline-none scrollbar-hide"
               style={{ lineHeight: '16px', resize: 'none' }}
             />
           </div>
         </div>
 
         <div className="flex-1 min-w-0">
-          <div ref={previewRef} className="flex-1 p-2 border overflow-auto text-xs font-mono h-full">
+          <div ref={previewRef} className="flex-1 p-2 border overflow-auto scrollbar-hide text-xs font-mono h-full">
             {previewMode === 'slides' && <SlideDisplay slides={slides} />}
             {previewMode === 'side-by-side' && (
               renderedOutputs.htmlChordsOnly || renderedOutputs.htmlLyricsOnly ? (
