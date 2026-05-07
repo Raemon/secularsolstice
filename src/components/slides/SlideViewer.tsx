@@ -58,10 +58,14 @@ const SlideViewer = ({slides, title, backgroundMovieUrl, playMovieAudio = false,
       video.muted = !shouldUnmute;
       video.src = backgroundMovieUrl;
       video.load();
-      video.play().catch(() => {
-        video.muted = true;
-        return video.play();
-      }).catch(err => console.error('Error playing slides movie:', err));
+      video.play().catch(err => {
+        if (err.name === 'NotAllowedError') {
+          video.muted = true;
+          video.play().catch(retryErr => console.error('Error playing slides movie (muted retry):', retryErr));
+        } else {
+          console.error('Error playing slides movie:', err);
+        }
+      });
     } else {
       video.pause();
       video.removeAttribute('src');
