@@ -4,8 +4,8 @@ import SlidesMovieUpload from './SlidesMovieUpload';
 import BlobUpload from './BlobUpload';
 
 export type CreateVersionFormProps = {
-  form: { label: string; content: string; audioUrl: string; slidesMovieUrl: string; slideMovieStart: number; bpm: number; transpose: number; previousVersionId: string; nextVersionId: string; slideCredits: string; programCredits: string; blobUrl: string };
-  onFormChange: (updates: Partial<{ label: string; content: string; audioUrl: string; slidesMovieUrl: string; slideMovieStart: number; bpm: number; transpose: number; previousVersionId: string; nextVersionId: string; slideCredits: string; programCredits: string; blobUrl: string }>) => void;
+  form: { label: string; content: string; audioUrl: string; slidesMovieUrl: string; slideMovieStart: number; playMovieAudio: boolean; bpm: number; transpose: number; previousVersionId: string; nextVersionId: string; slideCredits: string; programCredits: string; blobUrl: string };
+  onFormChange: (updates: Partial<{ label: string; content: string; audioUrl: string; slidesMovieUrl: string; slideMovieStart: number; playMovieAudio: boolean; bpm: number; transpose: number; previousVersionId: string; nextVersionId: string; slideCredits: string; programCredits: string; blobUrl: string }>) => void;
   onSubmit: () => void;
   onCancel: () => void;
   isSubmitting: boolean;
@@ -90,7 +90,7 @@ const CreateVersionForm = ({form, onFormChange, onSubmit, onCancel, isSubmitting
         />
       </div>
       <div>
-        <SlidesMovieUpload slidesMovieUrl={form.slidesMovieUrl} onFormChange={onFormChange} songId={songId} />
+        <SlidesMovieUpload slidesMovieUrl={form.slidesMovieUrl} playMovieAudio={form.playMovieAudio} onFormChange={onFormChange} songId={songId} />
       </div>
       <div>
         <label className="text-xs text-gray-400">Slide Movie Start (optional)</label>

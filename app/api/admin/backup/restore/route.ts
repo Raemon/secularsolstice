@@ -30,6 +30,7 @@ type SongVersionData = {
   audioUrl: string | null;
   slidesMovieUrl: string | null;
   slideMovieStart: number | null;
+  playMovieAudio?: boolean;
   previousVersionId: string | null;
   nextVersionId: string | null;
   originalVersionId: string | null;
@@ -177,12 +178,14 @@ export async function POST(request: NextRequest) {
             await sql`
               INSERT INTO song_versions (
                 id, song_id, label, content, audio_url, slides_movie_url, slide_movie_start,
+                play_movie_audio,
                 previous_version_id, next_version_id, original_version_id, rendered_content,
                 bpm, transpose, archived, created_by, created_at, db_created_at,
                 slide_credits, program_credits, blob_url
               ) VALUES (
                 ${version.id}, ${version.songId}, ${version.label}, ${version.content},
                 ${version.audioUrl}, ${version.slidesMovieUrl}, ${version.slideMovieStart},
+                ${version.playMovieAudio ?? false},
                 ${null}, ${null}, ${null},
                 ${version.renderedContent ? JSON.stringify(version.renderedContent) : null}::jsonb,
                 ${version.bpm}, ${version.transpose}, ${version.archived}, ${version.createdBy},

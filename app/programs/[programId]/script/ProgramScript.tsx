@@ -102,6 +102,7 @@ async function loadProgramScriptData(programId: string) {
     audio_url: string | null;
     slides_movie_url: string | null;
     slide_movie_start: number | null;
+    play_movie_audio: boolean;
     previous_version_id: string | null;
     next_version_id: string | null;
     original_version_id: string | null;
@@ -128,6 +129,7 @@ async function loadProgramScriptData(programId: string) {
       v.audio_url,
       v.slides_movie_url,
       v.slide_movie_start,
+      v.play_movie_audio,
       v.previous_version_id,
       v.next_version_id,
       v.original_version_id,
@@ -158,6 +160,7 @@ async function loadProgramScriptData(programId: string) {
       audioUrl: v.audio_url,
       slidesMovieUrl: v.slides_movie_url,
       slideMovieStart: v.slide_movie_start,
+      playMovieAudio: Boolean(v.play_movie_audio),
       previousVersionId: v.previous_version_id,
       nextVersionId: v.next_version_id,
       originalVersionId: v.original_version_id,

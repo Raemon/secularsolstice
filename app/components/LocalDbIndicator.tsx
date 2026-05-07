@@ -1,7 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 
 const LocalDbIndicator = () => {
+  const pathname = usePathname();
   const [dbId, setDbId] = useState<string | null>(null);
   const [isLocal, setIsLocal] = useState(false);
 
@@ -16,7 +18,7 @@ const LocalDbIndicator = () => {
     }
   }, []);
 
-  if (!isLocal || !dbId) return null;
+  if (!isLocal || !dbId || pathname?.includes('/slides')) return null;
 
   return (
     <div className="monospace text-xs text-gray-400 fixed bottom-2 left-2 z-50 print:hidden">

@@ -16,7 +16,7 @@ type ProgramSlidesProps = {
   programId: string;
 };
 
-type SongSlideDataWithMovie = SongSlideData & { slidesMovieUrl?: string | null; slideMovieStart?: number | null; programId: string };
+type SongSlideDataWithMovie = SongSlideData & { slidesMovieUrl?: string | null; slideMovieStart?: number | null; playMovieAudio?: boolean; programId: string };
 
 const ProgramSlides = ({ programId }: ProgramSlidesProps) => {
   const router = useRouter();
@@ -26,7 +26,7 @@ const ProgramSlides = ({ programId }: ProgramSlidesProps) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [totalVersionsToLoad, setTotalVersionsToLoad] = useState(0);
+  const [totalVersionsToLoad, setTotalVersionsToLoad] = useState<number | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [programFrames, setProgramFrames] = useState<Record<string, string[]>>({});
   const [showUploader, setShowUploader] = useState(false);
@@ -34,6 +34,7 @@ const ProgramSlides = ({ programId }: ProgramSlidesProps) => {
   const [extractingProgramId, setExtractingProgramId] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [backgroundMovieUrl, setBackgroundMovieUrl] = useState<string | null>(null);
+  const [backgroundMovieAudio, setBackgroundMovieAudio] = useState(false);
 
   const handleEscape = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape') {
@@ -164,7 +165,7 @@ const ProgramSlides = ({ programId }: ProgramSlidesProps) => {
   }, [selectedProgram, programMap]);
 
   const loadedVersionsCount = Object.keys(fullVersions).length;
-  const isFullyLoaded = totalVersionsToLoad === 0 || loadedVersionsCount >= totalVersionsToLoad;
+  const isFullyLoaded = totalVersionsToLoad !== null && loadedVersionsCount >= totalVersionsToLoad;
 
   const allSlides = useMemo<SongSlideDataWithMovie[]>(() => {
     if (!selectedProgram) return [];
@@ -207,6 +208,7 @@ const ProgramSlides = ({ programId }: ProgramSlidesProps) => {
         tags: version.tags || [],
         slidesMovieUrl: fullVersion?.slidesMovieUrl,
         slideMovieStart: fullVersion?.slideMovieStart ?? null,
+        playMovieAudio: fullVersion?.playMovieAudio ?? false,
         programId,
       };
     };
@@ -261,6 +263,10 @@ const ProgramSlides = ({ programId }: ProgramSlidesProps) => {
       return songData;
     });
   }, [allSlides]);
+
+  const hasAudioContent = useMemo(() => {
+    return processedSlides.some(songData => songData.playMovieAudio);
+  }, [processedSlides]);
 
   const flattenedSlides = useMemo(() => {
     const slides: Slide[] = [];
@@ -359,7 +365,11 @@ const ProgramSlides = ({ programId }: ProgramSlidesProps) => {
       video.src = videoForProgram;
 
       try {
-        const slideCount = programSlideCounts[nextProgramId] || flattenedSlides.length;
+        // Root program's video is the fallback for all slides (including subprograms),
+        // so extract enough frames for the entire slideshow
+        const slideCount = nextProgramId === selectedProgram?.id
+          ? flattenedSlides.length
+          : (programSlideCounts[nextProgramId] || flattenedSlides.length);
         const numFrames = Math.min(Math.max(slideCount, 1), 100);
         const frames = await extractFrames(video, numFrames);
         setProgramFrames(prev => ({ ...prev, [nextProgramId]: frames }));
@@ -390,6 +400,7 @@ const ProgramSlides = ({ programId }: ProgramSlidesProps) => {
   useEffect(() => {
     setCurrentSlide(0);
     setBackgroundMovieUrl(null);
+    setBackgroundMovieAudio(false);
   }, [flattenedSlides.length, selectedProgram?.id]);
 
   const handleSlideChange = (newSlideIndex: number) => {
@@ -397,26 +408,31 @@ const ProgramSlides = ({ programId }: ProgramSlidesProps) => {
     if (slideToSongIndex.length === 0) return;
     
     let activeVideoUrl: string | null = null;
-    
+    let activePlayAudio = false;
+
     for (let i = processedSlides.length - 1; i >= 0; i--) {
       const songData = processedSlides[i];
       const range = songSlideRanges[i];
-      
+
       if (!songData?.slidesMovieUrl || !range) continue;
-      
+
       if (newSlideIndex >= range.start && newSlideIndex < range.start + range.length) {
         const positionInSong = newSlideIndex - range.start + 1;
         const startAt = songData.slideMovieStart ?? 1;
-        
+
         if (positionInSong >= startAt) {
           activeVideoUrl = songData.slidesMovieUrl;
+          activePlayAudio = songData.playMovieAudio ?? false;
           break;
         }
       }
     }
-    
+
     if (backgroundMovieUrl !== activeVideoUrl) {
       setBackgroundMovieUrl(activeVideoUrl);
+    }
+    if (backgroundMovieAudio !== activePlayAudio) {
+      setBackgroundMovieAudio(activePlayAudio);
     }
   };
 
@@ -457,7 +473,7 @@ const ProgramSlides = ({ programId }: ProgramSlidesProps) => {
       <video ref={videoRef} style={{display: 'none'}} crossOrigin="anonymous" />
       
       <div className="fixed opacity-0 hover:opacity-100 top-4 left-4 z-10 text-white text-sm bg-black bg-opacity-50 px-3 py-1 rounded">
-        {!isFullyLoaded && totalVersionsToLoad > 0 && (<div>Loading: {loadedVersionsCount}/{totalVersionsToLoad} songs</div>)}
+        {!isFullyLoaded && totalVersionsToLoad !== null && totalVersionsToLoad > 0 && (<div>Loading: {loadedVersionsCount}/{totalVersionsToLoad} songs</div>)}
         <ProgramViews programId={programId} currentView="slides" />
       </div>
       {isExtractingFrames && (
@@ -471,7 +487,7 @@ const ProgramSlides = ({ programId }: ProgramSlidesProps) => {
         </button>
         <DownloadSlidesButton slides={flattenedSlides} programTitle={selectedProgram.title} getBackgroundForSlide={getBackgroundForSlide} programTitleSlideIndices={programTitleSlideIndices} />
       </div>
-      <SlideViewer slides={flattenedSlides} title={selectedProgram.title} backgroundMovieUrl={backgroundMovieUrl} programTitleSlideIndices={programTitleSlideIndices} getBackgroundForSlide={getBackgroundForSlide} showControls={true} onSlideChange={handleSlideChange} />
+      <SlideViewer slides={flattenedSlides} title={selectedProgram.title} backgroundMovieUrl={backgroundMovieUrl} playMovieAudio={backgroundMovieAudio} hasAudioContent={hasAudioContent} programTitleSlideIndices={programTitleSlideIndices} getBackgroundForSlide={getBackgroundForSlide} showControls={true} onSlideChange={handleSlideChange} />
     </>
   );
 };

@@ -14,6 +14,7 @@ type SongSlideData = {
   slides: Slide[];
   slidesMovieUrl?: string | null;
   slideMovieStart?: number | null;
+  playMovieAudio?: boolean;
 };
 
 const SongSlidesPage = () => {
@@ -65,6 +66,7 @@ const SongSlidesPage = () => {
           slides: slides,
           slidesMovieUrl: version.slidesMovieUrl,
           slideMovieStart: version.slideMovieStart ?? null,
+          playMovieAudio: version.playMovieAudio ?? false,
         });
         setError(null);
       } catch (err) {
@@ -118,7 +120,7 @@ const SongSlidesPage = () => {
   const programTitleSlideIndices = new Set<number>([0]);
 
   return (
-    <SlideViewer slides={slideData.slides} title={slideData.songTitle} backgroundMovieUrl={backgroundMovieUrl} programTitleSlideIndices={programTitleSlideIndices} showControls={true} onSlideChange={handleSlideChange} />
+    <SlideViewer slides={slideData.slides} title={slideData.songTitle} backgroundMovieUrl={backgroundMovieUrl} playMovieAudio={slideData.playMovieAudio} hasAudioContent={slideData.playMovieAudio} programTitleSlideIndices={programTitleSlideIndices} showControls={true} onSlideChange={handleSlideChange} />
   );
 };
 

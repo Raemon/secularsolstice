@@ -3,7 +3,7 @@ import { useRef, useState } from 'react';
 const MAX_FILE_SIZE_MB = 50;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
-const SlidesMovieUpload = ({slidesMovieUrl, onFormChange, songId}:{slidesMovieUrl: string; onFormChange: (updates: Partial<{ label: string; content: string; audioUrl: string; slidesMovieUrl: string; bpm: number; transpose: number; previousVersionId: string; nextVersionId: string; slideCredits: string; programCredits: string }>) => void; songId?: string}) => {
+const SlidesMovieUpload = ({slidesMovieUrl, playMovieAudio, onFormChange, songId}:{slidesMovieUrl: string; playMovieAudio: boolean; onFormChange: (updates: Partial<{ label: string; content: string; audioUrl: string; slidesMovieUrl: string; playMovieAudio: boolean; bpm: number; transpose: number; previousVersionId: string; nextVersionId: string; slideCredits: string; programCredits: string }>) => void; songId?: string}) => {
   const [isUploadingMovie, setIsUploadingMovie] = useState(false);
   const [movieUploadError, setMovieUploadError] = useState<string | null>(null);
   const movieInputRef = useRef<HTMLInputElement>(null);
@@ -57,7 +57,7 @@ const SlidesMovieUpload = ({slidesMovieUrl, onFormChange, songId}:{slidesMovieUr
         <input
           type="text"
           value={slidesMovieUrl}
-          onChange={(e) => onFormChange({ slidesMovieUrl: e.target.value })}
+          onChange={(e) => onFormChange({ slidesMovieUrl: e.target.value, ...(!e.target.value && { playMovieAudio: false }) })}
           className="w-full px-2 py-1 text-xs border border-gray-300 bg-black"
           placeholder="Slides movie URL"
         />
@@ -74,6 +74,16 @@ const SlidesMovieUpload = ({slidesMovieUrl, onFormChange, songId}:{slidesMovieUr
         </div>
       </div>
       {movieUploadError && <p className="text-red-600 text-xs">{movieUploadError}</p>}
+      <label className={`flex items-center gap-1.5 mt-1 text-xs ${slidesMovieUrl ? 'text-gray-300' : 'text-gray-600'}`}>
+        <input
+          type="checkbox"
+          checked={playMovieAudio}
+          onChange={(e) => onFormChange({ playMovieAudio: e.target.checked })}
+          disabled={!slidesMovieUrl}
+          className="accent-blue-600"
+        />
+        Play movie audio in slides
+      </label>
     </div>
   );
 };

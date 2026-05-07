@@ -5,7 +5,7 @@ import { processVersionLilypondIfNeeded } from '@/lib/lilypondRenderer';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { songId, label, content, audioUrl, slidesMovieUrl, slideMovieStart, bpm, transpose, previousVersionId, createdBy, renderedContent, slideCredits, programCredits, blobUrl } = body;
+    const { songId, label, content, audioUrl, slidesMovieUrl, slideMovieStart, playMovieAudio, bpm, transpose, previousVersionId, createdBy, renderedContent, slideCredits, programCredits, blobUrl } = body;
     
     if (!songId || !label) {
       return NextResponse.json({ error: 'songId and label are required' }, { status: 400 });
@@ -22,6 +22,7 @@ export async function POST(request: Request) {
       audioUrl: audioUrl ?? null,
       slidesMovieUrl: slidesMovieUrl ?? null,
       slideMovieStart: slideMovieStart ?? null,
+      playMovieAudio: playMovieAudio ?? false,
       bpm: bpm ?? null,
       transpose: transpose ?? null,
       previousVersionId: previousVersionId ?? null,

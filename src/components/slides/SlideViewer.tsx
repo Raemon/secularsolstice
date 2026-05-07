@@ -8,6 +8,8 @@ type SlideViewerProps = {
   slides: Slide[];
   title?: string;
   backgroundMovieUrl?: string | null;
+  playMovieAudio?: boolean;
+  hasAudioContent?: boolean;
   programTitleSlideIndices?: Set<number>;
   getBackgroundForSlide?: (slideIndex: number) => string | undefined;
   showControls?: boolean;
@@ -15,11 +17,27 @@ type SlideViewerProps = {
   onSlideChange?: (slideIndex: number) => void;
 };
 
-const SlideViewer = ({slides, title, backgroundMovieUrl, programTitleSlideIndices, getBackgroundForSlide, showControls = true, className, onSlideChange}: SlideViewerProps) => {
+const SlideViewer = ({slides, title, backgroundMovieUrl, playMovieAudio = false, hasAudioContent = false, programTitleSlideIndices, getBackgroundForSlide, showControls = true, className, onSlideChange}: SlideViewerProps) => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [userClickedUnlock, setUserClickedUnlock] = useState(false);
+  const userClickedUnlockRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const slidesMovieRef = useRef<HTMLVideoElement>(null);
+  const playMovieAudioRef = useRef(playMovieAudio);
+  playMovieAudioRef.current = playMovieAudio;
+
+  const audioUnlocked = !hasAudioContent || userClickedUnlock;
+
+  const handleAudioUnlock = () => {
+    userClickedUnlockRef.current = true;
+    const video = slidesMovieRef.current;
+    if (video && playMovieAudioRef.current) {
+      video.muted = false;
+      video.play().catch(() => {});
+    }
+    setUserClickedUnlock(true);
+  };
 
   useEffect(() => {
     setCurrentSlide(0);
@@ -31,19 +49,32 @@ const SlideViewer = ({slides, title, backgroundMovieUrl, programTitleSlideIndice
     }
   }, [currentSlide, onSlideChange]);
 
+  // Load and play video when URL changes (uses refs to avoid reloading on mute changes)
   useEffect(() => {
     const video = slidesMovieRef.current;
     if (!video) return;
     if (backgroundMovieUrl) {
+      const shouldUnmute = playMovieAudioRef.current && userClickedUnlockRef.current;
+      video.muted = !shouldUnmute;
       video.src = backgroundMovieUrl;
       video.load();
-      video.play().catch(err => console.error('Error playing slides movie:', err));
+      video.play().catch(() => {
+        video.muted = true;
+        return video.play();
+      }).catch(err => console.error('Error playing slides movie:', err));
     } else {
       video.pause();
       video.removeAttribute('src');
       video.load();
     }
   }, [backgroundMovieUrl]);
+
+  // Toggle muted on already-playing video when audio unlock state changes (no reload)
+  useEffect(() => {
+    const video = slidesMovieRef.current;
+    if (!video || !backgroundMovieUrl) return;
+    video.muted = !(playMovieAudio && userClickedUnlock);
+  }, [playMovieAudio, userClickedUnlock, backgroundMovieUrl]);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -109,6 +140,15 @@ const SlideViewer = ({slides, title, backgroundMovieUrl, programTitleSlideIndice
       )}
       {backgroundMovieUrl && (
         <div className="absolute inset-0 bg-black" style={{opacity: overlayOpacity, zIndex: 1}} />
+      )}
+      {!audioUnlocked && (
+        <div className="absolute inset-0 bg-black flex items-center justify-center cursor-pointer" style={{zIndex: 50}} onClick={handleAudioUnlock}>
+          <div className="text-center">
+            <div className="text-white text-2xl font-georgia mb-4">{title || 'Slideshow'}</div>
+            <div className="text-gray-400 text-lg">Click anywhere to start</div>
+            <div className="text-gray-600 text-sm mt-2">This slideshow contains audio</div>
+          </div>
+        </div>
       )}
       {showControls && (
         <div className="fixed top-4 right-4 z-10 opacity-0 hover:opacity-100">

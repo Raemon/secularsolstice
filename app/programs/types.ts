@@ -35,4 +35,5 @@ export type SongSlideData = {
   tags: string[];
   slidesMovieUrl?: string | null;
   slideMovieStart?: number | null;
+  playMovieAudio?: boolean;
 };

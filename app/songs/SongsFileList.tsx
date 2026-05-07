@@ -52,7 +52,7 @@ const SongsFileList = ({ initialSongs, initialSongId, initialVersionId, initialV
   const [panelError, setPanelError] = useState<string | null>(null);
   const [newVersionForm, setNewVersionForm] = useState({
     label: '', content: '', audioUrl: '', slidesMovieUrl: '', slideMovieStart: 0,
-    bpm: 0, transpose: 0, previousVersionId: '', nextVersionId: '',
+    playMovieAudio: false, bpm: 0, transpose: 0, previousVersionId: '', nextVersionId: '',
     slideCredits: '', programCredits: '', blobUrl: '',
   });
 
@@ -162,7 +162,8 @@ const SongsFileList = ({ initialSongs, initialSongId, initialVersionId, initialV
     setNewVersionForm({
       label: selectedVersion.label, content: selectedVersion.content || '',
       audioUrl: selectedVersion.audioUrl || '', slidesMovieUrl: selectedVersion.slidesMovieUrl || '',
-      slideMovieStart: selectedVersion.slideMovieStart || 0, bpm: selectedVersion.bpm || 0,
+      slideMovieStart: selectedVersion.slideMovieStart || 0, playMovieAudio: selectedVersion.playMovieAudio ?? false,
+      bpm: selectedVersion.bpm || 0,
       transpose: selectedVersion.transpose || 0, previousVersionId: selectedVersion.id, nextVersionId: '',
       slideCredits: selectedVersion.slideCredits || '', programCredits: selectedVersion.programCredits || '',
       blobUrl: selectedVersion.blobUrl || '',
@@ -201,7 +202,8 @@ const SongsFileList = ({ initialSongs, initialSongId, initialVersionId, initialV
         body: JSON.stringify({
           songId: selectedSong.id, label: trimmedLabel, content: newVersionForm.content || null,
           audioUrl: newVersionForm.audioUrl || null, slidesMovieUrl: newVersionForm.slidesMovieUrl || null,
-          slideMovieStart: newVersionForm.slideMovieStart ?? null, bpm: newVersionForm.bpm || null,
+          slideMovieStart: newVersionForm.slideMovieStart ?? null, playMovieAudio: newVersionForm.playMovieAudio ?? false,
+          bpm: newVersionForm.bpm || null,
           transpose: newVersionForm.transpose ?? null, previousVersionId: selectedVersion?.id || null,
           createdBy: userName, renderedContent, slideCredits: newVersionForm.slideCredits || null,
           programCredits: newVersionForm.programCredits || null, blobUrl: newVersionForm.blobUrl || null,

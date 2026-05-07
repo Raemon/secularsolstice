@@ -5,11 +5,14 @@ import Header from './Header';
 
 const ConditionalHeader = () => {
   const pathname = usePathname();
-  console.log(pathname);
 
-  // const hideHeader = pathname.includes('/feedback') || pathname?.includes('/results');
-  // if (hideHeader) return null;
-  return <Header />;
+  if (pathname?.includes('/slides')) return null;
+  return (
+    <>
+      <Header />
+      <div className="h-[45px]" />
+    </>
+  );
 };
 
 export default ConditionalHeader;
